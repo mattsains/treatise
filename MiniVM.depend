@@ -1,0 +1,15 @@
+# depslib dependency file v1.0
+1423077239 source:c:\users\matthew\desktop\varsity working folder\treatise\minivm\interpreter.c
+	"opcodes.h"
+	<stdint.h>
+
+1423076348 c:\users\matthew\desktop\varsity working folder\treatise\minivm\opcodes.h
+
+1423077266 source:c:\users\matthew\desktop\varsity working folder\treatise\minivm\main.c
+	<stdio.h>
+	<stdlib.h>
+
+1423077239 c:\users\matthew\desktop\varsity working folder\treatise\minivm\interpreter.c
+	"opcodes.h"
+	<stdint.h>
+
