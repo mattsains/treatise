@@ -26,15 +26,15 @@ void execute(uint32_t* instructions)
             break;
         case OP_LOADNIL:
             for (int i=A; i <= B; i++)
-                registers[i].nil = true;
+                registers[i].type = TNIL;
             break;
         case OP_LOADK:
             registers[A].value = Bx; //LOADK just loads the constant number as an int for now
-            registers[A].nil = false;
+            registers[A].type = TNUMBER;
             break;
         case OP_LOADBOOL:
             registers[A].value = B;
-            registers[A].nil = false;
+            registers[A].type = TBOOLEAN;
             if (C)
                 instructions++; //skip next instruction
             break;
@@ -48,15 +48,15 @@ void execute(uint32_t* instructions)
             break;
         case OP_ADD:
             registers[A].value=register_or_constant_value(B)+register_or_constant_value(C);
-            registers[A].nil=false;
+            registers[A].type=TNUMBER;
             break;
         case OP_SUB:
             registers[A].value=register_or_constant_value(B)-register_or_constant_value(C);
-            registers[A].nil=false;
+            registers[A].type=TNUMBER;
             break;
         case OP_MUL:
             registers[A].value=register_or_constant_value(B)*register_or_constant_value(C);
-            registers[A].nil=false;
+            registers[A].type=TNUMBER;
             break;
         case OP_DIV:
             uint16_t cval=register_or_constant_value(C);
@@ -66,7 +66,7 @@ void execute(uint32_t* instructions)
                 exit();
             }
             registers[A].value=register_or_constant_value(B)/cval;
-            registers[A].nil=false;
+            registers[A].type=TNUMBER;
             break;
         case OP_MOD:
             uint16_t cval=register_or_constant_value(C);
@@ -76,11 +76,11 @@ void execute(uint32_t* instructions)
                 exit();
             }
             registers[A].value=register_or_constant_value(B)%cval;
-            registers[A].nil=false;
+            registers[A].type=TNUMBER;
             break;
         case OP_POW:
             registers[A].value=pow(register_or_constant_value(B),register_or_constant_value(C));
-            registers[A].nil=false;
+            registers[A].type=TNUMBER;
             break;
         //todo: rest
         }
@@ -91,7 +91,7 @@ uint16_t register_or_constant_value (uint16_t operand)
 {
     if (operand<REGISTERS)
     {
-        if (registers[operand].nil)
+        if (registers[operand].type==TNIL)
         {
             printf("Error - trying to perform operation on nil");
             exit();
