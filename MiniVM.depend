@@ -1,15 +1,47 @@
 # depslib dependency file v1.0
-1423077239 source:c:\users\matthew\desktop\varsity working folder\treatise\minivm\interpreter.c
-	"opcodes.h"
+1423549267 source:c:\users\matthew\desktop\varsity working folder\treatise\minivm\interpreter.c
 	<stdint.h>
+	<math.h>
+	"opcodes.h"
+	"type.c"
 
-1423076348 c:\users\matthew\desktop\varsity working folder\treatise\minivm\opcodes.h
+1423080773 c:\users\matthew\desktop\varsity working folder\treatise\minivm\opcodes.h
 
-1423077266 source:c:\users\matthew\desktop\varsity working folder\treatise\minivm\main.c
+1424018333 source:c:\users\matthew\desktop\varsity working folder\treatise\minivm\main.c
 	<stdio.h>
 	<stdlib.h>
+	<stdint.h>
 
 1423077239 c:\users\matthew\desktop\varsity working folder\treatise\minivm\interpreter.c
 	"opcodes.h"
+	<stdint.h>
+
+1423549267 source:c:\users\s212213458\desktop\treatise\minivm\interpreter.c
+	<stdint.h>
+	<math.h>
+	"opcodes.h"
+	"type.c"
+
+1423080773 c:\users\s212213458\desktop\treatise\minivm\opcodes.h
+
+1423407473 c:\users\s212213458\desktop\treatise\minivm\type.c
+	<stdbool.h>
+	<stdint.h>
+
+1423551423 source:c:\users\s212213458\desktop\treatise\minivm\main.c
+	<stdio.h>
+	<stdlib.h>
+	<stdint.h>
+
+1423407473 source:c:\users\s212213458\desktop\treatise\minivm\type.c
+	<stdbool.h>
+	<stdint.h>
+
+1423407473 c:\users\matthew\desktop\varsity working folder\treatise\minivm\type.c
+	<stdbool.h>
+	<stdint.h>
+
+1423407473 source:c:\users\matthew\desktop\varsity working folder\treatise\minivm\type.c
+	<stdbool.h>
 	<stdint.h>
 

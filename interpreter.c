@@ -1,12 +1,19 @@
 #include <stdint.h>
 #include <math.h>
 
+#include "interpreter.h"
+
 #include "opcodes.h"
 #include "type.c"
 
 #define REGISTERS 256
 
 struct lua_type registers[REGISTERS] ;
+
+
+//headers because whyyy
+uint16_t register_or_constant_value (uint16_t operand);
+
 
 void execute(uint32_t* instructions)
 {
@@ -18,6 +25,8 @@ void execute(uint32_t* instructions)
         uint16_t C = instruction & (0x1FF << 14);
         uint16_t B = instruction & (0x1FF << 23);
         uint32_t Bx = instruction & (0x3FFFF << 14);
+
+        uint16_t cval;
 
         switch (opcode)
         {
@@ -59,21 +68,21 @@ void execute(uint32_t* instructions)
             registers[A].type=TNUMBER;
             break;
         case OP_DIV:
-            uint16_t cval=register_or_constant_value(C);
+            cval=register_or_constant_value(C);
             if (cval==0)
             {
                 printf("No dividing by zero");
-                exit();
+                exit(0);
             }
             registers[A].value=register_or_constant_value(B)/cval;
             registers[A].type=TNUMBER;
             break;
         case OP_MOD:
-            uint16_t cval=register_or_constant_value(C);
+            cval=register_or_constant_value(C);
             if (cval==0)
             {
                 printf("no modding by zero");
-                exit();
+                exit(0);
             }
             registers[A].value=register_or_constant_value(B)%cval;
             registers[A].type=TNUMBER;
@@ -91,10 +100,10 @@ uint16_t register_or_constant_value (uint16_t operand)
 {
     if (operand<REGISTERS)
     {
-        if (registers[operand].type==TNIL)
+        if (registers[operand].type!=TNUMBER)
         {
-            printf("Error - trying to perform operation on nil");
-            exit();
+            printf("Error - trying to perform operation on something other than a number");
+            exit(0);
         }
         return registers[operand].value;
     } else

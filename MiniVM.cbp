@@ -12,6 +12,7 @@
 				<Option type="1" />
 				<Option compiler="gcc" />
 				<Compiler>
+					<Add option="-w" />
 					<Add option="-g" />
 				</Compiler>
 			</Target>
@@ -35,9 +36,11 @@
 		<Unit filename="interpreter.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="interpreter.h" />
 		<Unit filename="main.c">
 			<Option compilerVar="CC" />
 		</Unit>
+		<Unit filename="main.h" />
 		<Unit filename="opcodes.h" />
 		<Unit filename="type.c">
 			<Option compilerVar="CC" />
