@@ -4,7 +4,7 @@
 #include "interpreter.h"
 
 #include "opcodes.h"
-#include "type.c"
+#include "type.h"
 
 #define REGISTERS 256
 
