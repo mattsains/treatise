@@ -14,7 +14,7 @@ int main(int argc, char* argv[])
     }
 
     //FILE* file = fopen(argv[0],"rb");
-    FILE* file = fopen("C:\\Users\\Matthew\\Desktop\\varsity working folder\\Treatise\\lua\\littleluac.out","rb");
+    FILE* file = fopen("C:\\Users\\Matthew\\Desktop\\varsity working folder\\Treatise\\lua\\littlefactorial.out","rb");
 
     uint32_t signature;
     fread(&signature, 4, 1, file);
@@ -61,6 +61,8 @@ int main(int argc, char* argv[])
     struct lua_function main_func = parse_function(file);
 
     fclose(file);
+
+    execute(main_func);
     return 0;
 }
 

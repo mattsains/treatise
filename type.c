@@ -3,8 +3,6 @@
 
 #include "type.h"
 
-
-
 //strings
 struct lua_string lua_string_alloc(uint32_t length)
 {
