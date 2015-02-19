@@ -39,11 +39,15 @@ struct lua_function
 #define VARARG_NEEDSARG 4
 
 //types in general
-struct lua_type
+struct lua_type //TODO: should have used unions here, duh!
 {
     char type;
-    NUMBER_TYPE value;
-    struct lua_string str;
+    union
+    {
+        NUMBER_TYPE number;
+        struct lua_string string;
+        struct lua_function function;
+    } value;
 };
 #define TNIL 0
 #define TBOOLEAN 1

@@ -11,9 +11,9 @@ struct lua_type registers[REGISTERS] ;
 
 void execute(struct lua_function function, struct lua_type* arguments, uint32_t argument_count)
 {
-    for(int PC=0; PC<function.code_length; PC++)
+    for(int PC=0; PC<function.code_length;)
     {
-        uint32_t instruction = function.code[PC];
+        uint32_t instruction = function.code[PC++];
         uint8_t opcode = instruction & 0b111111;
         uint8_t A = (instruction & (0xFF << 6))>>6;
         uint16_t C = (instruction & (0x1FF << 14))>>14;
@@ -41,7 +41,7 @@ void execute(struct lua_function function, struct lua_type* arguments, uint32_t 
             registers[A]=function.constants[Bx];
             break;
         case OP_LOADBOOL:
-            registers[A].value = B;
+            registers[A].value.number = B;
             registers[A].type = TBOOLEAN;
             if (C)
                 PC++; //skip next instruction
@@ -55,15 +55,15 @@ void execute(struct lua_function function, struct lua_type* arguments, uint32_t 
             //too tired to implement now
             break;
         case OP_ADD:
-            registers[A].value=register_or_constant_value(B)+register_or_constant_value(C);
+            registers[A].value.number=register_or_constant_value(B)+register_or_constant_value(C);
             registers[A].type=TNUMBER;
             break;
         case OP_SUB:
-            registers[A].value=register_or_constant_value(B)-register_or_constant_value(C);
+            registers[A].value.number=register_or_constant_value(B)-register_or_constant_value(C);
             registers[A].type=TNUMBER;
             break;
         case OP_MUL:
-            registers[A].value=register_or_constant_value(B)*register_or_constant_value(C);
+            registers[A].value.number=register_or_constant_value(B)*register_or_constant_value(C);
             registers[A].type=TNUMBER;
             break;
         case OP_DIV:
@@ -73,7 +73,7 @@ void execute(struct lua_function function, struct lua_type* arguments, uint32_t 
                 printf("No dividing by zero");
                 exit(0);
             }
-            registers[A].value=register_or_constant_value(B)/cval;
+            registers[A].value.number=register_or_constant_value(B)/cval;
             registers[A].type=TNUMBER;
             break;
         case OP_MOD:
@@ -83,26 +83,26 @@ void execute(struct lua_function function, struct lua_type* arguments, uint32_t 
                 printf("no modding by zero");
                 exit(0);
             }
-            registers[A].value=register_or_constant_value(B)%cval;
+            registers[A].value.number=register_or_constant_value(B)%cval;
             registers[A].type=TNUMBER;
             break;
         case OP_POW:
-            registers[A].value=pow(register_or_constant_value(B),register_or_constant_value(C));
+            registers[A].value.number=pow(register_or_constant_value(B),register_or_constant_value(C));
             registers[A].type=TNUMBER;
             break;
         case OP_UNM:
             enforce_type(registers[B], TNUMBER);
-            registers[A].value=-registers[B].value;
+            registers[A].value.number=-registers[B].value.number;
             registers[A].type=TNUMBER;
             break;
         case OP_NOT:
             enforce_type(registers[B], TBOOLEAN);
-            registers[A].value=!registers[B].value;
+            registers[A].value.number=!registers[B].value.number;
             registers[A].type=TBOOLEAN;
             break;
         case OP_LEN:
             enforce_type(registers[B], TSTRING); //Only works for strings right now
-            registers[A].value=registers[B].str.length;
+            registers[A].value.number=registers[B].value.string.length;
             registers[A].type=TNUMBER;
             break;
         case OP_CONCAT:;
@@ -110,18 +110,18 @@ void execute(struct lua_function function, struct lua_type* arguments, uint32_t 
             for (uint32_t i=B; i<=C; i++)
             {
                 enforce_type(registers[i], TSTRING);
-                strlen+=registers[i].str.length-1;
+                strlen+=registers[i].value.string.length-1;
             }
             strlen++;
             registers[A].type = TSTRING;
-            registers[A].str = lua_string_alloc(strlen);
+            registers[A].value.string = lua_string_alloc(strlen);
             uint32_t newstrpos=0;
             for (int i=B; i<=C; i++)
             {
-                for (int j=0; i<registers[i].str.length-1; i++)
-                    registers[A].str.start[newstrpos++]=registers[i].str.start[j];
+                for (int j=0; i<registers[i].value.string.length-1; i++)
+                    registers[A].value.string.start[newstrpos++]=registers[i].value.string.start[j];
             }
-            registers[A].str.start[newstrpos]=0;
+            registers[A].value.string.start[newstrpos]=0;
             break;
         case OP_JMP:
             PC+=sBx;
@@ -147,36 +147,45 @@ void execute(struct lua_function function, struct lua_type* arguments, uint32_t 
                 PC++;
             break;
         case OP_TEST:
-            if (registers[A].value==C)
+            if (registers[A].value.number==C)
                 PC++;
             break;
         case OP_TESTSET:
-            if (registers[A].value!=C)
+            if (registers[A].value.number!=C)
                 registers[A]=registers[B];
             else
                 PC++;
             break;
         case OP_FORPREP:
-            registers[A].value-=registers[A+2].value;
+            registers[A].value.number-=registers[A+2].value.number;
             PC+=sBx;
             break;
         case OP_FORLOOP:
-            registers[A].value+=registers[A+2].value;
-            if (registers[A+2].value>0)
+            registers[A].value.number+=registers[A+2].value.number;
+            if (registers[A+2].value.number>0)
             {
-                if (registers[A].value<=registers[A+1].value)
+                if (registers[A].value.number<=registers[A+1].value.number)
                 {
                     PC+=sBx;
                     registers[A+3]=registers[A];
                 }
             } else
             {
-                if (registers[A].value>=registers[A+1].value)
+                if (registers[A].value.number>=registers[A+1].value.number)
                 {
                     PC+=sBx;
                     registers[A+3]=registers[A];
                 }
             }
+            break;
+        case OP_TFORLOOP:
+            //function required
+        case OP_NEWTABLE:
+        case OP_SETLIST:
+            //tables
+            break;
+        case OP_CLOSURE:
+
             break;
         //todo: rest
         }
@@ -198,7 +207,7 @@ uint16_t register_or_constant_value (uint16_t operand)
     {
         enforce_type(registers[operand], TNUMBER);
 
-        return registers[operand].value;
+        return registers[operand].value.number;
     } else
         return operand-REGISTERS; //for now constants are done as integers
 }
@@ -206,9 +215,9 @@ uint16_t register_or_constant_value (uint16_t operand)
 void dealloc_str(struct lua_type obj) //this should be expanded to handle object types too
 {
     //destroys strings marked for deletion (length zero but still string type
-    if (obj.type==TSTRING && obj.str.length==0)
+    if (obj.type==TSTRING && obj.value.string.length==0)
     {
-        free(obj.str.start);
+        free(obj.value.string.start);
         obj.type=TNIL;
     }
 }

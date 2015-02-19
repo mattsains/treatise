@@ -95,11 +95,11 @@ struct lua_function parse_function(FILE* file)
         if (result.constants[i].type==TNIL)
             continue;
         else if (result.constants[i].type==TNUMBER)
-            fread(&(result.constants[i].value), sizeof(NUMBER_TYPE), 1, file);
+            fread(&(result.constants[i].value.number), sizeof(NUMBER_TYPE), 1, file);
         else if (result.constants[i].type==TBOOLEAN)
-            result.constants[i].value=fgetc(file);
+            result.constants[i].value.number=fgetc(file);
         else if (result.constants[i].type==TSTRING)
-            result.constants[i].str = parse_string(file);
+            result.constants[i].value.string = parse_string(file);
     }
 
     fread(&(result.function_length), sizeof(uint32_t), 1, file);
