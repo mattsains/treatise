@@ -1,0 +1,65 @@
+\documentclass[a4paper,10pt]{report}
+
+% Language
+\usepackage[UKenglish]{babel}    % define culture for rendering (eg., hyphenation rules)
+\usepackage[T1]{fontenc}         % use e-ASCII fonts
+\usepackage[ansinew]{inputenc}   % input encoding is ANSI
+\usepackage{lmodern}             % use font Latin Modern
+
+% Supreme boilerplating
+\usepackage{etex}                % LaTeX 2.0 features on relics
+\usepackage{microtype}           % Extremely anal typographic mode
+\usepackage{url}                 % Ability to create URLs
+\usepackage[hidelinks]{hyperref} % Makes intradocument links, eg., contents page
+\hypersetup{pageanchor=false}    % Not every page needs an anchor for href
+\usepackage{color}               % Adds colour features. Really.
+\usepackage{graphicx}            % Adds image features
+
+% Layout
+\usepackage[a4paper]{geometry}   % In case I want to set margins etc.
+\usepackage{setspace}            % For setting line spacing
+\usepackage{enumerate}           % Allows different types of numbering
+\onehalfspacing
+
+% Actual Packages
+\usepackage[authoryear, round, sort]{natbib} % References
+\usepackage{amsmath}             % Imports for maths things
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{empheq}              % For highlighting mathematics
+\usepackage{tikz}
+\usetikzlibrary{arrows,shapes,decorations.pathreplacing,decorations.pathmorphing,calc,patterns,scopes,trees,positioning,fit}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.7}
+\pgfkeys{/pgf/number format/relative round mode=fixed}
+
+% Bug Fixes
+\usepackage{fixltx2e}            % LaTeX bugfixes (yes really)
+% "fix the natbib spacing character" - Kevin Naudé
+\makeatletter
+\ifdefined \NAT@spacechar
+	\def\NAT@spacechar{~}
+\fi
+
+% "prevent abstract section from modifying page numbering" - Kevin
+\renewenvironment{abstract}{%
+  \if@twocolumn
+    \section*{\abstractname}%
+  \else
+    \small
+    \begin{center}%
+      {\bfseries \abstractname\vspace{-.5em}\vspace{\z@}}%
+    \end{center}%
+    \quotation
+  \fi}
+  {\if@twocolumn\else\endquotation\fi}
+\makeatother
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%555
+% Macros
+
+\def \startrealnumbers { 
+	\pagenumbering{arabic}
+	\setcounter{page}{1} 
+}

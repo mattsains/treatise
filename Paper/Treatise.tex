@@ -1,0 +1,55 @@
+\input{preamble}
+
+\begin{document}
+
+\title{A JIT-less, Register-Mapped Static-ISA Virtual Machine for Many-Instance Applications}
+\author{Matthew Sainsbury}
+\date{\today}
+
+% Cover Page
+\begin{titlepage}
+	\maketitle
+\end{titlepage}
+
+\pagenumbering{roman}
+
+% Prefaces
+\chapter*{Acknowledgements}
+People I want to acknowledge
+
+\chapter*{Abstract}
+Traditional JIT-less high-level virtual machines simulate virtual registers in random access memory and perform a dispatch whenever that register is accessed. This treatise investigates an alternative approach where virtual registers are mapped to physical registers, and virtual machine instructions are dispatched to a table of pre-compiled subroutines which emulate the behaviour of the virtual machine instruction. This table is indexed not only on virtual opcodes, but also on the operands of the virtual instructions. Thus, to emulate a virtual instruction, the interpreter jumps to the appropriate code segment in the table based on the instruction word to be executed. This table grows in a polynomial fashion with increased virtual registers, and therefore the performance balance between table size and register pressure is investigated.
+
+\chapter*{Declaration of Own Work}
+
+\tableofcontents
+
+
+
+% Main document body
+\chapter{The First Chapter}
+	\startrealnumbers
+	
+	\section{Introduction}
+	
+	\section{Background}
+	
+	\section{Problem Description}
+	
+	\section{Contribution to Field}
+	
+	\section{Purpose of Research}
+	
+	\section{Project Scope}
+	
+	\section{Overview of Treatise Structure}
+	
+% Last chapter
+\chapter{Conclusion}
+	\section{Evaluation}
+	
+	\section{Opportunities for Future Development}
+	
+	\section{Reflection}
+
+\end{document}
