@@ -11,7 +11,6 @@
 \usepackage{microtype}           % Extremely anal typographic mode
 \usepackage{url}                 % Ability to create URLs
 \usepackage[hidelinks]{hyperref} % Makes intradocument links, eg., contents page
-\hypersetup{pageanchor=false}    % Not every page needs an anchor for href
 \usepackage{color}               % Adds colour features. Really.
 \usepackage{graphicx}            % Adds image features
 
@@ -40,26 +39,26 @@
 \ifdefined \NAT@spacechar
 	\def\NAT@spacechar{~}
 \fi
-
-% "prevent abstract section from modifying page numbering" - Kevin
-\renewenvironment{abstract}{%
-  \if@twocolumn
-    \section*{\abstractname}%
-  \else
-    \small
-    \begin{center}%
-      {\bfseries \abstractname\vspace{-.5em}\vspace{\z@}}%
-    \end{center}%
-    \quotation
-  \fi}
-  {\if@twocolumn\else\endquotation\fi}
 \makeatother
+
+\hypersetup{pageanchor=false}    % Wait until actual start of writing before making page anchors
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%555
 % Macros
 
-\def \startrealnumbers { 
+% Restarts numbering and sets format to 1, 2, 3...
+\newcommand \startrealnumbers { 
 	\pagenumbering{arabic}
 	\setcounter{page}{1} 
+	\hypersetup{pageanchor=true}
+}
+
+% Renders a bibliography on its own page, and adds a contents reference.
+\def \bibliographysection {
+	\cleardoublepage
+	\phantomsection
+	\addcontentsline{toc}{chapter}{Bibliography}
+	\bibliographystyle{authordate3}
+	\bibliography{bibliography}
 }
