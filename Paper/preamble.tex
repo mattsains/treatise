@@ -66,6 +66,9 @@
 
 \newcommand \todo \fxwarning
 
+\renewcommand \todo [1] { {\color{red}(TODO: #1)} } %Remove for final version
+	
+
 \newcommand \nakedchapter [1] {
 	\chapter*{#1}
 	\addcontentsline{toc}{chapter}{#1}

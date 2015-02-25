@@ -15,7 +15,7 @@
 
 % Prefaces
 \nakedchapter{Acknowledgements}
-Kevin Naudé for having the idea I guess
+To all my loyal fans
 
 \nakedchapter{Abstract}
 Traditional JIT-less high-level register virtual machines simulate virtual registers in random access memory (RAM) and load the virtual register from RAM whenever it is accessed~\citep{caseregistervm}. This treatise investigates an alternative approach where virtual registers are mapped to physical registers, and instructions are dispatched through token threading.\todo{really?} The token table is indexed not only on virtual opcodes, but also on the operands of the virtual instructions. To emulate a virtual instruction, the interpreter jumps to the appropriate code segment in the table based on the instruction word to be executed. This table grows in a polynomial fashion with increased virtual registers, and therefore the performance balance between table size and register pressure is investigated.
@@ -31,20 +31,25 @@ Traditional JIT-less high-level register virtual machines simulate virtual regis
 	\startrealnumbers
 		
 	\section{Background}
+	High level language interpreters are typically implemented with a compiler that compiles the input source code into an intermediary bytecode, which is then interpreted on a high level virtual machine. High level virtual machines are not simply system virtual machines that emulate a real instruction set architecture. \citep{smithvmarticle} Instead, they execute bytecode for a machine imagined by the developer which is typically more sophisticated and generic than any real machine. This imaginary machine more easily supports the high-level nature of typical interpreted languages and---crucially---is not tied to any specific real architecture.
+	
 	Traditionally, the high level virtual machines implemented in interpreters are stack machines. Stack machines are used over register machines for a few reasons. Firstly, instructions for stack machines are smaller, because instruction operands are implicit. \todo{citations} This means that instruction fetching is faster. \todo{more reasons}
 	
-	On the other hand, register-based machines have some advantages over stack-based machines. For instance, many tasks can be performed in fewer register instructions than stack instructions. \citep{caseregistervm} However, register-based machines present their own problems. When executing a virtual machine operation, a register virtual machine must locate the virtual register in memory. 
+	On the other hand, register-based machines have some advantages over stack-based machines. For instance, many tasks can be performed in fewer register instructions than stack instructions. \citep{caseregistervm} However, register-based machines present their own problems. When executing a virtual machine operation, a register virtual machine must locate the virtual register in memory. \todo{make less abrupt}
 	
 	\section{Problem Description}
-	Most real computers are register machines, \todo{cite?} so it seems natural that one would want to map virtual machine registers to physical ones. Unfortunately, because the ultimate purpose of a high level virtual machine is to be platform independent, virtual registers must be of a generalised structure. This typically results in virtual registers which are indexed. (eg., r0, r1, r2, ...) However, real register machines do not have indexable registers, and so it is difficult to map virtual registers to real registers.
+	Most real computers are register machines, \todo{cite?} so it seems natural that one would want to map virtual machine registers to physical ones. Unfortunately, because the ultimate purpose of a high level virtual machine is to be platform independent, virtual registers must be of a generalised structure. This typically results in virtual registers which are indexed. (eg., r0, r1, r2, ...) However, real register machines do not have indexable registers, and so it is difficult to map virtual registers to real registers. \todo{again, cite?}
 	
 	\section{Purpose and Scope}
-	The goal of this project is to design and implement a high level register virtual machine based on the Lua 5.1 bytecode. This virtual machine will map some virtual machine registers to real registers. The virtual machine will perform dispatch not only on the opcodes of instructions, but on the entire instruction word including operands. The instruction word will be dispatched to a table of automatically generated assembly code for every combination of opcode and operands. The virtual machine will target the 64-bit AMD64 host machine architecture. \todo{or is it EM64T for intel?}
+	The goal of this project is to investigate the feasibility of register virtual machines for interpreters running on a modern architecture. To this end, a high-level register virtual machine based on the Lua 5.1 bytecode will be designed, implemented and evaluated.
 	
+	This virtual machine will have some unique design details that have not before been investigated or thought feasible. It will map some virtual machine registers to real registers. The virtual machine will perform dispatch not only on the opcodes of instructions, but on the entire instruction word including operands. The instruction word will be dispatched to a table of automatically generated assembly code for every combination of opcode and operands. 
 	
+	The virtual machine will target the 64-bit AMD64 host machine architecture. \todo{or is it EM64T or Intel 64 for intel?} \todo{continue details of scope}
 	
 	\section{Overview of Treatise Structure}
-
+	\todo{Will have to wait until the rest of the treatise exists for this!}
+	
 % Optional
 \chapter{Requirements Gathering}
 
@@ -64,6 +69,7 @@ Traditional JIT-less high-level register virtual machines simulate virtual regis
 
 % Last chapter
 \chapter{Conclusion}
+	
 	\section{Opportunities for Future Development}
 	
 	\section{Reflection}
