@@ -56,7 +56,7 @@
 }
 
 % Renders a bibliography on its own page, and adds a contents reference.
-\def \bibliographysection {
+\newcommand \bibliographysection {
 	\cleardoublepage
 	\phantomsection
 	\addcontentsline{toc}{chapter}{Bibliography}
@@ -65,3 +65,8 @@
 }
 
 \newcommand \todo \fxwarning
+
+\newcommand \nakedchapter [1] {
+	\chapter*{#1}
+	\addcontentsline{toc}{chapter}{#1}
+}

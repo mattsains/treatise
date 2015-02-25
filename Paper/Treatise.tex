@@ -14,13 +14,13 @@
 \pagenumbering{roman}
 
 % Prefaces
-\chapter*{Acknowledgements}
+\nakedchapter{Acknowledgements}
 Kevin Naudé for having the idea I guess
 
-\chapter*{Abstract}
+\nakedchapter{Abstract}
 Traditional JIT-less high-level register virtual machines simulate virtual registers in random access memory (RAM) and load the virtual register from RAM whenever it is accessed~\citep{caseregistervm}. This treatise investigates an alternative approach where virtual registers are mapped to physical registers, and instructions are dispatched through token threading.\todo{really?} The token table is indexed not only on virtual opcodes, but also on the operands of the virtual instructions. To emulate a virtual instruction, the interpreter jumps to the appropriate code segment in the table based on the instruction word to be executed. This table grows in a polynomial fashion with increased virtual registers, and therefore the performance balance between table size and register pressure is investigated.
 
-\chapter*{Declaration of Own Work}
+\nakedchapter{Declaration of Own Work}
 
 \tableofcontents
 
