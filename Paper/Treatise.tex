@@ -51,6 +51,9 @@ Traditional JIT-less high-level register virtual machines simulate virtual regis
 % 10-12 pages
 \chapter{Problem Exposition}
 	\section{Literature Review}
+	\cite{stackcaching} first wrote about this idea, but quickly dismissed it because it would ``cause code explosion, and will probably suffer a severe performance hit on machines with small first-level caches.'' He then went on to use the R4000 MIPS processor as an example, having 8 KB of L1 instruction cache.
+	
+	I believe that this approach deserves further investigation, especially with the advent of modern processors with significantly larger cache sizes---for example, 4th generation Intel Core processors, which have 32 KB of L1 instruction cache.\citep{haswellarch}
 	
 	\section{Difficulties}
 
