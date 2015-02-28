@@ -15,40 +15,49 @@
 
 % Prefaces
 \nakedchapter{Acknowledgements}
-To all my loyal fans
+	To all my loyal fans
 
 \nakedchapter{Abstract}
-Traditional JIT-less high-level register virtual machines simulate virtual registers in random access memory (RAM) and load the virtual register from RAM whenever it is accessed~\citep{caseregistervm}. This treatise investigates an alternative approach where virtual registers are mapped to physical registers, and instructions are dispatched through token threading.\todo{really?} The token table is indexed not only on virtual opcodes, but also on the operands of the virtual instructions. To emulate a virtual instruction, the interpreter jumps to the appropriate code segment in the table based on the instruction word to be executed. This table grows in a polynomial fashion with increased virtual registers, and therefore the performance balance between table size and register pressure is investigated.
+	\todo{align this with project proposal}
+	Traditional JIT-less high-level register virtual machines simulate virtual registers in random access memory (RAM) and load the virtual register from RAM whenever it is accessed. \citep{caseregistervm} This treatise investigates an alternative approach where virtual registers are mapped to physical registers, and instructions are dispatched through token threading.\todo{really?} The token table is indexed not only on virtual opcodes, but also on the operands of the virtual instructions. To emulate a virtual instruction, the interpreter jumps to the appropriate code segment in the table based on the instruction word to be executed. This table grows in a polynomial fashion with increased virtual registers, and therefore the performance balance between table size and register pressure is investigated.
 
 \nakedchapter{Declaration of Own Work}
 
 \tableofcontents
 
-
-
 % Main document body
 \chapter{Introduction}
 	\startrealnumbers
-		
+	
 	\section{Background}
-	High level language interpreters are typically implemented with a compiler that compiles the input source code into an intermediary bytecode, which is then interpreted on a high level virtual machine. High level virtual machines are not simply system virtual machines that emulate a real instruction set architecture. \citep{smithvmarticle} Instead, they execute bytecode for a machine imagined by the developer which is typically more sophisticated and generic than any real machine. This imaginary machine more easily supports the high-level nature of typical interpreted languages and---crucially---is not tied to any specific real architecture.
+		High level language interpreters are typically implemented with a compiler that compiles the input source code into an intermediary bytecode, which is then interpreted on a high level virtual machine. High level virtual machines are not simply system virtual machines that emulate a real instruction set architecture. \citep{smithvmarticle} Instead, they execute bytecode for a machine imagined by the developer which is typically more sophisticated and generic than any real machine. This imaginary machine more easily supports the high-level nature of typical interpreted languages and---crucially---is not tied to any specific real architecture. The practice of translating a high level interpreted language into an intermediary bytecode also helps modularize the structure of the interpreter by seperating the lexer, parser and contextual analysis structures from the host-specific implementation details. \citep{structureinterpreters}
 	
-	Traditionally, the high level virtual machines implemented in interpreters are stack machines. Stack machines are used over register machines for a few reasons. Firstly, instructions for stack machines are smaller, because instruction operands are implicit. \todo{citations} This means that instruction fetching is faster. \todo{more reasons}
+		Traditionally, the high level virtual machines implemented in interpreters are stack machines. Stack machines are used over register machines for a few reasons. Instructions for stack machines are smaller, because instruction operands are implicit. \todo{references} This means that instruction fetching is faster. Stack virtual machines are more established as a strategy for interpreters.
 	
-	On the other hand, register-based machines have some advantages over stack-based machines. For instance, many tasks can be performed in fewer register instructions than stack instructions. \citep{caseregistervm} However, register-based machines present their own problems. When executing a virtual machine operation, a register virtual machine must locate the virtual register in memory. \todo{make less abrupt}
-	
+		On the other hand, register-based machines have some advantages over stack-based machines. For instance, many tasks can be performed in fewer register instructions than stack instructions. \citep{caseregistervm} Most real machines are register machines, so there is more opportunity for register virtual machines to take advantage of the hardware on the host machine. 
+		
+		Ultimately, however, executing bytecode on any virtual machine is significantly slower than executing native code.\citep{optimizingindirectbranch} To try to remedy this, many popular interpreters implement just-in-time compilation. Just-in-time (JIT) compilation begins with the normal interpretation process, but while interpreting, a JIT interpreter profiles the executing bytecode to determine which parts of the bytecode would most benefit from native execution. Once it has identified these sections of bytecode, it compiles them into the host machine's instruction set and executes them natively instead of interpreting them. \todo{references}
+		
 	\section{Problem Description}
-	Most real computers are register machines, \todo{cite?} so it seems natural that one would want to map virtual machine registers to physical ones. Unfortunately, because the ultimate purpose of a high level virtual machine is to be platform independent, virtual registers must be of a generalised structure. This typically results in virtual registers which are indexed. (eg., r0, r1, r2, ...) However, real register machines do not have indexable registers, and so it is difficult to map virtual registers to real registers. \todo{again, cite?}
+		Although JIT compilation is a good strategy to improve the performance of virtual machines, they have disadvantages in certain use cases. For instance, in programs where many threads of the same code are executed simultaneously, which are known as multi-instance programs. A real-world example of such a program is a web server, which spawns many of the same program threads to serve many web clients asynchronously.
+		
+		JIT compilation is suboptimal for these types of programs, because native multi-instance programs share the same read-only code space. This is not possible in JIT interpreters because a JIT compiler alters the program code as it runs. A JIT compiler cannot do this with shared program memory because an in-progress JIT compilation might interfere with a thread executing the same part of the program. It is useful to explore opportunities for improvement in non-JIT interpreters so that situations where JIT compilation is inappropriate are not neglected. With this in mind, I consider ``traditional'' high level virtual machines.
+		
+		As mentioned in the previous section, most high level virtual machines are stack machines. However, \cite{stackregistershowdown} found that an efficient register virtual machine can execute benchmarks 32\% faster than an analogous stack machine. 
+		
+		Because most hosts are register machines, it would seem like a good idea to try to map virtual registers to real host registers. Unfortunately, unlike virtual registers that are implemented in host memory, real registers cannot be accessed by reference. \todo{really need a reference here!} This complicates writing host implementations of virtual machine instructions because it means that a different version of implementing code must be written for every combination of virtual machine operands.
 	
 	\section{Purpose and Scope}
-	The goal of this project is to investigate the feasibility of register virtual machines for interpreters running on a modern architecture. To this end, a high-level register virtual machine based on the Lua 5.1 bytecode will be designed, implemented and evaluated.
+		The goal of this project is to investigate the feasibility of register virtual machines for interpreters running on a modern architecture. To this end, a high-level register virtual machine based on the Lua 5.1 bytecode will be designed, implemented and evaluated.
 	
-	This virtual machine will have some unique design details that have not before been investigated or thought feasible. It will map some virtual machine registers to real registers. The virtual machine will perform dispatch not only on the opcodes of instructions, but on the entire instruction word including operands. The instruction word will be dispatched to a table of automatically generated assembly code for every combination of opcode and operands. 
+		This virtual machine will have some unique design details that have not before been investigated or thought feasible. It will map some virtual machine registers to real registers. The virtual machine will perform dispatch not only on the opcodes of instructions, but on the entire instruction word including operands. The instruction word will be dispatched to a code table containing a subroutine for every combination of virtual machine opcode and operands. 
+		
+		Such a code table is likely to be very large, since it grows polynomially with the number of virtual opcodes and virtual machine registers. To remain practical, a method will be developed automatically to generate implementation code for every combination of virtual opcode and operands. 
 	
-	The virtual machine will target the 64-bit AMD64 host machine architecture. \todo{or is it EM64T or Intel 64 for intel?} \todo{continue details of scope}
+		The virtual machine will target the 64-bit AMD64 host machine architecture, and will be written mostly in assembly, with some operating system-facing code written in C for ease of development. \todo{or is it EM64T or Intel 64 for intel?} \todo{continue details of scope}
 	
 	\section{Overview of Treatise Structure}
-	\todo{Will have to wait until the rest of the treatise exists for this!}
+		\todo{Will have to wait until the rest of the treatise exists for this!}
 	
 % Optional
 \chapter{Requirements Gathering}
@@ -56,14 +65,15 @@ Traditional JIT-less high-level register virtual machines simulate virtual regis
 % 10-12 pages
 \chapter{Problem Exposition}
 	\section{Literature Review}
-	\cite{stackcaching} first wrote about this idea, but quickly dismissed it because it would ``cause code explosion, and will probably suffer a severe performance hit on machines with small first-level caches.'' He then went on to use the R4000 MIPS processor as an example, having 8 KB of L1 instruction cache.
+		\cite{stackcaching} first wrote about this idea, but quickly dismissed it because it would ``cause code explosion, and will probably suffer a severe performance hit on machines with small first-level caches.'' He then went on to use the R4000 MIPS processor as an example, having 8 KB of L1 instruction cache.
 	
-	I believe that this approach deserves further investigation, especially with the advent of modern processors with significantly larger cache sizes---for example, 4th generation Intel Core processors, which have 32 KB of L1 instruction cache.\citep{haswellarch}
+		I believe that this approach deserves further investigation, especially with the advent of modern processors with significantly larger cache sizes---for example, 4th generation Intel Core processors, which have 32 KB of L1 instruction cache.\citep{haswellarch}
 	
 	\section{Difficulties}
 
 % 10-12 pages
 \chapter{Solution Design}
+	When designing the virtual machine architecture, it will be beneficial to remember this succinct heuristic by \cite{structureinterpreters}: ``Well-designed VMs are tailored for both easy compilation from the source language and fast interpretation on real machines.''\todo{too fluffy?}
 
 \chapter{Evaluation Methods and Results}
 
