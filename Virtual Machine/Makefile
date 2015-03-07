@@ -1,7 +1,7 @@
 GCCARGS = -g -std=c99
 all: clean vm
 vm: utility.o vm.o
-	gcc utility.o vm.o -o vm
+	gcc utility.o vm.o -o vm -nostartfiles
 	chmod u+x vm
 
 run: all

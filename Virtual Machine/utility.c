@@ -2,11 +2,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-int main(int argc, char* argv[])
-{
-   return run();
-}
-
 void print(char* str)
 {
    printf(str);

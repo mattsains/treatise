@@ -8,11 +8,8 @@ section .bss
 response: resb 100
 
 section .text
-global run
-run:
-        push rbp
-        mov rbp, rsp
-
+global _start
+_start:
         ;print prompt
         mov rdi, prompt 
         call print
@@ -29,7 +26,5 @@ run:
         mov rdi, newline
         call print
         
-        xor rax, rax ; return 0
-        mov rsp, rbp
-        pop rbp
-        ret
+        xor rdi, rdi
+        call exit
