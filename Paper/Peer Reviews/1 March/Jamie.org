@@ -1,0 +1,18 @@
+* Jamie's Comments:
+** Content:
+Background: Well written
+Problem description: Needs to be more to the point, possibly
+reduce to a single paragraph
+Project Goals and scope need to be separated
+Risks: Create a section for risks
+
+** General:
+Scientific writing discourages the use of first person pronouns
+
+** Overall:
+A really good first draft
+* Summary of Document Comments
+** TODO Again, first person
+** He said I should shorten my problem description to one paragraph. I think that's a little crazy so I will only shorten it in terms of Brandon's analogous comment
+** TODO He suggested I split "Purpose and Scope" into two sections. I think I kind of like it though. Maybe it requires some thought
+** 

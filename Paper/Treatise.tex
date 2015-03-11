@@ -19,16 +19,21 @@
 
 \nakedchapter{Abstract}
 	\todo{align this with project proposal}
-	Traditional JIT-less high-level register virtual machines simulate virtual registers in random access memory (RAM) and load the virtual register from RAM whenever it is accessed \citep{caseregistervm}. This treatise investigates an alternative approach where virtual registers are mapped to physical registers, and instructions are dispatched not only on the opcode, but also on the operands of the instruction. To emulate a virtual instruction, the interpreter jumps to the appropriate code segment in a table of implementation code based on the instruction word to be executed. This table grows in a polynomial fashion with increased virtual registers, and therefore the performance balance between table size and register pressure is investigated.
+	Traditional JIT-less high-level register virtual machines simulate virtual registers in random access memory (RAM) and load virtual registers from RAM whenever they are accessed \citep{caseregistervm}. This treatise investigates an alternative approach where virtual registers are mapped to physical registers, and instructions are dispatched not only on the opcode, but also on the operands of the instruction. To emulate a virtual instruction, the interpreter jumps to the appropriate code segment in a table of implementation code based on the instruction word to be executed. This table grows in a polynomial fashion with increased virtual registers, and therefore the performance balance between table size and register pressure is investigated.
 
 \nakedchapter{Declaration of Own Work}
+
+\nakedchapter{Glossary}
+\begin{description}
+	\item[test] Definition
+\end{description}
 
 \tableofcontents
 
 % Main document body
 \chapter{Introduction}
 	\startrealnumbers
-	In this treatise, I will document my investigation and analysis of a design for a new type of virtual machine for interpreters that supports efficient execution of multi-instance programs. Multi-instance programs are programs which perform many process forking operations. In this introduction I wish to establish why such an endeavour is worthwhile by presenting a brief outline of the many pre-existing designs for high level virtual machines
+	In this treatise, the investigation and analysis of a design for a new type of virtual machine for interpreters that supports efficient execution of multi-instance programs will be investigated. Multi-instance programs are programs which perform many process forking operations. This section aims to establish why such an endeavour is worthwhile by presenting a brief outline of the many existing designs for high level virtual machines
 	
 	\section{Background}
 		High level language interpreters are typically implemented with a compiler that compiles the input source code into an intermediary bytecode, which is then interpreted on a high level virtual machine. High level virtual machines are not simply system virtual machines that emulate a real instruction set architecture \citep{smithvmarticle}. Instead, they execute bytecode for a machine imagined by the developer which is typically more sophisticated and generic than any real machine. This imaginary machine more easily supports the high-level nature of typical interpreted languages and---crucially---is not tied to any specific real architecture. The practice of translating a high level interpreted language into an intermediary bytecode also helps modularize the structure of the interpreter by separating the language and context analysis structures from the host-specific implementation details \citep{structureinterpreters}.
@@ -42,7 +47,7 @@
 	\section{Problem Description}
 		Although JIT compilation is a good strategy to improve the performance of virtual machines, they have disadvantages in certain use cases. For instance, in multi-instance programs, where many identical threads of the same code are executed simultaneously. A real-world example of such a program is a web server, which spawns several identical program threads to serve web clients asynchronously.
 		
-		Native multi-instance programs share a read-only code space between instances. This is not possible in JIT interpreters because a JIT compiler alters the program code as it runs. A JIT compiler cannot do this with a shared code space because an in-progress JIT compilation might interfere with a thread executing the same part of the program. The alternative is to maintain a seperate code space for each process, which is wasteful because it means that the JIT compiler will compile interpreted code seperately for every running instance---essentially compiling the same code over and over. It is useful to explore opportunities for improvement in JIT-less interpreters so that situations where JIT compilation is inappropriate are not neglected. With this in mind, I consider ``traditional'' high level virtual machines.
+		Native multi-instance programs share a read-only code space between instances. This is not possible in JIT interpreters because a JIT compiler alters the program code as it runs. A JIT compiler cannot do this with a shared code space because an in-progress JIT compilation might interfere with a thread executing the same part of the program. The alternative is to maintain a separate code space for each process, which is wasteful because it means that the JIT compiler will compile interpreted code separately for every running instance---essentially compiling the same code over and over. It is useful to explore opportunities for improvement in JIT-less interpreters so that situations where JIT compilation is inappropriate are not neglected. With this in mind, ``traditional'' high level virtual machines will be considered.
 		
 		As mentioned in the previous section, most high level virtual machines are stack machines. However, \cite{stackregistershowdown} found that an efficient register virtual machine can execute benchmarks 32\% faster than an analogous stack machine. 
 		
@@ -55,11 +60,11 @@
 		
 		Such a code table is likely to be very large, since it grows polynomially with the number of virtual opcodes and virtual machine registers. To remain practical, a method will be developed to generate implementation code automatically for every combination of virtual opcode and operands. 
 	
-		An instruction set architecture will be designed which will be tailored for such a dispatch method. Naturally the goal will be to keep the number of unique instructions down, so that this code table is as small as possible, while remaining nontrivial.
+		An instruction set architecture will be designed which will be tailored for such a dispatch method. Naturally the goal will be to keep the number of unique instructions down, so that this code table is as small as possible, while remaining non-trivial.
 		
-		The virtual machine will target the Intel64 host machine architecture, and will be written mostly in assembly, with some operating system-facing code written in C for ease of development. 
+		The virtual machine will target the Intel 64 host machine architecture, and will be written mostly in assembly, with some operating system-facing code written in C for ease of development. 
 		
-		To aid in evaluation of the design, a second, more traditional register virtual machine will also be implemented that supports an identical instruction set. I call this the control virtual machine, where the other virtual machine is the experiment. \todo{will the control be a register VM?} The aim of the control virtual machine is to be a baseline comparison for the new virtual machine, hence its name. For the sake of fair comparison, the control will be as similar as possible to the experiment machine, except in the main detail of interpreting instructions, where the control machine will deviate and implement a traditional indirect threading dispatch, and will store virtual registers in an array.
+		To aid in evaluation of the design, a second, more traditional register virtual machine will also be implemented that supports an identical instruction set. This will be called the control virtual machine, where the other virtual machine is the experiment. The aim of the control virtual machine is to be a baseline comparison for the new virtual machine, hence its name. For the sake of fair comparison, the control will be as similar as possible to the experiment machine, except in the main detail of interpreting instructions, where the control machine will deviate and implement a traditional indirect threading dispatch, and will store virtual registers in an array.
 		
 		To compare these two machines, several benchmark programs will be used to test the machines. These benchmarks will be chosen to test a realistically wide range of runtime behaviours, such as integer arithmetic, string manipulation and data structure traversal. Each benchmark will be hand-written in the instruction set of the two machines. The results of these benchmarks should provide some meaningful information about the appropriateness of the new design over traditional register virtual machines.
 		
@@ -71,13 +76,13 @@
 	
 % Optional
 \chapter{Requirements Gathering}
-
+	\todo{Not sure if I will even have this section}
 % 10-12 pages
 \chapter{Problem Exposition}
 	\section{Literature Review}
-		\cite{stackcaching} first wrote about this idea, but quickly dismissed it because it would ``cause code explosion, and will probably suffer a severe performance hit on machines with small first-level caches.'' He then went on to use the R4000 MIPS processor as an example, having 8 KB of L1 instruction cache.
+		\cite{stackcaching} first wrote about the idea of achieving register mapping through a table of implementations for each combination of opcode and operands, but quickly dismissed it because it would ``cause code explosion, and will probably suffer a severe performance hit on machines with small first-level caches.'' He then went on to use the R4000 MIPS processor as an example, having 8 KB of level one (L1) instruction cache.
 	
-		I believe that this approach deserves further investigation, especially with the advent of modern processors with significantly larger cache sizes---for example, 4th generation Intel Core processors, which have 32 KB of L1 instruction cache \citep{haswellarch}.
+		However, this approach deserves further investigation, especially with the advent of modern processors with significantly larger cache sizes---for example, 4th generation Intel Core processors, which have 32 KB of L1 instruction cache \citep{haswellarch}, four times as much as the R4000.
 	
 	\section{Difficulties}
 

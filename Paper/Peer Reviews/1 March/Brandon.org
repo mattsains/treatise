@@ -1,0 +1,22 @@
+* Brandon's Comments
+** Content:
+Everything was pretty well written and professional, I think you should just be careful of not adding too much information into the sections. I felt that some stuff may have been unnecessary
+
+** General:
+Not sure about this myself, but my supervisor mentioned that you should not write in first person.
+
+Also just check for minor grammar issues
+
+** Overall:
+Well written, the author mentioned that I might find it difficult to review because another paper I was reviewing had similar topic. But I felt like I read two different research papers. Very little mistakes if any
+
+* Summary of Document Comments
+** TODO Add NMMU Logo
+** TODO Add a glossary as a fast lookup for jargon
+** DONE Remove first person where possible
+Okay let's talk about policy here. I agree that first person is bad for research articles, however I think a few concessions need to be made:
+- When talking specifically about my opinions ("guesses" without basis) then I will use first person
+** TODO Between sections Background, Problem Description and Purpose and Scope, try to transition better between sections
+Brandon suggests I shorten problem description by exporting some of it to background, somehow.
+** TODO TMI in background, problem description and purpose?
+
