@@ -27,7 +27,7 @@
 
 % Actual Packages
 \usepackage{fixme}
-\usepackage[authoryear, round, sort]{natbib} % References
+
 \usepackage{amsmath}             % Imports for maths things
 \usepackage{amssymb}
 \usepackage{amsthm}
@@ -40,7 +40,9 @@
 
 % Bug Fixes
 \usepackage{fixltx2e}            % LaTeX bugfixes (yes really)
-% "fix the natbib spacing character" - Kevin Naudé
+
+\usepackage[authoryear, round, sort]{natbib} % References
+% "fix the natbib spacing character" - Kevin Naudï¿½
 \makeatletter
 \ifdefined \NAT@spacechar
 	\def\NAT@spacechar{~}
@@ -49,9 +51,31 @@
 
 \hypersetup{pageanchor=false}    % Wait until actual start of writing before making page anchors
 
+\definecolor{nmmu_blue}{cmyk}{0.99,0.48,0,0.56}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%555
 % Macros
+\makeatletter
+\renewcommand{\maketitle}{
+	\newpage
+	\null
+	\begin{center}%
+	\includegraphics[width=\textwidth]{nmmu.jpg}
+	\vskip 2em%
+		{\color{nmmu_blue}
+			\rule{\textwidth}{2pt}
+			\vskip 2em%
+			
+			{\huge \textbf{\@title} \par}%
+		}
+				\vskip 1em%
+				{\Large Author: \it{\@author} \par}
+				{\Large Supervisor: \it{Kevin NaudÃ©}}
+				\vskip 2em%
+			\textcolor{nmmu_blue}{\rule{\textwidth}{2pt}}
+	\end{center}%
+	\par}
+\makeatother
 
 % Restarts numbering and sets format to 1, 2, 3...
 \newcommand \startrealnumbers { 
