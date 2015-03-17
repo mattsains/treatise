@@ -12,7 +12,7 @@ utility.o: utility.c
 	gcc $(GCCARGS) -c utility.c -o utility.o
 
 vm.o: vm.asm utility.h.asm
-	nasm -g -f elf64 vm.asm -o vm.o
+	yasm -g -f elf64 vm.asm -o vm.o
 
 clean:
 	rm -f *.o vm
