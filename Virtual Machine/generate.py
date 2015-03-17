@@ -7,9 +7,9 @@ def vm_reg(i):
 
 def dispatch():
     return ('    ;dispatch \n'
-     '    lodsw rax \n' # rax(IR)=code[rsi(PC)++]
-     '    mov rax [vector+rax] \n'
-     '    jmp rax')
+    '    lodsw \n' # rax(IR)=code[rsi(PC)++]
+    '    mov rax, [vector+rax] \n'
+    '    jmp rax')
 
 # This is for when the operation is identical to the x86's
 def vm_simple(opcode, r1, r2):
@@ -49,8 +49,8 @@ def vm_div(r1, r2):
     rr1 = vm_reg(r1)
     rr2 = vm_reg(r2)
     rrs = vm_reg(-3)
-    return ('div_'+str(r1)+'_'+str(r2)+': n'
-    '    mov rax, r1 \n' #mov numerator to rax (no saving needed)
+    return ('div_'+str(r1)+'_'+str(r2)+': \n'
+    '    mov rax, '+rr1+' \n' #mov numerator to rax (no saving needed)
     '    mov '+rrs+', rdx \n' #save rdx for clear
     '    cqo \n'
     '    idiv '+rr2+' \n' # rdx:rax / arg; rax=result, rdx=remainder
@@ -79,7 +79,7 @@ print 'vector: '
 for func in opcode_funcs:
     for r1 in range(0,6):
         for r2 in range(0,6):
-            print 'add_'+str(r1)+'_'+str(r2)+':'
+            print 'dw add_'+str(r1)+'_'+str(r2)
 
 # table of instruction macro instances
 print 'code: '
