@@ -8,7 +8,7 @@ def vm_reg(i):
 def dispatch():
     return ('    ;dispatch \n'
     '    lodsw \n' # rax(IR)=code[rsi(PC)++]
-    '    mov rax, [vector+rax] \n'
+    '    mov rax, [vector+rax*8] \n'
     '    jmp rax')
 
 # This is for when the operation is identical to the x86's
@@ -79,7 +79,7 @@ print 'vector: '
 for func in opcode_funcs:
     for r1 in range(0,6):
         for r2 in range(0,6):
-            print 'dw add_'+str(r1)+'_'+str(r2)
+            print 'dq add_'+str(r1)+'_'+str(r2)
 
 # table of instruction macro instances
 print 'code: '
