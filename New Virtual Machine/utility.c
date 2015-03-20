@@ -2,6 +2,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+extern int vm_start(int argc, char* argv);
+int main(int argc, char** argv)
+{
+   vm_start(argc, argv[1]);
+}
+
+
 void print(char* str)
 {
    printf(str);
@@ -13,7 +20,7 @@ void read_line(char* str, int len)
       exit(1);
 
    for (int i=0; i<len; i++)
-      if ((str[i])=="\n")
+      if ((str[i])=='\n')
       {
          str[i] = 0;
          return;
@@ -21,7 +28,7 @@ void read_line(char* str, int len)
 }
 
 // Returns -1 if failure, else size of file in bytes
-int file_to_memory(char* filename)
+char* file_to_memory(char* filename)
 {
    FILE *f = fopen(filename, "rb");
    if (f==NULL)
