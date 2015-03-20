@@ -8,14 +8,14 @@ vm: utility.o vm.o
 run: all
 	./vm
 
-debug:
+debug: all
 	gdb --directory . vm -tui
 
 utility.o: utility.c
 	gcc $(GCCARGS) -c utility.c -o utility.o
 
-codetable.asm: generate.py
-	python generate.py > codetable.asm
+codetable.asm: generate.rb
+	./generate.rb > codetable.asm
 
 vm.o: vm.asm utility.h.asm codetable.asm
 	yasm -g -f elf64 vm.asm -o vm.o
