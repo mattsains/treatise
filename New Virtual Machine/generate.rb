@@ -2,10 +2,13 @@
 require "rubygems"
 require "liquid"
 
+require File.dirname(__FILE__)+"/instructions.rb"
+@instructions = $instructions
+
 $debug = true
 
 # Define register mapping
-r = {
+@r = {
   0 => 'rbx',
   1 => 'rcx',
   2 => 'rdx',
@@ -17,61 +20,7 @@ r = {
 }
 
 #Some scratch registers
-s = (11..15).collect {|n| "r#{n}"}
-
-class Inst
-  attr_accessor :opcode
-  attr_accessor :allowed_trivial
-  attr_accessor :operands
-  def initialize(opcode, operands, allowed_trivial=true)
-    @opcode = opcode
-    @operands = operands
-    @allowed_trivial = allowed_trivial
-  end
-
-  def valid(r1, r2)
-    if @allowed_trivial then true else r1!=r2 end
-  end
-end
-
-instructions = []
-
-#instructions with two arguments where the trivial case is allowed
-instructions += ['add', 'mul'].collect {|opcode| Inst.new opcode, 2}
-
-#instructions with one argument
-instructions +=
-  [
-    'addc', 'subc', 'csub', 'mulc', 'divc', 'andc', 'orc',
-    'shlc', 'cshl', 'shrc', 'cshr', 'sarc', 'csar', 'movc',
-    'null', 'jmp', 'jmpf', 'switch', 'jcmpc', 'jnullp',
-    'alloc', 'in', 'out', 'err'
-  ].collect {|opcode| Inst.new opcode, 1}
-
-#instructions with two arguments where the trivial case is not allowed
-instructions +=
-  [
-    'sub', 'div', 'and', 'or', 'xor', 'shl', 'shr',
-    'sar', 'mov', 'movp', 'jcmp', 'jeqp'
-  ].collect {|opcode| Inst.new opcode, 2, false}
-
-offsets =
-  {
-    'add' => 0, 'addc' => 36, 'sub' => 42, 'subc' => 78, 'csub' => 84,
-    'mul' => 90, 'mulc' => 126, 'div' => 132, 'divc' => 168, 'and' => 174,
-    'andc' => 210, 'or' => 216, 'orc' => 252, 'xor' => 258, 'shl' => 294,
-    'shlc' => 330, 'cshl' => 336, 'shr' => 342, 'shrc' => 378, 'cshr' => 384,
-    'sar' => 390, 'sarc' => 426, 'csar' => 432, 'mov' => 438, 'movp' => 474,
-    'movc' => 510, 'null' => 516, 'jmp' => 522, 'jmpf' => 523, 'switch' => 524,
-    'jcmp' => 530, 'jcmpc' => 566, 'jeqp' => 572, 'jnullp' => 608,
-    'alloc' => 614, 'in' => 620, 'out' => 626, 'err' => 632
-  }
-
-# Sort instructions by their numbers
-instructions.sort! {|a,b| offsets[a.opcode] <=> offsets[b.opcode]}
-@instructions = instructions
-@r=r
-@s=s
+@s = (11..15).collect {|n| "r#{n}"}
 
 def render path, vars={}
   path='templates/'+path
@@ -86,10 +35,10 @@ end
 
 # Now time to generate the code
 puts "vector:"
-instructions.each do |instr|
-  case instr.operands 
+@instructions.each do |instr|
+  case instr.operands.count(:reg)
   when 0
-    puts "  dq #{instr.opcode}"
+    puts "  dq #{instr.opcode}_all"
     
   when 1
     6.times do |i|
@@ -99,7 +48,7 @@ instructions.each do |instr|
   when 2
     6.times do |i|
       6.times do |j|
-        if instr.valid i, j
+        if instr.allow_trivial || (i!=j)
           puts "  dq #{instr.opcode}_#{i}_#{j}"
         else
           puts "  dq fault"
@@ -113,13 +62,13 @@ instructions.each do |instr|
 end
 
 puts "code:"
-instructions.each do |instr|
+@instructions.each do |instr|
   puts "  ;; #{instr.opcode} has #{instr.operands} operands and "+
-       "#{instr.allowed_trivial ? "allows" : "disallows"} trivials"
+       "#{instr.allow_trivial ? "allows" : "disallows"} trivials"
   
-    case instr.operands 
+    case instr.operands.count(:reg)
     when 0 
-      puts "  #{instr.opcode}:"
+      puts "  #{instr.opcode}_all:"
       puts render instr.opcode
       puts render "dispatch"
     when 1 
@@ -132,7 +81,7 @@ instructions.each do |instr|
     when 2 
       6.times do |i|
         6.times do |j|
-          if instr.valid i, j 
+          if instr.allow_trivial || (i!=j)
             puts "  #{instr.opcode}_#{i}_#{j}:"
             puts render instr.opcode, {'i' => i, 'j' => j}
             puts render "dispatch"
