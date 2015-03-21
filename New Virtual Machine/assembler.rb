@@ -124,8 +124,14 @@ File.open(ARGV[0],"r") do |f|
     end
   }
 
+  if ARGV[1] == nil
+    filename = "a.out"
+  else
+    filename = ARGV[1]
+  end
+  
   puts code.inspect
-  IO.write("a.out", code.pack('s*'))
+  IO.write(filename, code.pack('s*'))
 end
 
 
