@@ -12,7 +12,7 @@ r = {
   3 => 'r8',
   4 => 'r9',
   5 => 'r10',
-  :pc => 'rsi',
+  'pc' => 'rsi',
   :fp => 'rbp'
 }
 
@@ -78,8 +78,7 @@ def render path, vars={}
   if $debug and !File.exist?(File.expand_path(path))
     ""
   else
-    content = File.read(File.expand_path(path))
-    z={'a'=>6}
+    content = File.read(File.expand_path(path)).gsub('{%','<%').gsub('%}','%>').gsub(/[\{\}]/, '{'=>'{{', '}'=>'}}').gsub('<%','{%').gsub('%>','%}')
     Liquid::Template.parse(content).render({'r' => @r, 's' => @s, 'instructions' => @instructions}.merge(vars))
   end
 end

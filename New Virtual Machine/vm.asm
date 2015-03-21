@@ -5,12 +5,11 @@ BITS 64
 
 section .data
 ; These are constants
-error: db 'File not found.', NL, 0
+file_error: db 'File not found.', NL, 0
 program_loaded: db 'Program loaded', NL, 0
 
 section .bss
 ; These are variables
-registers: resw 6
 
 section .text
 global vm_start
@@ -22,7 +21,7 @@ vm_start:
         call file_to_memory
 
         and rax, rax
-        jz errorprint
+        jz error_print
 
         ;The file is now in RAM at rax
         push rax
@@ -33,15 +32,15 @@ vm_start:
         dispatch:
         xor rax, rax ;the high portion of rax needs to stay cleared forever
         ;Dispatch now
-        lodsw
+        %include "templates/dispatch"
 
         %include "codetable.asm"
 
         ;End the program
         jmp end
 
-        errorprint:
-        mov rdi, error
+        error_print:
+        mov rdi, file_error
         call print
 
         end:

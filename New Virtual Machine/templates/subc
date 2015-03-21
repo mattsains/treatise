@@ -1,0 +1,3 @@
+    lodsw
+    mov {s[0]}, [{r['pc']} + rax - 2]
+    sub {r[i]}, {s[0]}

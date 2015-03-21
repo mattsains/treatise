@@ -1,0 +1,6 @@
+    lodsw
+    mov {s[0]}, [{r['pc']} + rax - 2]
+    xchg rcx, {r[i]}
+    shl {s[0]}, cl
+    mov rcx,  {r[i]}
+    mov {r[i]}, {s[0]}

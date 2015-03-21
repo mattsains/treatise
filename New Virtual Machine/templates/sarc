@@ -1,0 +1,4 @@
+    lodsw
+    xchg rax, rcx
+    sar {r[i]}, cl
+    xchg rax, rcx
