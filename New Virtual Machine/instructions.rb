@@ -17,7 +17,8 @@ instructions = []
 instructions += ['null', 'in', 'out', 'err'].collect {|opcode| Inst.new opcode, [:reg]}
 
 #instructions with just one operand (immediate)
-instructions += ['jmp', 'jmpf'].collect {|opcode| Inst.new opcode, [:imm16]}
+instructions += ['jmp'].collect {|opcode| Inst.new opcode, [:imm16]}
+instructions += ['jmpf'].collect {|opcode| Inst.new opcode, [:immptr64]}
 
 #instructions with two registers only where the trivial case is allowed
 instructions += ['add','mul'].collect {|opcode| Inst.new opcode, [:reg, :reg]}
@@ -26,13 +27,16 @@ instructions += ['add','mul'].collect {|opcode| Inst.new opcode, [:reg, :reg]}
 instructions += ['sub','div','and','or','xor','shl','shr','sar','mov','movp'].collect {|opcode| Inst.new opcode, [:reg, :reg], false}
 
 #instructions with one register and one 16b immediate
-instructions += ['addc','subc','mulc','divc','andc','orc','shlc','shrc','sarc','movc','alloc','jcmpc'].collect {|opcode| Inst.new opcode, [:reg, :imm16]}
+instructions += ['addc','subc','mulc','divc','andc','orc','movc','alloc'].collect {|opcode| Inst.new opcode, [:reg, :immptr64]}
+instructions += ['shlc','shrc','sarc'].collect {|opcode| Inst.new opcode, [:reg, :imm16]}
 
 #instructions with one 16b immediate and one register
-instructions += ['csub','cshl','cshr','csar'].collect {|opcode| Inst.new opcode, [:imm16, :reg]}
+instructions += ['csub'].collect {|opcode| Inst.new opcode, [:immptr64, :reg]}
+instructions += ['cshl','cshr','csar'].collect {|opcode| Inst.new opcode, [:imm16, :reg]}
 
 #strange instructions
 instructions += ['jcmp'].collect {|opcode| Inst.new opcode, [:reg, :reg, :imm16, :imm16, :imm16], false}
+instructions += ['jcmpc'].collect {|opcode| Inst.new opcode, [:reg, :immptr64, :imm16, :imm16, :imm16]}
 instructions += ['jeqp'].collect {|opcode| Inst.new opcode, [:reg, :reg, :imm16, :imm16], false}
 instructions += ['jnullp'].collect {|opcode| Inst.new opcode, [:reg, :imm16, :imm16]}
 instructions += ['switch'].collect {|opcode| Inst.new opcode, [:reg, :imm16, :imm16]} #TODO: work out what to make of this
@@ -57,7 +61,7 @@ end
 
 # Sort instructions by their numbers
 instructions.each {|instruction| instruction.offset=offsets[instruction.opcode]}
-instructions.sort_by {|instruction| instruction.offset }
+instructions.sort_by! {|instruction| instruction.offset }
 
 # Export these variables
 $instructions = instructions

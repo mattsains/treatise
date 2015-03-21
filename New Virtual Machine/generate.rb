@@ -46,8 +46,8 @@ puts "vector:"
     end
 
   when 2
-    6.times do |i|
-      6.times do |j|
+    6.times do |j|
+      6.times do |i|
         if instr.allow_trivial || (i!=j)
           puts "  dq #{instr.opcode}_#{i}_#{j}"
         else
@@ -79,8 +79,8 @@ puts "code:"
       end 
       
     when 2 
-      6.times do |i|
-        6.times do |j|
+      6.times do |j|
+        6.times do |i|
           if instr.allow_trivial || (i!=j)
             puts "  #{instr.opcode}_#{i}_#{j}:"
             puts render instr.opcode, {'i' => i, 'j' => j}

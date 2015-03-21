@@ -1,0 +1,13 @@
+    lodsw
+    mov {s[0]}, [{r['pc']} + rax - 2]
+    cmp {r[i]}, {s[0]}
+    jl .jmp
+    add {r['pc']}, 2
+    je .jmp
+    add {r['pc']}, 2
+
+    .jmp:
+    lodsw
+    movsx {s[0]}, ax
+    sub {s[0]}, 2
+    add {r['pc']}, {s[0]}

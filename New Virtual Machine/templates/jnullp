@@ -1,0 +1,9 @@
+    and {r[i]}, {r[i]} ; TODO: might need to check real NULLness
+    jnz .jmp
+    add {r['pc']}, 2
+
+    .jmp:
+    lodsw
+    movsx {s[0]}, ax
+    sub {s[0]}, 2
+    add {r['pc']}, {s[0]}
