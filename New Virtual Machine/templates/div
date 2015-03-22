@@ -1,7 +1,11 @@
     mov rax, {r[i]}
     mov {s[0]}, rdx
     cqo
+    {% if r[j] == 'rdx' %}
+    idiv {s[0]}
+    {% else %}
     idiv {r[j]}
+    {% endif %}
     mov {r[i]}, rax
     mov {r[0]}, rdx
     mov rdx, {s[0]}

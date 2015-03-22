@@ -1,9 +1,9 @@
     cmp {r[i]}, {r[j]}
-    jl .jmp
+    jl .jmp ; lt pointer is under rsi so use it
+    je .eq ;eq is 2B further
+    add {r['pc']}, 2 ;otherwise gt, 4B further
+    .eq:
     add {r['pc']}, 2
-    je .jmp
-    add {r['pc']}, 2
-
     .jmp:
     lodsw
     movsx {s[0]}, ax
