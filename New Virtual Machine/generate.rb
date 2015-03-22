@@ -4,20 +4,11 @@ require "liquid"
 
 require File.dirname(__FILE__)+"/instructions.rb"
 @instructions = $instructions
+@r = $r
 
 $debug = true
 
 # Define register mapping
-@r = {
-  0 => 'rbx',
-  1 => 'rcx',
-  2 => 'rdx',
-  3 => 'r8',
-  4 => 'r9',
-  5 => 'r10',
-  'pc' => 'rsi',
-  :fp => 'rbp'
-}
 
 #Some scratch registers
 @s = (11..15).collect {|n| "r#{n}"}

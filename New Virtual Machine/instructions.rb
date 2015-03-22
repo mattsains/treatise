@@ -63,6 +63,20 @@ end
 instructions.each {|instruction| instruction.offset=offsets[instruction.opcode]}
 instructions.sort_by! {|instruction| instruction.offset }
 
+
+r = {
+  0 => 'rbx',
+  1 => 'rcx',
+  2 => 'rdx',
+  3 => 'r8',
+  4 => 'r9',
+  5 => 'r10',
+  'pc' => 'rsi',
+  :fp => 'rbp'
+}
+
+
 # Export these variables
 $instructions = instructions
 $offsets = offsets
+$r = r
