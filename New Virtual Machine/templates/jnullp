@@ -1,9 +1,10 @@
     and {r[i]}, {r[i]} ; TODO: might need to check real NULLness
-    jnz .jmp
-    add {r['pc']}, 2
+    jz .z
+    ;not-zero(null):
+    movsx {s[0]}, word [rsi]
+    jmp .end
+    .z:
+    movsx {s[0]}, word [rsi+2]
 
-    .jmp:
-    lodsw
-    movsx {s[0]}, ax
-    sub {s[0]}, 2
-    add {r['pc']}, {s[0]}
+    .end:
+    add rsi, {s[0]}

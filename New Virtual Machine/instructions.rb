@@ -32,7 +32,7 @@ instructions += ['shlc','shrc','sarc'].collect {|opcode| Inst.new opcode, [:reg,
 
 #instructions with one 16b immediate and one register
 instructions += ['csub'].collect {|opcode| Inst.new opcode, [:immptr64, :reg]}
-instructions += ['cshl','cshr','csar'].collect {|opcode| Inst.new opcode, [:imm16, :reg]}
+instructions += ['cshl','cshr','csar'].collect {|opcode| Inst.new opcode, [:imm64, :reg]}
 
 #strange instructions
 instructions += ['jcmp'].collect {|opcode| Inst.new opcode, [:reg, :reg, :imm16, :imm16, :imm16], false}

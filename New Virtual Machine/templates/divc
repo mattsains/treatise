@@ -1,5 +1,5 @@
     lodsw
-    mov {s[1]}, [{r['pc']} + rax - 2]
+    mov {s[1]}, [rsi + rax - 2]
     mov rax, {r[i]}
     mov {s[0]}, rdx
     cqo

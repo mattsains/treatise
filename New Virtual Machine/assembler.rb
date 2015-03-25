@@ -55,10 +55,6 @@ File.open(ARGV[0],"r") do |f|
           else
             label = "l"+SecureRandom.uuid.tr('-','_')[0,9]+"imm_#{val}"
             const_labels[val] = label
-            val0 = val&0xFFFF
-            val1 = (val>>16)&0xFFFF
-            val2 = (val>>32)&0xFFFF
-            val3 = (val>>48)&0xFFFF
             program_epilogue << "#{label}:"
             program_epilogue << "dq #{val}"
           end
@@ -106,10 +102,12 @@ File.open(ARGV[0],"r") do |f|
 
     if parts[0] == 'dw'
       literal = Integer(parts[1])
+      raise "Constant #{literal} too big for 16 bit" if (literal>>16)!=0
       puts "#{(code.length*2).to_s(16)}: ".rjust(4)+"     (dw #{literal})"
       code << literal
     elsif parts[0] == 'dq'
       literal = Integer(parts[1])
+      raise "Constant #{literal} too big for 64 bit" if (literal>>64)!=0
       puts "#{(code.length*2).to_s(16)}: ".rjust(4)+"     (dq #{literal})"
       code << (literal&0xFFFF)
       code << ((literal>>16)&0xFFFF)
@@ -124,6 +122,8 @@ File.open(ARGV[0],"r") do |f|
         puts "#{(code.length*2).to_s(16)}: ".rjust(4)+(hex instruction.offset)+" (#{instruction.opcode})"
       end
       code << instruction.offset
+
+      instruction_end = code.length*2
       
       instruction.operands.each_index do |index|
         expected_operand = instruction.operands[index]
@@ -146,7 +146,7 @@ File.open(ARGV[0],"r") do |f|
           end
         elsif (expected_operand == :imm16) || (expected_operand == :immptr64)
           if labels.has_key? operand
-            imm = labels[operand] - (code.length*2)
+            imm = labels[operand] - instruction_end
             puts "#{(code.length*2).to_s(16)}: ".rjust(4)+(hex imm)+" (lbl: #{parts[index+1]})"
           elsif (operand.start_with? '[') && (operand.end_with? ']')
             imm = Integer(operand[1, operand.length-2])
