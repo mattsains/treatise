@@ -1,7 +1,7 @@
 class Inst
-  attr_accessor :opcode
+  attr_accessor :opcode #mnemonic
   attr_accessor :allow_trivial
-  attr_accessor :operands
+  attr_accessor :operands # a list of symbols - :reg, :imm16, :immptr64
   attr_accessor :offset
 
   def initialize(opcode, operands, allow_trivial=true)
@@ -59,11 +59,11 @@ def is_int? str
   return true
 end
 
+instructions.each {|instruction| instruction.offset = offsets[instruction.opcode]}
 # Sort instructions by their numbers
-instructions.each {|instruction| instruction.offset=offsets[instruction.opcode]}
 instructions.sort_by! {|instruction| instruction.offset }
 
-
+# Register Mapping
 r = {
   0 => 'rbx',
   1 => 'rcx',
