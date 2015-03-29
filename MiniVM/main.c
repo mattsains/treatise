@@ -13,7 +13,7 @@ int main(int argc, char* argv[])
         printf("Please provide an input binary");
     }
 
-    //FILE* file = fopen(argv[0],"rb");
+    //FILE* file = fopen(argv[1],"rb");
     FILE* file = fopen("C:\\Users\\Matthew\\Desktop\\varsity working folder\\Treatise\\lua\\littlefactorial.out","rb");
 
     uint32_t signature;
