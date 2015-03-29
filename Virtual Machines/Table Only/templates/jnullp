@@ -1,10 +1,11 @@
-    and {r[i]}, {r[i]} ; TODO: might need to check real NULLness
+    mov rbx, [registers+{i}*8]
+    and rbx, rbx ; TODO: might need to check real NULLness
     jz .z
     ;not-zero(null):
-    movsx {s[0]}, word [rsi]
+    movsx rbx, word [rsi]
     jmp .end
     .z:
-    movsx {s[0]}, word [rsi+2]
+    movsx rbx, word [rsi+2]
 
     .end:
-    add rsi, {s[0]}
+    add rsi, rbx

@@ -1,4 +1,5 @@
     lodsw
-    xchg rax, rcx
-    shl {r[i]}, cl
-    xchg rax, rcx
+    mov cl, al
+    mov rbx, [registers+{i}*8]
+    shl rbx, cl
+    mov [registers+{i}*8], rbx

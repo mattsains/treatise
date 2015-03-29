@@ -1,3 +1,4 @@
-    xchg rcx, {r[j]}
-    shl {r[i]}, cl
-    xchg rcx, {r[j]}
+    mov rbx, [registers+{i}*8]
+    mov rcx, [registers+{j}*8]
+    shl rbx, cl
+    mov [registers+{i}*8], rbx

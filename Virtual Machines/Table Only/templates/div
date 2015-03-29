@@ -1,12 +1,7 @@
-    mov rax, {r[i]}
-    mov {s[0]}, rdx
+    mov rax, [registers+{i}*8]
     cqo
-    {% if r[j] == 'rdx' %}
-    idiv {s[0]}
-    {% else %}
-    idiv {r[j]}
-    {% endif %}
-    mov {r[i]}, rax
-    mov {r[0]}, rdx
-    mov rdx, {s[0]}
+    mov rbx, [registers+{i}*8]
+    idiv rbx
+    mov [registers+{i}*8], rax
+    mov [registers+0], rdx
     xor rax, rax

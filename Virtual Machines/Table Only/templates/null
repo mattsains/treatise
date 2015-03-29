@@ -1,1 +1,2 @@
-    xor {r[i]}, {r[i]}
+    xor rbx, rbx
+    mov [registers+{i}*8], rbx

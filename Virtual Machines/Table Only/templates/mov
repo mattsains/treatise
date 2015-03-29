@@ -1,1 +1,2 @@
-    mov {r[i]}, {r[j]}
+    mov rbx, [registers+{j}*8]
+    mov [registers+{i}*8], rbx

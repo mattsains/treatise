@@ -1,2 +1,3 @@
     lodsw
-    mov {r[i]}, [rsi + rax - 2]
+    mov rbx, [rsi + rax - 2]
+    mov [registers+{i}*8], rbx

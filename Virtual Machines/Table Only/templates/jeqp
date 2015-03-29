@@ -1,8 +1,10 @@
-    cmp {r[i]}, {r[j]}
+    mov rbx, [registers+{i}*8]
+    mov rcx, [registers+{j}*8]
+    cmp rbx, rcx
     jne .ne
-    movsx {s[0]}, word [rsi]
+    movsx rbx, word [rsi]
     jmp .end
     .ne:
-    movsx {s[0]}, word [rsi+2]
+    movsx rbx, word [rsi+2]
     .end:
-    add rsi, {s[0]}
+    add rsi, rbx

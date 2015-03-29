@@ -1,15 +1,16 @@
     lodsw
-    mov {s[0]}, [rsi + rax - 2]
-    cmp {r[i]}, {s[0]}
+    mov rbx, [registers+{i}*8]
+    mov rcx, [rsi + rax - 2]
+    cmp rbx, rcx
     jg .gt
     je .eq
     ;less than:
-    movsx {s[0]}, word [rsi]
+    movsx rbx, word [rsi]
     jmp .end
     .eq:
-    movsx {s[0]}, word [rsi+2]
+    movsx rbx, word [rsi+2]
     jmp .end
     .gt:
-    movsx {s[0]}, word [rsi+4]
+    movsx rbx, word [rsi+4]
     .end:
-    add rsi, {s[0]}
+    add rsi, rbx

@@ -1,14 +1,15 @@
-    mov {s[0]}, rsi
-    cmp {r[i]}, {r[j]}
+    mov rbx, [registers+{i}*8]
+    mov rcx, [registers+{j}*8]
+    cmp rbx, rcx
     jg .gt
     je .eq
     ; less than:
-    movsx {s[0]}, word [rsi]
+    movsx rbx, word [rsi]
     jmp .end
     .eq:
-    movsx {s[0]}, word [rsi+2]
+    movsx rbx, word [rsi+2]
     jmp .end
     .gt:
-    movsx {s[0]}, word [rsi+4]
+    movsx rbx, word [rsi+4]
     .end:
-    add rsi, {s[0]}
+    add rsi, rbx

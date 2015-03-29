@@ -10,6 +10,7 @@ program_loaded: db 'Program loaded', NL, 0
 
 section .bss
 ; These are variables
+registers: resq 6
 
 section .text
 global vm_start
