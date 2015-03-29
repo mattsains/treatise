@@ -1,0 +1,14 @@
+    mov {s[0]}, rsi
+    cmp {r[i]}, {r[j]}
+    jg .gt
+    je .eq
+    ; less than:
+    movsx {s[0]}, word [rsi]
+    jmp .end
+    .eq:
+    movsx {s[0]}, word [rsi+2]
+    jmp .end
+    .gt:
+    movsx {s[0]}, word [rsi+4]
+    .end:
+    add rsi, {s[0]}

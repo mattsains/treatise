@@ -1,0 +1,3 @@
+    ;dispatch
+        lodsw
+        jmp [vector+rax*8]

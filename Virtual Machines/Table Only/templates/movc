@@ -1,0 +1,2 @@
+    lodsw
+    mov {r[i]}, [rsi + rax - 2]

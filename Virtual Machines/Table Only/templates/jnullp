@@ -1,0 +1,10 @@
+    and {r[i]}, {r[i]} ; TODO: might need to check real NULLness
+    jz .z
+    ;not-zero(null):
+    movsx {s[0]}, word [rsi]
+    jmp .end
+    .z:
+    movsx {s[0]}, word [rsi+2]
+
+    .end:
+    add rsi, {s[0]}

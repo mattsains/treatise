@@ -1,0 +1,3 @@
+    xchg rcx, {r[j]}
+    sar {r[i]}, cl
+    xchg rcx, {r[j]}

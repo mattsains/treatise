@@ -1,0 +1,2 @@
+    movsx {s[0]}, word [rsi]
+    add rsi, {s[0]}

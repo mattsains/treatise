@@ -2,7 +2,7 @@
 require "rubygems"
 require "liquid"
 
-require File.dirname(__FILE__)+"/instructions.rb"
+require File.dirname(__FILE__)+"/../Common/instructions.rb"
 @instructions = $instructions
 @r = $r
 

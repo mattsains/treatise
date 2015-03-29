@@ -1,5 +1,5 @@
 BITS 64
-%include "utility.h.asm"
+%include "../Common/utility.h.asm"
 
 %define NL 0x0A
 

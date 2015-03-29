@@ -1,0 +1,3 @@
+    lodsw
+    mov {s[0]}, [rsi + rax - 2]
+    or {r[i]}, {s[0]}

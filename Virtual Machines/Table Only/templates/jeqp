@@ -1,0 +1,8 @@
+    cmp {r[i]}, {r[j]}
+    jne .ne
+    movsx {s[0]}, word [rsi]
+    jmp .end
+    .ne:
+    movsx {s[0]}, word [rsi+2]
+    .end:
+    add rsi, {s[0]}
