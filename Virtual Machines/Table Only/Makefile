@@ -9,7 +9,7 @@ run: all
 	./vm
 
 debug: all
-	gdb --directory . vm -tui
+	gdb --directory . vm -tui --command=gdbinit
 
 utility.o: ../Common/utility.c
 	gcc $(GCCARGS) -c ../Common/utility.c -o utility.o
