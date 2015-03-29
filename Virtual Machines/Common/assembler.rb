@@ -134,8 +134,7 @@ else
         code << instruction.offset
         
         instruction_end = code.length*2
-        
-        instruction.operands.each_index do |index|
+         instruction.operands.each_index do |index|
           expected_operand = instruction.operands[index]
           operand = parts[index+1]
           
@@ -172,13 +171,12 @@ else
         end
       end
     }
-    
-    if ARGV[1] == nil
+
+    argv_without_r = ARGV - ['-r']
+    if argv_without_r[1] == nil
       filename = "a.out"
-    elsif (ARGV[1] == '-r') && (ARGV[2] != nil)
-      filename = ARGV[2]
     else
-      filename = ARGV[1]
+      filename = argv_without_r[1]
     end
     
     puts ""
