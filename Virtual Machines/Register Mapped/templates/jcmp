@@ -1,4 +1,3 @@
-    mov {s[0]}, rsi
     cmp {r[i]}, {r[j]}
     jg .gt
     je .eq

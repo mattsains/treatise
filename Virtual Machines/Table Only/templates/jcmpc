@@ -13,4 +13,5 @@
     .gt:
     movsx rbx, word [rsi+4]
     .end:
+    sub rsi, 2
     add rsi, rbx

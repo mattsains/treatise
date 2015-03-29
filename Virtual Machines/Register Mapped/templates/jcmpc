@@ -12,4 +12,5 @@
     .gt:
     movsx {s[0]}, word [rsi+4]
     .end:
+    sub rsi, 2
     add rsi, {s[0]}
