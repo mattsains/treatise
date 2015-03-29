@@ -6,5 +6,5 @@ mov r3, r0
 add r3, r1
 mov r0, r1
 mov r1, r3
-jcmpc r1, 100, loop, begin, begin
+jmp loop
 
