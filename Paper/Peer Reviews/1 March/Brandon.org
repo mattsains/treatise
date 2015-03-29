@@ -11,7 +11,7 @@ Also just check for minor grammar issues
 Well written, the author mentioned that I might find it difficult to review because another paper I was reviewing had similar topic. But I felt like I read two different research papers. Very little mistakes if any
 
 * Summary of Document Comments
-** TODO Add NMMU Logo
+** DONE Add NMMU Logo
 ** TODO Add a glossary as a fast lookup for jargon
 ** DONE Remove first person where possible
 Okay let's talk about policy here. I agree that first person is bad for research articles, however I think a few concessions need to be made:
