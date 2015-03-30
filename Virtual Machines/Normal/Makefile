@@ -12,10 +12,10 @@ debug: all
 utility.o: ../Common/utility.c
 	gcc $(GCCARGS) -c ../Common/utility.c -o utility.o
 
-dispatch_numbers.asm:
-	./generate.rb > dispatch_numbers.asm
+vectors.asm:
+	./generate.rb > vectors.asm
 
-vm.o: vm.asm ../Common/utility.h.asm dispatch_numbers.asm
+vm.o: vm.asm ../Common/utility.h.asm vectors.asm
 	nasm -g -f elf64 vm.asm -o vm.o
 
 clean:

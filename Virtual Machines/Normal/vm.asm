@@ -3,8 +3,15 @@ BITS 64
 
 %define NL 0x0A
 
-;Include dispatch numbers
-%include "dispatch_numbers.asm"
+;Include vector table
+%include "vectors.asm"
+
+%macro dispatch 0
+       lodsw
+       mov rbx, rax
+       shr rbx, 6
+       jmp [vectors+rbx*8]
+%endmacro
 
 section .data
 file_error: db 'File not found.', NL, 0
