@@ -46,6 +46,13 @@ else
       elsif line.start_with? 'dq'
         program[cur_byte] = line
         cur_byte += 8
+      elsif line == 'align 8'
+        for i in (cur_byte+1)...(cur_byte/8.0).ceil*8
+          if cur_byte % 2 ==0
+            program[i] = 'dw 0'
+          end
+        end
+        cur_byte = (cur_byte/8.0).ceil * 8
       else
         parts=[]
         line.split.each {|s| parts+=s.split(',')}
@@ -66,6 +73,7 @@ else
             else
               label = "l"+SecureRandom.uuid.tr('-','_')[0,9]+"imm_#{val}"
               const_labels[val] = label
+              program_epilogue << "align 8"
               program_epilogue << "#{label}:"
               program_epilogue << "dq #{val}"
             end
@@ -91,6 +99,13 @@ else
       elsif line.start_with? 'dq'
         program[cur_byte] = line
         cur_byte += 8
+      elsif line == 'align 8'
+        for i in (cur_byte+1)...(cur_byte/8.0).ceil*8
+          if cur_byte % 2 ==0
+            program[i] = 'dw 0'
+          end
+        end
+        cur_byte = (cur_byte/8.0).ceil * 8
       else
         raise "Error - invalid data in program epilogue"
       end
@@ -223,7 +238,7 @@ else
       word_count+=1
       if word_count%4==0
         puts (hex word)
-        print (hex word_count)+": "
+        print (hex word_count*2)+": " unless word_count==code.length
       else
         print (hex word)+" "
       end
