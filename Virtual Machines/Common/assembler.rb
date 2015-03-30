@@ -2,7 +2,8 @@
 require File.dirname(__FILE__)+'/instructions.rb'
 require 'securerandom'
 
-real_reg= (ARGV[1] == '-r') || (ARGV[2] == '-r')
+real_reg = ARGV.include? '-r'
+conventional = ARGV.include? '-c'
 
 program={}
 program_epilogue=[]
@@ -127,11 +128,23 @@ else
         instruction = $instructions.find {|inst| inst.opcode == parts[0]}
         reg_count = 1
         if instruction.operands[0] == :reg
-          print "#{(code.length*2).to_s(16)}: ".rjust(4)+(hex instruction.offset)+" (#{instruction.opcode})"
+          if conventional
+            print "#{(code.length*2).to_s(16)}: ".rjust(4)+(hex $instructions.index(instruction) << 6)+" (#{instruction.opcode})"
+          else
+            print "#{(code.length*2).to_s(16)}: ".rjust(4)+(hex instruction.offset)+" (#{instruction.opcode})"
+          end
         else
-          puts "#{(code.length*2).to_s(16)}: ".rjust(4)+(hex instruction.offset)+" (#{instruction.opcode})"
+          if conventional
+            puts "#{(code.length*2).to_s(16)}: ".rjust(4)+(hex $instructions.index(instruction) << 6)+" (#{instruction.opcode})"
+          else
+            puts "#{(code.length*2).to_s(16)}: ".rjust(4)+(hex instruction.offset)+" (#{instruction.opcode})"
+          end
         end
-        code << instruction.offset
+        if conventional
+          code << ($instructions.index(instruction) << 6)
+        else
+          code << instruction.offset
+        end
         
         instruction_end = code.length*2
          instruction.operands.each_index do |index|
@@ -142,13 +155,34 @@ else
             if (operand.start_with? 'r') || (operand.start_with? 'p')
               reg = operand[1,operand.length-1].to_i
               reg_text = if real_reg then $r[reg] else "r#{reg}" end
-              
-              if instruction.operands[index+1] == :reg
-                print " +#{reg*reg_count}(#{reg_text})"
+
+              if conventional
+                if reg_count == 1
+                  reg_val = reg << 3
+                else
+                  reg_val = reg
+                end
+                if instruction.operands[index+1] == :reg
+                  print " +#{reg_val}(#{reg_text})"
+                else
+                  puts " +#{reg_val}(#{reg_text})"
+                end
               else
-                puts " +#{reg*reg_count}(#{reg_text})"
+                if instruction.operands[index+1] == :reg
+                  print " +#{reg*reg_count}(#{reg_text})"
+                else
+                  puts " +#{reg*reg_count}(#{reg_text})"
+                end
               end
-              code[-1] += reg*reg_count
+              if conventional
+                if reg_count == 1
+                  code[-1] |= reg << 3
+                else
+                  code[-1] |= reg
+                end
+              else
+                code[-1] += reg*reg_count
+              end
               reg_count *= 6
             else
               puts "Error: #{instruction.opcode} expects a register in position #{index+1}"
@@ -172,11 +206,11 @@ else
       end
     }
 
-    argv_without_r = ARGV - ['-r']
-    if argv_without_r[1] == nil
+    argv_without_flags = ARGV - ['-r', '-c']
+    if argv_without_flags[1] == nil
       filename = "a.out"
     else
-      filename = argv_without_r[1]
+      filename = argv_without_flags[1]
     end
     
     puts ""
