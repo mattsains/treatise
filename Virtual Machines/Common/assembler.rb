@@ -45,7 +45,7 @@ else
         label = line.match(/[^\d\W]\w*/)[0]
         puts "#{label}:"
         labels[label] = cur_byte
-      elsif line.start_with? 'dw'
+      elsif line.start_with? 'dw' or line.start_with? 'locals'
         program[cur_byte] = line
         cur_byte += 2
       elsif line.start_with? 'dq'
