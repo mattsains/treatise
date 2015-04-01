@@ -21,6 +21,8 @@ BITS 64
        pop rcx
 %endmacro
 
+FRAME_HEADER_SIZE equ 80
+
 section .data
 ; These are constants
 file_error: db 'File not found.', NL, 0

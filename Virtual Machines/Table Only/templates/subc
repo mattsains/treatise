@@ -1,5 +1,0 @@
-    lodsw
-    mov rbx, [registers+{i}*8]
-    mov rcx, [rsi + rax - 2]
-    sub rbx, rcx
-    mov [registers+{i}*8], rbx

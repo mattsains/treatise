@@ -32,16 +32,6 @@ _sub:
     sub rbx, rcx
     mov [registers+r8], rbx
     dispatch
-_subc:
-    mov r8, (111b<<3)
-    and r8, rax
-
-    lodsw
-    mov rbx, [registers+r8]
-    mov rcx, [rsi + rax - 2]
-    sub rbx, rcx
-    mov [registers+r8], rbx
-    dispatch
 _csub:
     mov r8, (111b<<3)
     and r8, rax
