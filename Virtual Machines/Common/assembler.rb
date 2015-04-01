@@ -8,6 +8,8 @@ argv_without_flags = ARGV - ['-r', '-c']
 program={}
 program_epilogue=[]
 const_labels={}
+obj_member_labels={}
+
 labels={}
 cur_byte=0
 
@@ -30,6 +32,9 @@ else
     puts ""
     puts "Understood Code:"
     puts "================"
+
+    busy_object = nil
+    busy_object_keys = []
     
     f.each_line do |line|
       line = line.split(';')[0] #remove comments
@@ -53,6 +58,43 @@ else
           end
         end
         cur_byte = (cur_byte/8.0).ceil * 8
+      elsif line.start_with? 'object ' or busy_object
+        parts = line.split(' ')
+
+        if parts[0] == 'object'
+          busy_object = {:name => parts[1]}
+          busy_object_keys = []
+        elsif parts[0] == 'ptr' or parts[0] == 'int'
+          busy_object[parts[1]] = parts[0]
+          busy_object_keys << parts[1]
+        else
+          #align objects defs to 16 bytes
+          for i in (cur_byte)...(cur_byte/16.0).ceil*16
+            if i % 2 == 0
+              program[i] = 'dw 0'
+            end
+          end
+          labels[busy_object[:name]] = cur_byte
+          program[cur_byte] = "dq " + (busy_object.length - 1).to_s
+          cur_byte += 8
+          
+          bitmap = 0
+          busy_object_keys.each_index {|i|
+            k = busy_object_keys[i]
+            unless k == :name
+              obj_member_labels[busy_object[:name]+"."+k] = i
+              if i % 64 == 0 and i != 0
+                program[cur_byte] = "dq #{bitmap}"
+                cur_byte += 8
+              end
+              bitmap |= (busy_object[k] == 'ptr'?1:0) << (i%64)
+            end
+          }
+          program[cur_byte] = "dq #{bitmap}"
+          cur_byte += 8
+          busy_object = nil
+          busy_object_keys = []
+        end
       else
         parts=[]
         line.split.each {|s| parts+=s.split(',')}
@@ -139,13 +181,13 @@ else
     puts ""
     puts "Code generation:"
     puts "================"
-    
+
     code = []
     program.each {|addr,instr|
       parts=[]
       instr.split.each {|s| parts+=s.split(',')}
 
-      names = labels.each {|k,v| puts "    #{k}:" if v==(code.length*2)}
+      labels.each {|k,v| puts "    #{k}:" if v==(code.length*2)}
         
       if parts[0] == 'dw'
         literal = Integer(parts[1])
@@ -233,7 +275,11 @@ else
               imm = Integer(operand[1, operand.length-2])
               puts "#{(code.length*2).to_s(16)}: ".rjust(4)+(hex imm)+" (ptr)"
             elsif expected_operand == :imm16
-              imm = Integer(operand)
+              if obj_member_labels.has_key? operand
+                imm = obj_member_labels[operand]
+              else
+                imm = Integer(operand)
+              end
               puts "#{(code.length*2).to_s(16)}: ".rjust(4)+"#{imm}".rjust(4)+" (const)"
             else
               raise "Error: Couldn't make anything from #{operand}"
