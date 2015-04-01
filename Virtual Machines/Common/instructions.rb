@@ -1,7 +1,7 @@
 class Inst
   attr_accessor :opcode #mnemonic
   attr_accessor :allow_trivial
-  attr_accessor :operands # a list of symbols - :reg, :imm16, :immptr64
+  attr_accessor :operands # a list of symbols - :reg, :imm16, :immptr64, :arbimmptr64
   attr_accessor :offset
 
   def initialize(opcode, operands, allow_trivial=true)
@@ -39,7 +39,7 @@ instructions += ['jcmp'].collect {|opcode| Inst.new opcode, [:reg, :reg, :imm16,
 instructions += ['jcmpc'].collect {|opcode| Inst.new opcode, [:reg, :immptr64, :imm16, :imm16, :imm16]}
 instructions += ['jeqp'].collect {|opcode| Inst.new opcode, [:reg, :reg, :imm16, :imm16], false}
 instructions += ['jnullp'].collect {|opcode| Inst.new opcode, [:reg, :imm16, :imm16]}
-instructions += ['switch'].collect {|opcode| Inst.new opcode, [:reg, :imm16, :imm16]} #TODO: work out what to make of this
+instructions += ['switch'].collect {|opcode| Inst.new opcode, [:reg, :imm16, :arbimm16]} #TODO: work out what to make of this
 
 offsets =
   {

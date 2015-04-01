@@ -1,6 +1,5 @@
 #!/usr/bin/env ruby
 require File.dirname(__FILE__)+'/instructions.rb'
-require 'securerandom'
 
 real_reg = ARGV.include? '-r'
 conventional = ARGV.include? '-c'
@@ -63,16 +62,18 @@ else
           raise "Error - #{instruction.opcode} given wrong number of arguments "+
                 "(#{parts.length-1} for #{instruction.operands})"
         end
+        last_index = 0
         instruction.operands.each_index {|index|
+          last_index=index
           expected_operand = instruction.operands[index]
           operand = parts[index+1]
-          if (expected_operand == :immptr64) && (is_int? operand)
+          if expected_operand == :immptr64 and is_int? operand
             val = Integer(operand)
             if const_labels.has_key? val
               label = const_labels[val]
               
             else
-              label = "l"+SecureRandom.uuid.tr('-','_')[0,9]+"imm_#{val}"
+              label = "_imm_#{val}"
               const_labels[val] = label
               program_epilogue << "align 8"
               program_epilogue << "#{label}:"
@@ -80,15 +81,32 @@ else
             end
             parts[index+1] = label
             line = parts[0]+" "+parts[1, parts.length-1].join(",")
-            
           end
         }
+        if instruction.operands[-1] == :arbimmptr64
+          for index in (last_index+1)...parts.length
+            operand = parts[index+1]
+            val = Integer(operand)
+            if const_labels.has_key? val
+              label = const_labels[val]
+              
+            else
+              label = "_imm_#{val}"
+              const_labels[val] = label
+              program_epilogue << "align 8"
+              program_epilogue << "#{label}:"
+              program_epilogue << "dq #{val}"
+            end
+            parts[index+1] = label
+            line = parts[0]+" "+parts[1, parts.length-1].join(",")
+          end
+        end
+        
         program[cur_byte] = line
-        cur_byte += 2
-        cur_byte += 2*(instruction.operands.count(:imm16) + instruction.operands.count(:immptr64))
+        cur_byte += 2*(parts.length - instruction.operands.count(:reg))
       end
     end
-    
+
     program_epilogue.each {|line|
       #These can only have constants and labels
       if line.end_with? ':'
@@ -165,7 +183,9 @@ else
         end
         
         instruction_end = code.length*2
-         instruction.operands.each_index do |index|
+        last_index = 0
+        instruction.operands.each_index do |index|
+          last_index = index
           expected_operand = instruction.operands[index]
           operand = parts[index+1]
           
@@ -219,6 +239,24 @@ else
               raise "Error: Couldn't make anything from #{operand}"
             end
             code << imm
+          end
+          if instruction.operands[-1] == :arbimmptr64
+            for index in (last_index+1)...parts.length
+              operand = parts[index+1]
+              if labels.has_key? operand
+                imm = labels[operand] - instruction_end
+                puts "#{(code.length*2).to_s(16)}: ".rjust(4)+(hex imm)+" (lbl: #{parts[index+1]})"
+              elsif (operand.start_with? '[') && (operand.end_with? ']')
+                imm = Integer(operand[1, operand.length-2])
+                puts "#{(code.length*2).to_s(16)}: ".rjust(4)+(hex imm)+" (ptr)"
+              elsif expected_operand == :imm16
+                imm = Integer(operand)
+                puts "#{(code.length*2).to_s(16)}: ".rjust(4)+"#{imm}".rjust(4)+" (const)"
+              else
+                raise "Error: Couldn't make anything from #{operand}"
+              end
+              code << imm
+            end
           end
         end
       end
