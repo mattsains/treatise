@@ -1,0 +1,16 @@
+start ../Common/a.out
+la p
+la p
+s
+n
+n
+n
+n
+n
+n
+n
+n
+n
+n
+
+display/6g &registers

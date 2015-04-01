@@ -1,8 +1,8 @@
-add:
-    mov r8, (0b111<<3)
+_add:
+    mov r8, (111b<<3)
     and r8, rax
 
-    mov r9, 0b111
+    mov r9, 111b
     and r9, rax
     
     mov rbx, [registers+r8]
@@ -10,8 +10,8 @@ add:
     add rbx, rcx
     mov [registers+r8], rbx
     dispatch
-addc:
-    mov r8, (0b111<<3)
+_addc:
+    mov r8, (111b<<3)
     and r8, rax
 
     lodsw
@@ -20,11 +20,11 @@ addc:
     add rbx, rcx
     mov [registers+r8], rbx
     dispatch
-sub:
-    mov r8, (0b111<<3)
+_sub:
+    mov r8, (111b<<3)
     and r8, rax
 
-    mov r9, 0b111
+    mov r9, 111b
     and r9, rax
 
     mov rbx, [registers+r8]
@@ -32,8 +32,8 @@ sub:
     sub rbx, rcx
     mov [registers+r8], rbx
     dispatch
-subc:
-    mov r8, (0b111<<3)
+_subc:
+    mov r8, (111b<<3)
     and r8, rax
 
     lodsw
@@ -42,8 +42,8 @@ subc:
     sub rbx, rcx
     mov [registers+r8], rbx
     dispatch
-csub:
-    mov r8, (0b111<<3)
+_csub:
+    mov r8, (111b<<3)
     and r8, rax
 
     lodsw
@@ -52,11 +52,11 @@ csub:
     sub rbx, rcx
     mov [registers+r8], rbx
     dispatch
-mul:
-    mov r8, (0b111<<3)
+_mul:
+    mov r8, (111b<<3)
     and r8, rax
 
-    mov r9, 0b111
+    mov r9, 111b
     and r9, rax
 
     mov rbx, [registers+r8]
@@ -64,8 +64,8 @@ mul:
     imul rbx, rcx
     mov [registers+r8], rbx
     dispatch
-mulc:
-    mov r8, (0b111<<3)
+_mulc:
+    mov r8, (111b<<3)
     and r8, rax
 
     lodsw
@@ -74,11 +74,11 @@ mulc:
     imul rbx, rcx
     mov [registers+r8], rbx
     dispatch
-div:
-    mov r8, (0b111<<3)
+_div:
+    mov r8, (111b<<3)
     and r8, rax
 
-    mov r9, 0b111
+    mov r9, 111b
     and r9, rax
 
     mov rax, [registers+r8]
@@ -89,8 +89,8 @@ div:
     mov [registers+0], rdx
     xor rax, rax
     dispatch
-divc:
-    mov r8, (0b111<<3)
+_divc:
+    mov r8, (111b<<3)
     and r8, rax
 
     lodsw
@@ -102,11 +102,11 @@ divc:
     mov [registers+0], rdx
     xor rax, rax
     dispatch
-and:
-    mov r8, (0b111<<3)
+_and:
+    mov r8, (111b<<3)
     and r8, rax
 
-    mov r9, 0b111
+    mov r9, 111b
     and r9, rax
 
     mov rbx, [registers+r8]
@@ -114,8 +114,8 @@ and:
     and rbx, rcx
     mov [registers+r8], rbx
     dispatch
-andc:
-    mov r8, (0b111<<3)
+_andc:
+    mov r8, (111b<<3)
     and r8, rax
 
     lodsw
@@ -124,11 +124,11 @@ andc:
     and rbx, rcx
     mov [registers+r8], rbx
     dispatch
-or:
-    mov r8, (0b111<<3)
+_or:
+    mov r8, (111b<<3)
     and r8, rax
 
-    mov r9, 0b111
+    mov r9, 111b
     and r9, rax
 
     mov rbx, [registers+r8]
@@ -136,8 +136,8 @@ or:
     or rbx, rcx
     mov [registers+r8], rbx
     dispatch
-orc:
-    mov r8, (0b111<<3)
+_orc:
+    mov r8, (111b<<3)
     and r8, rax
 
     lodsw
@@ -146,11 +146,11 @@ orc:
     or rbx, rcx
     mov [registers+r8], rbx
     dispatch
-xor:
-    mov r8, (0b111<<3)
+_xor:
+    mov r8, (111b<<3)
     and r8, rax
 
-    mov r9, 0b111
+    mov r9, 111b
     and r9, rax
 
     mov rbx, [registers+r8]
@@ -158,11 +158,11 @@ xor:
     xor rbx, rcx
     mov [registers+r8], rbx
     dispatch
-shl:
-    mov r8, (0b111<<3)
+_shl:
+    mov r8, (111b<<3)
     and r8, rax
 
-    mov r9, 0b111
+    mov r9, 111b
     and r9, rax
 
     mov rbx, [registers+r8]
@@ -170,8 +170,8 @@ shl:
     shl rbx, cl
     mov [registers+r8], rbx
     dispatch
-shlc:
-    mov r8, (0b111<<3)
+_shlc:
+    mov r8, (111b<<3)
     and r8, rax
 
     lodsw
@@ -180,8 +180,8 @@ shlc:
     shl rbx, cl
     mov [registers+r8], rbx
     dispatch
-cshl:
-    mov r8, (0b111<<3)
+_cshl:
+    mov r8, (111b<<3)
     and r8, rax
 
     lodsw
@@ -190,11 +190,11 @@ cshl:
     shl rbx, cl
     mov [registers+r8], rbx
     dispatch
-shr:
-    mov r8, (0b111<<3)
+_shr:
+    mov r8, (111b<<3)
     and r8, rax
 
-    mov r9, 0b111
+    mov r9, 111b
     and r9, rax
 
     mov rbx, [registers+r8]
@@ -202,8 +202,8 @@ shr:
     shr rbx, cl
     mov [registers+r8], rbx
     dispatch
-shrc:
-    mov r8, (0b111<<3)
+_shrc:
+    mov r8, (111b<<3)
     and r8, rax
 
     lodsw
@@ -212,8 +212,8 @@ shrc:
     shr rbx, cl
     mov [registers+r8], rbx
     dispatch
-cshr:
-    mov r8, (0b111<<3)
+_cshr:
+    mov r8, (111b<<3)
     and r8, rax
 
     lodsw
@@ -222,11 +222,11 @@ cshr:
     shr rbx, cl
     mov [registers+r8], rbx
     dispatch
-sar:
-    mov r8, (0b111<<3)
+_sar:
+    mov r8, (111b<<3)
     and r8, rax
 
-    mov r9, 0b111
+    mov r9, 111b
     and r9, rax
 
     mov rbx, [registers+r8]
@@ -234,8 +234,8 @@ sar:
     sar rbx, cl
     mov rbx, [registers+r8]
     dispatch
-sarc:
-    mov r8, (0b111<<3)
+_sarc:
+    mov r8, (111b<<3)
     and r8, rax
 
     lodsw
@@ -244,8 +244,8 @@ sarc:
     sar rbx, cl
     mov [registers+r8], rbx
     dispatch
-csar:
-    mov r8, (0b111<<3)
+_csar:
+    mov r8, (111b<<3)
     and r8, rax
     
     lodsw
@@ -254,58 +254,58 @@ csar:
     sar rbx, cl
     mov [registers+r8], rbx
     dispatch
-mov:
-    mov r8, (0b111<<3)
+_mov:
+    mov r8, (111b<<3)
     and r8, rax
 
-    mov r9, 0b111
+    mov r9, 111b
     and r9, rax
 
     mov rbx, [registers+r9*8]
     mov [registers+r8], rbx
     dispatch
-movp:
-    mov r8, (0b111<<3)
+_movp:
+    mov r8, (111b<<3)
     and r8, rax
 
-    mov r9, 0b111
+    mov r9, 111b
     and r9, rax
 
     mov rbx, [registers+r9*8]
     mov [registers+r8], rbx
     dispatch
-movc:
-    mov r8, (0b111<<3)
+_movc:
+    mov r8, (111b<<3)
     and r8, rax
 
     lodsw
     mov rbx, [rsi + rax - 2]
     mov [registers+r8], rbx
     dispatch
-null:
-    mov r8, (0b111<<3)
+_null:
+    mov r8, (111b<<3)
     and r8, rax
 
     xor rbx, rbx
     mov [registers+r8], rbx
     dispatch
-jmp:
+_jmp:
     movsx rbx, word [rsi]
     add rsi, rbx
     dispatch
-jmpf:
+_jmpf:
     mov ax, [rsi]
     movsx rbx, word [rsi + rax]
     add rsi, rbx
     dispatch
-switch:
+_switch:
     ;;to be written
     dispatch
-jcmp:
-    mov r8, (0b111<<3)
+_jcmp:
+    mov r8, (111b<<3)
     and r8, rax
 
-    mov r9, 0b111
+    mov r9, 111b
     and r9, rax
 
     mov rbx, [registers+r8]
@@ -324,8 +324,8 @@ jcmp:
     .end:
     add rsi, rbx
     dispatch
-jcmpc:
-    mov r8, (0b111<<3)
+_jcmpc:
+    mov r8, (111b<<3)
     and r8, rax
 
     lodsw
@@ -346,11 +346,11 @@ jcmpc:
     sub rsi, 2
     add rsi, rbx
     dispatch
-jeqp:
-    mov r8, (0b111<<3)
+_jeqp:
+    mov r8, (111b<<3)
     and r8, rax
 
-    mov r9, 0b111
+    mov r9, 111b
     and r9, rax
 
     mov rbx, [registers+r8]
@@ -364,11 +364,11 @@ jeqp:
     .end:
     add rsi, rbx
     dispatch
-jnullp:
-    mov r8, (0b111<<3)
+_jnullp:
+    mov r8, (111b<<3)
     and r8, rax
 
-    mov r9, 0b111
+    mov r9, 111b
     and r9, rax
 
     mov rbx, [registers+r8]
@@ -383,16 +383,16 @@ jnullp:
     .end:
     add rsi, rbx
     dispatch
-alloc:
+_alloc:
     ; to be written
     dispatch
-in:
+_in:
     xor rax, rax
     call exit
     dispatch
-out:
+_out:
     ; to be written
     dispatch
-err:
+_err:
     ; to be written
     dispatch

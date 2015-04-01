@@ -1,4 +1,5 @@
 GCCARGS = -g -std=c99
+
 all: clean vm
 vm: utility.o vm.o
 	gcc utility.o vm.o -o vm
@@ -6,8 +7,9 @@ vm: utility.o vm.o
 
 run: all
 	./vm
+
 debug: all
-	gdb --directory . vm -tui
+	gdb --directory . vm -tui --command=gdbinit
 
 utility.o: ../Common/utility.c
 	gcc $(GCCARGS) -c ../Common/utility.c -o utility.o
@@ -15,8 +17,9 @@ utility.o: ../Common/utility.c
 vectors.asm:
 	./generate.rb > vectors.asm
 
-vm.o: vm.asm ../Common/utility.h.asm vectors.asm
-	nasm -g -f elf64 vm.asm -o vm.o
+vm.o: vm.asm ../Common/utility.h.asm vectors.asm code.asm
+	yasm -g dwarf2 -f elf64 vm.asm -o vm.o
 
 clean:
 	rm -f *.o vm
+	rm -f vectors.asm

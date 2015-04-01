@@ -20,5 +20,6 @@ loop:
 end:
     in r1
 
+align 8
 below:
 dq 1000
