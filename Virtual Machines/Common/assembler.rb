@@ -58,10 +58,10 @@ else
           end
         end
         cur_byte = (cur_byte/8.0).ceil * 8
-      elsif line.start_with? 'object ' or busy_object
+      elsif line.start_with? 'object ' or line.start_with? 'function' or busy_object
         parts = line.split(' ')
 
-        if parts[0] == 'object'
+        if parts[0] == 'object' or parts[0] == 'function'
           busy_object = {:name => parts[1]}
           busy_object_keys = []
         elsif parts[0] == 'ptr' or parts[0] == 'int'
