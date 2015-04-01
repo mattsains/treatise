@@ -4,6 +4,7 @@ require 'securerandom'
 
 real_reg = ARGV.include? '-r'
 conventional = ARGV.include? '-c'
+argv_without_flags = ARGV - ['-r', '-c']
 
 program={}
 program_epilogue=[]
@@ -15,7 +16,7 @@ def hex n
   ("%04x"%n).tr('..','ff').reverse[0, 4].reverse
 end
 
-if ARGV[0] == nil
+if argv_without_flags[0] == nil
   puts "Matt's assembler"
   puts ""
   puts "Invocation:"
@@ -25,7 +26,7 @@ if ARGV[0] == nil
   puts " -r flag prints the names of the actual registers used in x64,"
   puts "   to make debugging a little easier."
 else
-  File.open(ARGV[0],"r") do |f|
+  File.open(argv_without_flags[0],"r") do |f|
 
     puts ""
     puts "Understood Code:"
@@ -47,8 +48,8 @@ else
         program[cur_byte] = line
         cur_byte += 8
       elsif line == 'align 8'
-        for i in (cur_byte+1)...(cur_byte/8.0).ceil*8
-          if cur_byte % 2 ==0
+        for i in (cur_byte)...(cur_byte/8.0).ceil*8
+          if i % 2 == 0
             program[i] = 'dw 0'
           end
         end
@@ -100,8 +101,8 @@ else
         program[cur_byte] = line
         cur_byte += 8
       elsif line == 'align 8'
-        for i in (cur_byte+1)...(cur_byte/8.0).ceil*8
-          if cur_byte % 2 ==0
+        for i in (cur_byte)...(cur_byte/8.0).ceil*8
+          if i % 2 == 0
             program[i] = 'dw 0'
           end
         end
@@ -125,7 +126,9 @@ else
     program.each {|addr,instr|
       parts=[]
       instr.split.each {|s| parts+=s.split(',')}
-      
+
+      names = labels.each {|k,v| puts "    #{k}:" if v==(code.length*2)}
+        
       if parts[0] == 'dw'
         literal = Integer(parts[1])
         raise "Constant #{literal} too big for 16 bit" if (literal>>16)!=0
@@ -221,7 +224,6 @@ else
       end
     }
 
-    argv_without_flags = ARGV - ['-r', '-c']
     if argv_without_flags[1] == nil
       filename = "a.out"
     else
