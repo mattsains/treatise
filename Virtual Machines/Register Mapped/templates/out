@@ -3,6 +3,5 @@
     pushq
     mov rsi, {r[i]}
     shr rsi, 4
-    call read_line
+    call print_chars
     popq
-    

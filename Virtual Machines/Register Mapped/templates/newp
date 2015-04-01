@@ -1,0 +1,16 @@
+    lodsw
+    add rax, rsi
+    sub rax, 2
+    mov rdi, [rax]
+    shl rdi, 4
+    add rdi, 8
+    push rax
+    pushq
+    call malloc
+    popq
+    mov {r[i]}, rax
+    pop rax
+    and rax, ~1111b
+    or rax, 10b
+    mov [{r[i]}], rax
+    xor rax, rax

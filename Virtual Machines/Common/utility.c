@@ -14,6 +14,13 @@ void print(char* str)
    printf(str);
 }
 
+void print_chars(char* str, int len)
+{
+   for(int i=0; i<len; i++)
+      putchar(str[i]);
+}
+
+
 void read_line(char* str, int len)
 {
    if (fgets(str, len, stdin)==NULL)

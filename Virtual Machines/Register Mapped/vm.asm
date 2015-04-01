@@ -3,6 +3,24 @@ BITS 64
 
 %define NL 0x0A
 
+%macro pushq 0
+       push rcx
+       push rdx
+       push r8
+       push r9
+       push r10
+       push rsi
+%endmacro
+
+%macro popq 0
+       pop rsi
+       pop r10
+       pop r9
+       pop r8
+       pop rdx
+       pop rcx
+%endmacro
+
 section .data
 ; These are constants
 file_error: db 'File not found.', NL, 0

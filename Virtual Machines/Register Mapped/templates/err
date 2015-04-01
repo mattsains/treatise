@@ -1,0 +1,9 @@
+    mov rsi, {r[i]}
+    lodsq
+    shr rax, 4
+    mov rdi, rsi
+    mov rsi, rax
+    call print_chars
+    mov rdi, 1
+    call exit
+    
