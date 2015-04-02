@@ -41,7 +41,47 @@ else
       line.strip! #remove spaces
       next if line.empty? #skip empty lines
       
-      if line.end_with? ':'
+      if line.start_with? 'object ' or line.start_with? 'function' or busy_object
+        parts = line.split(' ')
+        
+        if parts[0] == 'object' or parts[0] == 'function'
+          busy_object = {:name => parts[1]}
+          busy_object_keys = []
+        elsif parts[0] == 'ptr' or parts[0] == 'int'
+          busy_object[parts[1]] = parts[0]
+          busy_object_keys << parts[1]
+        else
+          #align objects defs to 16 bytes
+          for i in (cur_byte)...(cur_byte/16.0).ceil*16
+            if i % 2 == 0
+              program[i] = 'dw 0'
+            end
+          end
+          cur_byte = (cur_byte/16.0).ceil*16
+          labels[busy_object[:name]] = cur_byte
+          
+          bitmap = 0
+          busy_object_keys.each_index {|i|
+            k = busy_object_keys[i]
+            unless k == :name
+              obj_member_labels[busy_object[:name]+"."+k] = i
+              if i % 64 == 0 and i != 0
+                program[cur_byte] = "dq #{bitmap}"
+                cur_byte += 8
+              end
+              bitmap |= (busy_object[k] == 'ptr'?1:0) << (i%64)
+            end
+          }
+          program[cur_byte] = "dq #{bitmap}"
+          cur_byte += 8
+
+          program[cur_byte] = "dw " + (busy_object.length - 1).to_s
+          cur_byte += 2
+          
+          busy_object = nil
+          busy_object_keys = []
+        end
+      elsif line.end_with? ':'
         label = line.match(/[^\d\W]\w*/)[0]
         puts "#{label}:"
         labels[label] = cur_byte
@@ -58,43 +98,6 @@ else
           end
         end
         cur_byte = (cur_byte/8.0).ceil * 8
-      elsif line.start_with? 'object ' or line.start_with? 'function' or busy_object
-        parts = line.split(' ')
-
-        if parts[0] == 'object' or parts[0] == 'function'
-          busy_object = {:name => parts[1]}
-          busy_object_keys = []
-        elsif parts[0] == 'ptr' or parts[0] == 'int'
-          busy_object[parts[1]] = parts[0]
-          busy_object_keys << parts[1]
-        else
-          #align objects defs to 16 bytes
-          for i in (cur_byte)...(cur_byte/16.0).ceil*16
-            if i % 2 == 0
-              program[i] = 'dw 0'
-            end
-          end
-          labels[busy_object[:name]] = cur_byte
-          program[cur_byte] = "dq " + (busy_object.length - 1).to_s
-          cur_byte += 8
-          
-          bitmap = 0
-          busy_object_keys.each_index {|i|
-            k = busy_object_keys[i]
-            unless k == :name
-              obj_member_labels[busy_object[:name]+"."+k] = i
-              if i % 64 == 0 and i != 0
-                program[cur_byte] = "dq #{bitmap}"
-                cur_byte += 8
-              end
-              bitmap |= (busy_object[k] == 'ptr'?1:0) << (i%64)
-            end
-          }
-          program[cur_byte] = "dq #{bitmap}"
-          cur_byte += 8
-          busy_object = nil
-          busy_object_keys = []
-        end
       else
         parts=[]
         line.split.each {|s| parts+=s.split(',')}
@@ -115,7 +118,7 @@ else
               label = const_labels[val]
               
             else
-              label = "_imm_#{val}"
+              label = "_imm_#{val.to_s.tr('-','m')}"
               const_labels[val] = label
               program_epilogue << "align 8"
               program_epilogue << "#{label}:"
@@ -125,7 +128,7 @@ else
             line = parts[0]+" "+parts[1, parts.length-1].join(",")
           end
         }
-        if instruction.operands[-1] == :arbimmptr64
+        if instruction.operands[-1] == :arbimm16
           for index in (last_index+1)...parts.length
             operand = parts[index+1]
             val = Integer(operand)
@@ -133,7 +136,7 @@ else
               label = const_labels[val]
               
             else
-              label = "_imm_#{val}"
+              label = "_imm_#{val.to_s.tr('-','m')}"
               const_labels[val] = label
               program_epilogue << "align 8"
               program_epilogue << "#{label}:"
@@ -189,14 +192,22 @@ else
 
       labels.each {|k,v| puts "    #{k}:" if v==(code.length*2)}
         
-      if parts[0] == 'dw'
+      if parts[0] == 'dw' or parts[0] == 'locals'
         literal = Integer(parts[1])
-        raise "Constant #{literal} too big for 16 bit" if (literal>>16)!=0
+        if literal >= 0
+          raise "Constant #{literal} too big for 16 bit" if (literal>>16)!=0
+        else
+          raise "Constant #{literal} too big for 16 bit" if (~(literal>>16))!=0
+        end
         puts "#{(code.length*2).to_s(16)}: ".rjust(4)+"     (dw #{literal})"
         code << literal
       elsif parts[0] == 'dq'
         literal = Integer(parts[1])
-        raise "Constant #{literal} too big for 64 bit" if (literal>>64)!=0
+        if literal >= 0
+          raise "Constant #{literal} too big for 64 bit" if (literal>>64)!=0
+        else
+          raise "Constant #{literal} too big for 64 bit" if (~(literal>>64))!=0
+        end
         puts "#{(code.length*2).to_s(16)}: ".rjust(4)+"     (dq #{literal})"
         code << (literal&0xFFFF)
         code << ((literal>>16)&0xFFFF)
@@ -204,6 +215,7 @@ else
         code << ((literal>>48)&0xFFFF)
       else
         instruction = $instructions.find {|inst| inst.opcode == parts[0]}
+        raise "No such instruction '#{parts[0]}'" unless instruction
         reg_count = 1
         if instruction.operands[0] == :reg
           if conventional
@@ -286,7 +298,7 @@ else
             end
             code << imm
           end
-          if instruction.operands[-1] == :arbimmptr64
+          if instruction.operands[-1] == :arbimm16
             for index in (last_index+1)...parts.length
               operand = parts[index+1]
               if labels.has_key? operand
