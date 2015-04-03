@@ -27,15 +27,17 @@
     mov [rax+0x50], {s[1]}
     mov {s[1]}, rsi ;s[1] storing old pc
     mov rdi, rax ; rdi location of new frame
-    add rdi, 0x58 
+    add rdi, 0x58
+    xor rax, rax
     lodsw
     mov rsi, rax ; s[2] first local to send
     lodsw ; rax is the count of locals
     .loop:
         and rax, rax
         jz .loop_end
-        movq
-        dec rax        
+        movsq
+        dec rax
+        jmp .loop
     .loop_end:
     mov rbp, rdi
     sub rbp, 0x8
