@@ -1,13 +1,19 @@
 class Inst
   attr_accessor :opcode #mnemonic
-  attr_accessor :allow_trivial
+  attr_accessor :disallow_trivial_between #[0,1] means between reg argument 0 and reg argument 1
   attr_accessor :operands # a list of symbols - :reg, :imm16, :immptr64, :arbimm16
   attr_accessor :offset
 
-  def initialize(opcode, operands, allow_trivial=true)
+  def initialize(opcode, operands, disallow_trivial_between=[])
     @opcode = opcode
     @operands = operands
-    @allow_trivial = allow_trivial
+    @disallow_trivial_between = disallow_trivial_between
+  end
+
+  def allowed? (*r)
+    check = []
+    @disallow_trivial_between.each {|i| check << r[i]}
+    not (check.any? {|item| check.count(item) > 1})
   end
 end
 
@@ -35,7 +41,7 @@ instructions +=
 #instructions with two registers where the trivial case is disallowed
 instructions +=
   ['sub','div','and','or','xor','shl','shr','sar','mov','movp','newpa','newa']
-  .collect {|opcode| Inst.new opcode, [:reg, :reg], false}
+  .collect {|opcode| Inst.new opcode, [:reg, :reg], [0,1]}
 
 #instructions with one register and one 16b immediate
 instructions +=
@@ -61,8 +67,12 @@ instructions +=
   .collect {|opcode| Inst.new opcode, [:reg, :reg, :imm16]}
 
 instructions +=
-  ['geta','getap','seta','setap','getb','setb']
-  .collect {|opcode| Inst.new opcode, [:reg, :reg, :reg]}
+  ['geta','getap','getb']
+  .collect {|opcode| Inst.new opcode, [:reg, :reg, :reg], [1,2]}
+
+instructions +=
+  ['seta','setap','setb']
+  .collect {|opcode| Inst.new opcode, [:reg, :reg, :reg], [0,1]}
 
 #strange instructions
 instructions +=
@@ -71,7 +81,7 @@ instructions +=
 
 instructions +=
   ['jcmp']
-  .collect {|opcode| Inst.new opcode, [:reg, :reg, :imm16, :imm16, :imm16], false}
+  .collect {|opcode| Inst.new opcode, [:reg, :reg, :imm16, :imm16, :imm16], [0,1]}
 
 instructions +=
   ['jcmpc']
@@ -79,7 +89,7 @@ instructions +=
 
 instructions +=
   ['jeqp']
-  .collect {|opcode| Inst.new opcode, [:reg, :reg, :imm16, :imm16], false}
+  .collect {|opcode| Inst.new opcode, [:reg, :reg, :imm16, :imm16], [0,1]}
 
 instructions +=
   ['jnullp']
@@ -95,18 +105,18 @@ instructions +=
 
 offsets =
   {
-    'add' => 0, 'addc' => 36, 'sub' => 42, 'csub' => 72, 'mul' => 78,
-    'mulc' => 114, 'div' => 120, 'divc' => 150, 'and' => 156, 'andc' => 186,
-    'or' => 192, 'orc' => 222, 'xor' => 228, 'shl' => 258, 'shlc' => 288,
-    'cshl' => 294, 'shr' => 300, 'shrc' => 330, 'cshr' => 336, 'sar' => 342,
-    'sarc' => 372, 'csar' => 378, 'mov' => 384, 'movp' => 414, 'movc' => 444,
-    'null' => 450, 'getl' => 456, 'getlp' => 62, 'setl' => 68, 'setlp' => 74,
-    'getm' => 80, 'getmp' => 16, 'setm' => 52, 'setmp' => 88, 'geta' => 24,
-    'getap' => 04, 'seta' => 84, 'setap' => 164, 'getb' => 344, 'setb' => 524,
-    'jmp' => 704, 'jmpf' => 705, 'switch' => 706, 'jcmp' => 1712,
-    'jcmpc' => 1742, 'jeqp' => 1748, 'jnullp' => 1778, 'call' => 1784,
-    'ret' => 785, 'newp' => 786, 'newpa' => 792, 'newa' => 822, 'in' => 852,
-    'out' => 1858, 'err' => 1864
+    'add' => 0, 'addc' => 36, 'sub' => 42, 'csub' => 78, 'mul' => 84,
+    'mulc' => 120, 'div' => 126, 'divc' => 162, 'and' => 168, 'andc' => 204,
+    'or' => 210, 'orc' => 246, 'xor' => 252, 'shl' => 288, 'shlc' => 324,
+    'cshl' => 330, 'shr' => 336, 'shrc' => 372, 'cshr' => 378, 'sar' => 384,
+    'sarc' => 420, 'csar' => 426, 'mov' => 432, 'movp' => 468, 'movc' => 504,
+    'null' => 510, 'getl' => 516, 'getlp' => 522, 'setl' => 528, 'setlp' => 534,
+    'getm' => 540, 'getmp' => 576, 'setm' => 612, 'setmp' => 648, 'geta' => 684,
+    'getap' => 900, 'seta' => 1116, 'setap' => 1332, 'getb' => 1548,
+    'setb' => 1764, 'jmp' => 1980, 'jmpf' => 1981, 'switch' => 1982,
+    'jcmp' => 1988, 'jcmpc' => 2024, 'jeqp' => 2030, 'jnullp' => 2066,
+    'call' => 2072, 'ret' => 2073, 'newp' => 2074, 'newpa' => 2080,
+    'newa' => 2116, 'in' => 2152, 'out' => 2158, 'err' => 2164
   }
 
 # Yeah this is bad but it is still the nicest way
