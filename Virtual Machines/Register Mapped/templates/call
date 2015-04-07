@@ -1,15 +1,17 @@
     mov {s[0]}, rsi
     lodsw
     add {s[0]}, rax ;s[0] location of function
-    mov {s[1]}, [{s[0]}] ;s[1] size of new local space
-    add {s[1]}, 11 ; registers_saved + desc_and_flags
-    shl {s[1]}, 4
-    mov rdi, {s[1]}
+    mov rdi, [{s[0]}] ;rdi number of locals
+    mov {s[3]}, rdi ;remember how many locals for way later
+    add rdi, 11 ;registers saved + td ptr
+    shl rdi, 3 ;rax*8
+    ;allocate space for the frame
     push {s[0]}
     pushq
     call malloc
     popq
     pop {s[0]}
+    ;save register state
     mov [rax+0x00], {r[1]}
     mov [rax+0x08], {r[2]}
     mov [rax+0x10], {r[3]}
@@ -20,30 +22,36 @@
     mov [rax+0x38], {r[4]}
     mov [rax+0x40], rsi
     mov [rax+0x48], rbp
-    mov {s[1]}, {s[0]}
-    add {s[1]}, 8 ;s[1] ptr to TD
-    and {s[1]}, ~1111b
-    or {s[1]}, 2 ; Object flag, S is now an object header
-    mov [rax+0x50], {s[1]}
-    mov {s[1]}, rsi ;s[1] storing old pc
-    mov rdi, rax ; rdi location of new frame
-    add rdi, 0x58
+    mov {s[2]}, rax ; s2 now responsible for new frame
+    add {s[2]}, 0x50
+    mov {s[1]}, {s[0]} ;preserve location of function
+    ;calculate ptr and flags for function header
+    or {s[0]}, 2 ; add obj flag
+    mov [{s[2]}], {s[0]} ;[s2] is ptr and flags to function header
+    ;copy in locals
     xor rax, rax
     lodsw
-    mov rsi, rax ; s[2] first local to send
-    lodsw ; rax is the count of locals
+    movsx {s[0]}, ax
+    lodsw
+    ;now s0 is first local, rax is count
+    mov rsi, {s[0]}
+    add rsi, [rbp+0x58] ;rsi points to first param
+    mov rdi, {s[2]} ;using rdi for destination of param copy
+    add rdi, 8
+    ;now copying:
+    and rax, rax
     .loop:
-        and rax, rax
-        jz .loop_end
+        jz .endloop
         movsq
         dec rax
         jmp .loop
-    .loop_end:
-    mov rbp, rdi
-    sub rbp, 0x8
-    mov rsi, {s[0]}
-    add rsi, 0xa ;skip headers
-    
-    
-    
-    
+    .endloop:
+    ;time to set new fp
+    mov rbp, {s[2]}
+    ;work out how big the function header is
+    add {s[3]}, 63 ;remember, s3 is number of locals
+    shr {s[3]}, 6
+    shl {s[3]}, 2 ;(locals.ceil(64)/64)*8
+    add {s[3]}, 8
+    add {s[3]}, {s[1]} ;now s3 points to beginning of function code
+    mov rsi, {s[3]} ;jumped.

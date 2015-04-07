@@ -21,7 +21,7 @@ BITS 64
        pop rcx
 %endmacro
 
-FRAME_HEADER_SIZE equ 80
+FRAME_HEADER_SIZE equ 8
 
 section .data
 ; These are constants
@@ -49,6 +49,12 @@ vm_start:
         call print
         pop rsi
 
+        ;Create the first stack frame
+        lodsq ;number of locals
+        
+        
+        
+        
         dispatch:
         xor rax, rax ;the high portion of rax needs to stay cleared forever
         ;Dispatch now

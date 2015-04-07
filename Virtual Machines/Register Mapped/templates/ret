@@ -1,0 +1,26 @@
+
+    mov rdi, rbp
+    sub rdi, 0x50 ;rdi now points to beginning of register saving
+    ;restore registers
+    mov {r[1]}, [rbp+0x00]
+    mov {r[2]}, [rax+0x08]
+    mov {r[3]}, [rax+0x10]
+    mov {r[4]}, [rax+0x18]
+    mov {r[1]}, [rax+0x20]
+    mov {r[2]}, [rax+0x28]
+    mov {r[3]}, [rax+0x30]
+    mov {r[4]}, [rax+0x38]
+    mov rsi, [rax+0x40]
+    mov rbp, [rax+0x48]
+    ;now call free to release frame
+    push rbp
+    push rsi
+    push {r[0]}
+    push {r[1]}
+    call free
+    pop {r[1]}
+    pop {r[0]}
+    pop rsi
+    pop rbp
+    ;now we're ready to dispatch to the next instruction
+    add rsi, 8
