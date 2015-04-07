@@ -19,6 +19,11 @@ end
 
 instructions = []
 
+#instructions with no operands
+instructions +=
+  ['ret']
+  .collect {|opcode| Inst.new opcode, []}
+
 #instructions with just one operand (register)
 instructions +=
   ['null', 'in', 'out']
@@ -98,10 +103,6 @@ instructions +=
 instructions +=
   ['call']
   .collect {|opcode| Inst.new opcode, [:imm16, :imm16, :imm16]}
-
-instructions +=
-  ['ret']
-  .collect {|opcode| Inst.new opcode, []}
 
 offsets =
   {

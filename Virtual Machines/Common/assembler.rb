@@ -59,7 +59,10 @@ else
           end
           cur_byte = (cur_byte/16.0).ceil*16
           labels[busy_object[:name]] = cur_byte
-          
+
+          program[cur_byte] = "dq " + (busy_object.length - 1).to_s
+          cur_byte += 8
+
           bitmap = 0
           busy_object_keys.each_index {|i|
             k = busy_object_keys[i]
@@ -68,16 +71,17 @@ else
               if i % 64 == 0 and i != 0
                 program[cur_byte] = "dq #{bitmap}"
                 cur_byte += 8
+                bitmap = 0
               end
               bitmap |= (busy_object[k] == 'ptr'?1:0) << (i%64)
             end
           }
-          program[cur_byte] = "dq #{bitmap}"
-          cur_byte += 8
 
-          program[cur_byte] = "dw " + (busy_object.length - 1).to_s
-          cur_byte += 2
-          
+          unless bitmap == 0
+            program[cur_byte] = "dq #{bitmap}"
+            cur_byte += 8
+          end
+
           busy_object = nil
           busy_object_keys = []
         end
@@ -85,7 +89,7 @@ else
         label = line.match(/[^\d\W]\w*/)[0]
         puts "#{label}:"
         labels[label] = cur_byte
-      elsif line.start_with? 'dw' or line.start_with? 'locals'
+      elsif line.start_with? 'dw'
         program[cur_byte] = line
         cur_byte += 2
       elsif line.start_with? 'dq'
@@ -192,7 +196,7 @@ else
 
       labels.each {|k,v| puts "    #{k}:" if v==(code.length*2)}
         
-      if parts[0] == 'dw' or parts[0] == 'locals'
+      if parts[0] == 'dw'
         literal = Integer(parts[1])
         if literal >= 0
           raise "Constant #{literal} too big for 16 bit" if (literal>>16)!=0
