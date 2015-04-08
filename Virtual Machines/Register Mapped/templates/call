@@ -4,7 +4,7 @@
     mov rdi, [{s[0]}] ;rdi number of locals
     mov {s[3]}, rdi ;remember how many locals for way later
     add rdi, 11 ;registers saved + td ptr
-    shl rdi, 3 ;rax*8
+    shl rdi, 3 ;rdi*8
     ;allocate space for the frame
     push {s[0]}
     pushq
