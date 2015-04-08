@@ -21,11 +21,18 @@ if argv_without_flags[0] == nil
   puts "Matt's assembler"
   puts ""
   puts "Invocation:"
-  puts " assembler.rb input_file [output_file] [-r]"
+  puts " assembler.rb input_file [output_file] [-r -c]"
   puts ""
   puts " output_file defaults to a.out"
   puts " -r flag prints the names of the actual registers used in x64,"
   puts "   to make debugging a little easier."
+  puts " -c flag generates code in the more conventional bytecode format"
+  puts "   defined by Douglas:"
+  puts "    bits  |  meaning"
+  puts "   --------------------"
+  puts "    0..3  |  register 2"
+  puts "    4..7  |  register 1"
+  puts "    8..16 |  opcode"
 else
   File.open(argv_without_flags[0],"r") do |f|
 
