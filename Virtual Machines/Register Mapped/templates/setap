@@ -1,4 +1,4 @@
-    mov {s[0]}, {r[i]}
-    add {s[0]}, {r[j]}
+    mov {s[0]}, {r[j]}
     shl {s[0]}, 4
-    mov {r[i]}, [{s[0]} + 8]
+    add {s[0]}, {r[i]}
+    mov {r[k]}, [{s[0]}]
