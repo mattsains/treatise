@@ -53,9 +53,12 @@ else
         
         if parts[0] == 'object' or parts[0] == 'function'
           busy_object = {:name => parts[1]}
+          puts ""
+          puts "#{parts[0]} #{parts[1]}"
           busy_object_keys = []
         elsif parts[0] == 'ptr' or parts[0] == 'int'
           busy_object[parts[1]] = parts[0]
+          puts "  #{parts[1]}: #{parts[0]}"
           busy_object_keys << parts[1]
         else
           #align objects defs to 16 bytes
