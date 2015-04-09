@@ -46,6 +46,7 @@ else
     f.each_line do |line|
       line = line.split(';')[0] #remove comments
       line.strip! #remove spaces
+
       next if line.empty? #skip empty lines
       
       if line.start_with? 'object ' or line.start_with? 'function' or busy_object
@@ -56,10 +57,12 @@ else
           puts ""
           puts "#{parts[0]} #{parts[1]}"
           busy_object_keys = []
+          next
         elsif parts[0] == 'ptr' or parts[0] == 'int'
           busy_object[parts[1]] = parts[0]
           puts "  #{parts[1]}: #{parts[0]}"
           busy_object_keys << parts[1]
+          next
         else
           #align objects defs to 16 bytes
           for i in (cur_byte)...(cur_byte/16.0).ceil*16
@@ -96,7 +99,8 @@ else
           busy_object = nil
           busy_object_keys = []
         end
-      elsif line.end_with? ':'
+      end
+      if line.end_with? ':'
         label = line.match(/[^\d\W]\w*/)[0]
         puts "#{label}:"
         labels[label] = cur_byte
