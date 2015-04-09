@@ -285,14 +285,15 @@ else
                   puts " +#{reg*reg_count}(#{reg_text})"
                 end
               end
+              instruction_index = instruction_end/2 - 1
               if conventional
                 if reg_count == 1
-                  code[-1] |= reg << 3
+                  code[instruction_index] |= reg << 3
                 else
-                  code[-1] |= reg
+                  code[instruction_index] |= reg
                 end
               else
-                code[-1] += reg*reg_count
+                code[instruction_index] += reg*reg_count
               end
               reg_count *= 6
             else
