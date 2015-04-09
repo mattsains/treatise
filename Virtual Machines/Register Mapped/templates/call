@@ -38,6 +38,7 @@
     lodsw
     ;now s0 is first local, rax is count
     mov rsi, {s[0]}
+    shl rsi, 3
     add rsi, rbp ;rsi points to first old local
     add rsi, 0x8 ;rsi points to first param
     mov rdi, {s[2]} ;using rdi for destination of param copy
