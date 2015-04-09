@@ -2,7 +2,7 @@
     add rdi, 8
     pushq
     mov rsi, {r[i]}
-    shr rsi, 4
+    shr rsi, 4 ;TODO: check if 4 is right
     call read_line
     popq
     

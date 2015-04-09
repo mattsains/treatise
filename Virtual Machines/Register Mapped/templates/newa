@@ -6,6 +6,6 @@
     mov {r[i]}, rax
     mov rax, {r[j]}
     inc rax
-    shl rax, 4
+    shl rax, 3
     mov [{r[i]}], rax ;set size and flags
     xor rax, rax

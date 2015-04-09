@@ -1,4 +1,4 @@
     lodsw
-    shl rax, 4
+    shl rax, 3
     mov {r[i]}, [{r[j]} + rax]
     xor rax, rax

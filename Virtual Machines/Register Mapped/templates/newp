@@ -2,7 +2,7 @@
     add rax, rsi
     sub rax, 2
     mov rdi, [rax]
-    shl rdi, 4
+    shl rdi, 3
     add rdi, 8
     push rax
     pushq
