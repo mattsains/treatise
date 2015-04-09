@@ -1,28 +1,22 @@
     mov rdi, rbp
     sub rdi, 0x50 ;rdi now points to beginning of register saving
     ;restore registers
-    mov {r[1]}, [rbp+0x00]
-    mov {r[2]}, [rbp+0x08]
-    mov {r[3]}, [rbp+0x10]
-    mov {r[4]}, [rbp+0x18]
-    mov {r[1]}, [rbp+0x20]
-    mov {r[2]}, [rbp+0x28]
-    mov {r[3]}, [rbp+0x30]
-    mov {r[4]}, [rbp+0x38]
-    mov rsi, [rbp+0x40]
-    mov rbp, [rbp+0x48]
+    mov {r[1]}, [rdi+0x00]
+    mov {r[2]}, [rdi+0x08]
+    mov {r[3]}, [rdi+0x10]
+    mov {r[4]}, [rdi+0x18]
+    mov {r[1]}, [rdi+0x20]
+    mov {r[2]}, [rdi+0x28]
+    mov {r[3]}, [rdi+0x30]
+    mov {r[4]}, [rdi+0x38]
+    mov rsi, [rdi+0x40]
+    mov rbp, [rdi+0x48]
     ;now call free to release frame
-    push rbp
-    push rsi
-    push {r[0]}
-    push {r[1]}
+    pushq
     call free
-    pop {r[1]}
-    pop {r[0]}
-    pop rsi
-    pop rbp
+    popq
     ;is there no lower frame?
     and rbp, rbp
     jz end
     ;now we're ready to dispatch to the next instruction
-    add rsi, 8
+    xor rax, rax

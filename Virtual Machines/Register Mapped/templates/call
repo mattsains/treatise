@@ -1,5 +1,6 @@
     mov {s[0]}, rsi
     lodsw
+    movsx rax, ax ;in case the displacement is negative
     add {s[0]}, rax ;s[0] location of function
     mov rdi, [{s[0]}] ;rdi number of locals
     mov {s[3]}, rdi ;remember how many locals for way later
@@ -12,6 +13,7 @@
     popq
     pop {s[0]}
     ;save register state
+    add rsi, 4 ;because that's where we must jump afterward
     mov [rax+0x00], {r[1]}
     mov [rax+0x08], {r[2]}
     mov [rax+0x10], {r[3]}
@@ -22,6 +24,7 @@
     mov [rax+0x38], {r[4]}
     mov [rax+0x40], rsi
     mov [rax+0x48], rbp
+    sub rsi, 4
     mov {s[2]}, rax ; s2 now responsible for new frame
     add {s[2]}, 0x50
     mov {s[1]}, {s[0]} ;preserve location of function
@@ -35,7 +38,8 @@
     lodsw
     ;now s0 is first local, rax is count
     mov rsi, {s[0]}
-    add rsi, [rbp+0x58] ;rsi points to first param
+    add rsi, rbp ;rsi points to first old local
+    add rsi, 0x8 ;rsi points to first param
     mov rdi, {s[2]} ;using rdi for destination of param copy
     add rdi, 8
     ;now copying:
@@ -51,7 +55,7 @@
     ;work out how big the function header is
     add {s[3]}, 63 ;remember, s3 is number of locals
     shr {s[3]}, 6
-    shl {s[3]}, 2 ;(locals.ceil(64)/64)*8
+    shl {s[3]}, 3 ;(locals.ceil(64)/64)*8
     add {s[3]}, 8
     add {s[3]}, {s[1]} ;now s3 points to beginning of function code
     mov rsi, {s[3]} ;jumped.
