@@ -74,20 +74,21 @@ else
           cur_byte += 8
 
           bitmap = 0
+          bitmap_has_content = false
           busy_object_keys.each_index {|i|
             k = busy_object_keys[i]
-            unless k == :name
               obj_member_labels[busy_object[:name]+"."+k] = i
               if i % 64 == 0 and i != 0
                 program[cur_byte] = "dq #{bitmap}"
                 cur_byte += 8
                 bitmap = 0
+                bitmap_has_content = false
               end
               bitmap |= (busy_object[k] == 'ptr'?1:0) << (i%64)
-            end
+              bitmap_has_content = true
           }
 
-          unless bitmap == 0
+          if bitmap_has_content
             program[cur_byte] = "dq #{bitmap}"
             cur_byte += 8
           end
