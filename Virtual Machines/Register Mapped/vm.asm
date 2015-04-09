@@ -52,7 +52,6 @@ vm_start:
         ;Create the first stack frame
         lodsq ;number of locals
         ;advance rsi while we have number of locals
-        add rsi, rax
         mov rbx, rax
         add rbx, 63
         shr rbx, 6
@@ -60,14 +59,16 @@ vm_start:
         add rsi, rbx
         
         mov rdi, rax
-        add rdi, 11 ;sham register saving
+        add rdi, 11 ;+sham register saving + td ptr
         shl rdi, 3 ;rdi*8
         push rax
+        push rsi
         call malloc
         mov rbp, rax
+        pop rsi
         pop rax
         add rbp, 0x48 ;skip over sham registers
-        mov [rbp], 0 ;previous rbp field is null
+        mov QWORD [rbp], 0 ;previous rbp field is null
         add rbp, 8
         mov rax, rbp ;use rax for flags+ptr
         or rax, 2 ;obj flag
