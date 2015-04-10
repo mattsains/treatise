@@ -1,5 +1,2 @@
     lodsw
-    shl rax, 3
-    add rax, FRAME_HEADER_SIZE
-    mov {r[i]}, [rbp + rax]
-    xor rax, rax
+    mov {r[i]}, [rbp + rax*8 + 8]

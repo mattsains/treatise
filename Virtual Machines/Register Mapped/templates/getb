@@ -1,3 +1,1 @@
-    mov {s[0]}, {r[j]}
-    add {s[0]}, {r[k]}
-    movsx {r[i]}, byte [{s[0]}]
+    movsx {r[i]}, byte [{r[j]} + {r[k]} + 8]

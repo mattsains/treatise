@@ -1,4 +1,2 @@
     lodsw
-    shl rax, 3
-    mov [{r[i]} + rax], {r[j]}
-    xor rax, rax
+    mov [{r[i]} + rax*8 + 8], {r[j]}

@@ -1,5 +1,3 @@
-    mov {s[0]}, {r[i]}
-    add {s[0]}, {r[j]}
     mov rax, {r[k]}
-    mov byte [{s[0]}], al
+    mov byte [{r[i]} + {r[j]} + 8], al
     xor rax, rax
