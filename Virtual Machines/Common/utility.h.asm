@@ -1,5 +1,6 @@
 ; This file contains assembly headers for the utility.c source
 extern print
+extern println
 extern print_chars
 extern read_line
 extern file_to_memory

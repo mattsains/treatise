@@ -84,12 +84,12 @@ vm_start:
         %include "codetable.asm"
 
         ;End the program
-        jmp end
+        end:
+        xor rdi, rdi
+        call exit
 
         error_print:
         mov rdi, file_error
         call print
-
-        end:
-        xor rdi, rdi
-        call exit
+        
+        

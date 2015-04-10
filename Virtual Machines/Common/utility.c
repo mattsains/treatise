@@ -14,6 +14,12 @@ void print(char* str)
    printf(str);
 }
 
+void println(char* str)
+{
+   printf(str);
+   printf("\n");
+}
+
 void print_chars(char* str, int len)
 {
    for(int i=0; i<len; i++)
