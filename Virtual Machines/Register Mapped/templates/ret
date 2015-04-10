@@ -5,10 +5,6 @@
     mov {r[2]}, [rdi+0x08]
     mov {r[3]}, [rdi+0x10]
     mov {r[4]}, [rdi+0x18]
-    mov {r[1]}, [rdi+0x20]
-    mov {r[2]}, [rdi+0x28]
-    mov {r[3]}, [rdi+0x30]
-    mov {r[4]}, [rdi+0x38]
     mov rsi, [rdi+0x40]
     mov rbp, [rdi+0x48]
     ;now call free to release frame
