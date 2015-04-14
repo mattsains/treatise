@@ -9,7 +9,7 @@ BITS 64
 %macro dispatch 0
        lodsw
        mov rbx, rax
-       shr rbx, 6
+       shr rbx, 9
        jmp [vectors+rbx*8]
 %endmacro
 
