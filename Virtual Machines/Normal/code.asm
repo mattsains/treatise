@@ -5,79 +5,79 @@ _add:
     mov rdx, rax
     shr rdx, 3
     and rdx, 111b
-    mov rdx, [registers+rdx]
+    mov rdx, [registers+rdx*8]
     
     add rcx, rdx
     
-    mov [registers+rbx], rcx
+    mov [registers+rbx*8], rcx
     dispatch
 _addc:
     mov rbx, rax
     and rbx, 111b
-    mov rcx, [registers+rbx]
+    mov rcx, [registers+rbx*8]
     
     lodsw
     mov rdx, [rsi + rax - 2]
     add rcx, rdx
     
-    mov [registers+rbx], rcx
+    mov [registers+rbx*8], rcx
     dispatch
 _sub:
     mov rbx, rax
     and rbx, 111b
-    mov rcx, [registers+rbx]
+    mov rcx, [registers+rbx*8]
     mov rdx, rax
     shr rdx, 3
     and rdx, 111b
-    mov rdx, [registers+rdx]
+    mov rdx, [registers+rdx*8]
     
     sub rcx, rdx
     
-    mov [registers+rbx], rcx
+    mov [registers+rbx*8], rcx
     dispatch
 _csub:
     mov rbx, rax
     and rbx, 111b
-    mov rcx, [registers+rbx]
+    mov rcx, [registers+rbx*8]
     
     lodsw
     mov rdx, [rsi + rax - 2]
     sub rdx, rcx
     
-    mov [registers+rbx], rdx
+    mov [registers+rbx*8], rdx
     dispatch
 _mul:
     mov rbx, rax
     and rbx, 111b
-    mov rcx, [registers+rbx]
+    mov rcx, [registers+rbx*8]
     mov rdx, rax
     shr rdx, 3
     and rdx, 111b
-    mov rdx, [registers+rdx]
+    mov rdx, [registers+rdx*8]
     
     imul rcx, rdx
     
-    mov [registers+rbx], rcx
+    mov [registers+rbx*8], rcx
     dispatch
 _mulc:
     mov rbx, rax
     and rbx, 111b
-    mov rcx, [registers+rbx]
+    mov rcx, [registers+rbx*8]
     
     lodsw
     mov rdx, [rsi + rax - 2]
     imul rcx, rdx
     
-    mov [registers+rbx], rcx
+    mov [registers+rbx*8], rcx
     dispatch
 _div:
     mov rbx, rax
     and rbx, 111b
-    mov rcx, [registers+rbx]
+    mov rcx, [registers+rbx*8]
     mov rdx, rax
     shr rdx, 3
     and rdx, 111b
-    mov rdx, [registers+rdx]
+    mov rdx, [registers+rdx*8]
     
     mov rax, rcx
     cqo
@@ -331,7 +331,7 @@ _getm:
     mov rdx, rax
     shr rdx, 3
     and rdx, 111b
-    mov rdx, [registers+rdx]
+    mov rdx, [registers+rdx*8]
     lodsw
     mov r8, [rdx + rax*8 + 8]
     mov [registers+rbx*8], r8
@@ -342,7 +342,7 @@ _getmp:
     mov rdx, rax
     shr rdx, 3
     and rdx, 111b
-    mov rdx, [registers+rdx]
+    mov rdx, [registers+rdx*8]
     lodsw
     mov r8, [rdx + rax*8 + 8]
     mov [registers+rbx*8], r8
