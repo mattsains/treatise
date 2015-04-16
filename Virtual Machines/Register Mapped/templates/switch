@@ -1,9 +1,13 @@
     lodsw
+    movsx rax, ax
     cmp {r[i]}, rax
-    jae .default ;this is an unsigned jge. handles the negative case nicely
-    mov ax, word [rsi + {r[i]}]
+    jae .default ;unsigned jge
+
+    mov rax, {r[i]}
     
     .default:
+    shl rax, 1
     add rsi, rax
     sub rsi, 2
-    ;wait for dispatch to do the rest
+    .dispatch:
+    xor rax, rax

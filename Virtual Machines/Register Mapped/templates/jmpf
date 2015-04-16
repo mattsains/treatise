@@ -1,3 +1,4 @@
-    mov ax, [rsi]
-    movsx {s[0]}, word [rsi + rax]
+    movsx rax, word [rsi]
+    mov {s[0]}, [rsi + rax]
     add rsi, {s[0]}
+    xor rax, rax
