@@ -90,10 +90,10 @@ _div:
 _divc:
     mov rbx, rax
     and rbx, 111b
-    mov rax, [registers+rbx*8]
 
     lodsw
     mov rcx, [rsi + rax - 2]
+    mov rax, [registers+rbx*8]
     cqo
     idiv rcx
     mov [registers+rbx*8], rax
@@ -564,11 +564,13 @@ _call:
     add rdi, 11 ;registers saved + td ptr
     shl rdi, 3 ;rdi*8
     ;allocate space for the frame
+    push rsi
     push rbx
     push r8
     call malloc
     pop r8
     pop rbx
+    pop rsi
     ;save register state
     add rsi, 4 ;because that's where we must jump afterward
     mov r9, [registers+0x08]
@@ -719,7 +721,7 @@ _newa:
 _in:
     mov rbx, rax
     and rbx, 111b
-    mov rbx, [rbx]
+    mov rbx, [registers+rbx*8]
     mov rdi, rbx
     add rdi, 8
     push rsi
@@ -733,7 +735,7 @@ _in:
 _out:
     mov rbx, rax
     and rbx, 111b
-    mov rbx, [rbx]
+    mov rbx, [registers+rbx*8]
     mov rdi, rbx
     add rdi, 8
     push rsi
