@@ -1,0 +1,3 @@
+    lodsw
+    mov rbx, [registers+{i}*8]
+    mov [rbp + rax*8 + 8], rbx

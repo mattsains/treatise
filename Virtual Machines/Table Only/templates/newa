@@ -1,0 +1,8 @@
+    mov rdi, [registers+{j}*8]
+    add rdi, 8
+    call malloc
+    mov [registers+{i}*8], rax
+    inc rdi
+    shl rdi, 4
+    mov [rax], rdi ;set size and flags
+    xor rax, rax

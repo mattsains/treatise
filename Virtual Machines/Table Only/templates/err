@@ -1,0 +1,7 @@
+    mov rdi, rsi
+    lodsw
+    add rdi, rax
+    call print
+    mov rdi, 1
+    call exit
+    

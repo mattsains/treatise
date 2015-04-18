@@ -1,0 +1,4 @@
+    mov rbx, [registers+{j}*8]
+    mov rcx, [registers+{k}*8]
+    mov rbx, [rbx + rcx*8 + 8]
+    mov [registers+{i}*8], rbx

@@ -1,0 +1,14 @@
+    lodsw
+    mov rbx, [registers+{i}*8]
+    movsx rax, ax
+    cmp rbx, rax
+    jae .default ;unsigned jge
+
+    mov rax, rbx
+    
+    .default:
+    shl rax, 1
+    add rsi, rax
+    sub rsi, 2
+    .dispatch:
+    xor rax, rax

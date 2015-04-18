@@ -4,14 +4,8 @@ require "liquid"
 
 require File.dirname(__FILE__)+"/../Common/instructions.rb"
 @instructions = $instructions
-@r = $r
 
 $debug = true
-
-# Define register mapping
-
-#Some scratch registers
-@s = (11..15).collect {|n| "r#{n}"}
 
 def render path, vars={}
   path='templates/'+path
@@ -39,7 +33,7 @@ puts "vector:"
   when 2
     6.times do |j|
       6.times do |i|
-        if instr.allow_trivial || (i!=j)
+        if instr.allowed? i, j
           puts "  dq #{instr.opcode}_#{i}_#{j}"
         else
           puts "  dq fault"
@@ -47,15 +41,26 @@ puts "vector:"
       end
     end
     
+  when 3
+    6.times do |k|
+      6.times do |j|
+        6.times do |i|
+          if instr.allowed? i, j, k
+            puts "  dq #{instr.opcode}_#{i}_#{j}_#{k}"
+          else
+            puts "  dq fault"
+          end
+        end
+      end
+    end
   else
-    puts "  %error \"Three-operand codes not implemented\""
+    puts "  %error \"Four-operand codes not implemented\""
   end
 end
 
 puts "code:"
 @instructions.each do |instr|
-  puts "  ;; #{instr.opcode} has #{instr.operands} operands and "+
-       "#{instr.allow_trivial ? "allows" : "disallows"} trivials"
+  puts "  ;; #{instr.opcode} has #{instr.operands} operands and "
   
     case instr.operands.count(:reg)
     when 0 
@@ -72,16 +77,28 @@ puts "code:"
     when 2 
       6.times do |j|
         6.times do |i|
-          if instr.allow_trivial || (i!=j)
+          if instr.allowed? i, j
             puts "  #{instr.opcode}_#{i}_#{j}:"
             puts render instr.opcode, {'i' => i, 'j' => j}
             puts render "dispatch"
           end 
         end 
-      end 
-      
+      end
+
+    when 3
+      6.times do |k|
+        6.times do |j|
+          6.times do |i|
+            if instr.allowed? i, j, k
+              puts "  #{instr.opcode}_#{i}_#{j}_#{k}:"
+              puts render instr.opcode, {'i' => i, 'j' => j, 'k' => k}
+              puts render "dispatch"
+            end
+          end
+        end
+      end
     else 
-      puts "  %error \"Three-operand codes not implemented\""
+      puts "  %error \"Four-operand codes not implemented\""
     end 
 end 
 

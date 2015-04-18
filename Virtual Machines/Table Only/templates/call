@@ -1,0 +1,66 @@
+    mov rbx, rsi
+    lodsw
+    movsx rax, ax ;in case the displacement is negative
+    add rbx, rax ;s[0] location of function
+    mov rdi, [rbx] ;rdi number of locals
+    mov r8, rdi ;remember how many locals for way later
+    add rdi, 11 ;registers saved + td ptr
+    shl rdi, 3 ;rdi*8
+    ;allocate space for the frame
+    push rbx
+    push r8
+    call malloc
+    pop r8
+    pop rbx
+    ;save register state
+    add rsi, 4 ;because that's where we must jump afterward
+    mov r9, [registers+1]
+    mov r10, [registers+2]
+    mov r11, [registers+3]
+    mov r12, [registers+4]
+    mov [rax+0x00], r9
+    mov [rax+0x08], r10
+    mov [rax+0x10], r11
+    mov [rax+0x18], r12
+    mov [rax+0x20], r9
+    mov [rax+0x28], r10
+    mov [rax+0x30], r11
+    mov [rax+0x38], r12
+    mov [rax+0x40], rsi
+    mov [rax+0x48], rbp
+    sub rsi, 4
+    mov rdx, rax ; rdx now responsible for new frame
+    add rdx, 0x50
+    mov rcx, rbx ;preserve location of function
+    ;calculate ptr and flags for function header
+    or rbx, 2 ; add obj flag
+    mov [rdx], rbx ;[rdx] is ptr and flags to function header
+    ;copy in locals
+    xor rax, rax
+    lodsw
+    movsx rbx, ax
+    lodsw
+    ;now rbx is first local, rax is count
+    mov rsi, rbx
+    shl rsi, 3
+    add rsi, rbp ;rsi points to first old local
+    add rsi, 0x8 ;rsi points to first param
+    mov rdi, rdx ;using rdi for destination of param copy
+    add rdi, 8
+    ;now copying:
+    and rax, rax
+    .loop:
+        jz .endloop
+        movsq
+        dec rax
+        jmp .loop
+    .endloop:
+    ;time to set new fp
+    mov rbp, rdx
+    ;work out how big the function header is
+    add r8, 63 ;remember, r8 is number of locals
+    shr r8, 6
+    shl r8, 3 ;(locals.ceil(64)/64)*8
+    add r8, 8
+    add r8, rcx ;now r8 points to beginning of function code
+    mov rsi, r8 ;jumped.

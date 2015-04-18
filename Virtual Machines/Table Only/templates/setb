@@ -1,0 +1,4 @@
+    mov rbx, [registers+{i}*8]
+    mov rcx, [registers+{j}*8]
+    mov rdx, [registers+{k}*8]
+    mov byte [rbx + rcx + 8], dl

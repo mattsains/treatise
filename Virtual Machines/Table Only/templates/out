@@ -1,0 +1,7 @@
+    mov rdi, [registers+{i}*8]
+    add rdi, 8
+    push rsi
+    mov rsi, [registers+{i}*8]
+    shr rsi, 4
+    call println
+    pop rsi

@@ -1,0 +1,22 @@
+    mov rdi, rbp
+    sub rdi, 0x50 ;rdi now points to beginning of register saving
+    ;restore registers
+    mov r8, [rdi+0x00]
+    mov r9, [rdi+0x08]
+    mov r10, [rdi+0x10]
+    mov r11, [rdi+0x18]
+    mov [registers+0x08], r8
+    mov [registers+0x10], r9
+    mov [registers+0x18], r10
+    mov [registers+0x20], r11
+    mov rsi, [rdi+0x40]
+    mov rbp, [rdi+0x48]
+    ;now call free to release frame
+    push rsi
+    call free
+    pop rsi
+    ;is there no lower frame?
+    and rbp, rbp
+    jz end
+    ;now ready to dispatch to next instruction
+    xor rax, rax

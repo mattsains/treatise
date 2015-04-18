@@ -1,4 +1,4 @@
     mov rbx, [registers+{i}*8]
     mov rcx, [registers+{j}*8]
     sar rbx, cl
-    mov rbx, [registers+{i}*8]
+    mov [registers+{i}*8], rbx

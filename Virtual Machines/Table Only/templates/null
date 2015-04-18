@@ -1,2 +1,1 @@
-    xor rbx, rbx
-    mov [registers+{i}*8], rbx
+    mov qword [registers+{i}*8], 0
