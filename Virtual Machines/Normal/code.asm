@@ -356,7 +356,7 @@ _setm:
     and rcx, 111b
     mov rcx, [registers+rcx*8]
     lodsw
-    mov [rbp + rax*8 + 8], rcx
+    mov [rbx + rax*8 + 8], rcx
     dispatch
 _setmp:
     mov rbx, rax
@@ -367,7 +367,7 @@ _setmp:
     and rcx, 111b
     mov rcx, [registers+rcx*8]
     lodsw
-    mov [rbp + rax*8 + 8], rcx
+    mov [rbx + rax*8 + 8], rcx
     dispatch
 _geta:
     mov rbx, rax
@@ -543,7 +543,7 @@ _jeqp:
 _jnullp:
     mov rbx, rax
     and rbx, 111b
-    mov rbx, [rbx]
+    mov rbx, [registers+rbx*8]
     and rbx, rbx
     jz .z
     ;nonzero (not null):
@@ -658,10 +658,12 @@ _newp:
     shl rdi, 3
     add rdi, 8
     push rax
+    push rbx
     push rsi
     call malloc
     pop rsi
-    mov [rbx], rax
+    pop rbx
+    mov [registers+rbx*8], rax
     mov rcx, rax
     pop rax
     and rax, ~1111b
@@ -679,12 +681,14 @@ _newpa:
 
     mov rdi, rcx
     add rdi, 8
+    push rbx
     push rcx
     push rsi
     call malloc
     pop rsi
     pop rcx
-    mov [rbx], rax
+    push rbx
+    mov [registers+rbx*8], rax
     mov rdx, rax
     mov rax, rcx
     inc rax
