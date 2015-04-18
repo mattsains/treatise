@@ -1,6 +1,8 @@
     mov rdi, [registers+{j}*8]
     add rdi, 8
+    push rsi
     call malloc
+    pop rsi
     mov [registers+{i}*8], rax
     inc rdi
     shl rdi, 4
