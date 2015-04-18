@@ -1,6 +1,7 @@
-    lodsw
-    mov {s[0]}, [rsi + rax - 2]
-    xchg rcx, {r[i]}
-    shr {s[0]}, cl
-    mov rcx,  {r[i]}
-    mov {r[i]}, {s[0]}
+    {% if r[j] != 'rcx' %}
+    xchg rcx, {r[j]}
+    {% endif %}
+    shr {r[i]}, cl
+    {% if r[j] != 'rcx' %}
+    xchg rcx, {r[j]}
+    {% endif %}
