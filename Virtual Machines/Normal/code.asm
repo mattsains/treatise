@@ -74,14 +74,14 @@ _div:
     mov rbx, rax
     and rbx, 111b
     mov rcx, [registers+rbx*8]
-    mov rdx, rax
-    shr rdx, 3
-    and rdx, 111b
-    mov rdx, [registers+rdx*8]
+    mov r8, rax
+    shr r8, 3
+    and r8, 111b
+    mov r8, [registers+r8*8]
     
     mov rax, rcx
     cqo
-    idiv rdx
+    idiv r8
     mov [registers+rbx*8], rax
     mov [registers+0], rdx
     xor rax, rax
@@ -93,9 +93,9 @@ _divc:
     mov rax, [registers+rbx*8]
 
     lodsw
-    mov rdx, [rsi + rax - 2]
+    mov rcx, [rsi + rax - 2]
     cqo
-    idiv rdx
+    idiv rcx
     mov [registers+rbx*8], rax
     mov [registers+0], rdx
     xor rax, rax
