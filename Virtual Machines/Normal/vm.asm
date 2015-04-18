@@ -65,7 +65,6 @@ vm_start:
         ;assuming no parameters
         ;fall through to dispatch
 
-        dispatch:
         xor rax, rax ;the high portion of rax needs to stay cleared forever
         ;Dispatch now
         dispatch
