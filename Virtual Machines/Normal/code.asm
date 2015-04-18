@@ -571,10 +571,10 @@ _call:
     pop rbx
     ;save register state
     add rsi, 4 ;because that's where we must jump afterward
-    mov r9, [registers+1]
-    mov r10, [registers+2]
-    mov r11, [registers+3]
-    mov r12, [registers+4]
+    mov r9, [registers+0x08]
+    mov r10, [registers+0x10]
+    mov r11, [registers+0x18]
+    mov r12, [registers+0x20]
     mov [rax+0x00], r9
     mov [rax+0x08], r10
     mov [rax+0x10], r11
