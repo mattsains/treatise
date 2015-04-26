@@ -40,7 +40,7 @@ void read_line(char* str, int len)
       }   
 }
 
-// Returns -1 if failure, else size of file in bytes
+// Returns 0 if failure, else pointer to file in memory. Null-terminated.
 char* file_to_memory(char* filename)
 {
    FILE *f = fopen(filename, "rb");
