@@ -691,7 +691,6 @@ _newpa:
     mov [registers+rbx*8], rax
     mov rdx, rax
     mov rax, rcx
-    inc rax
     shl rax, 4
     or rax, 1 ;PtrArray
     mov [rdx], rax ;set size and flags
@@ -717,7 +716,6 @@ _newa:
     mov [registers+rbx*8], rax
     mov rcx, rax
     mov rax, rcx
-    inc rax
     shl rax, 4
     mov [rcx], rax ;set size and flags
     xor rax, rax
@@ -731,7 +729,6 @@ _in:
     push rsi
     mov rsi, [rbx]
     shr rsi, 4
-    shl rsi, 3
     call read_line
     pop rsi
     xor rax, rax

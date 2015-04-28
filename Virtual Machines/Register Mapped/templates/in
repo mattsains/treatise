@@ -3,7 +3,6 @@
     pushq
     mov rsi, [{r[i]}]
     shr rsi, 4
-    shl rsi, 3
     call read_line
     popq
     xor rax, rax

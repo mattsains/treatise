@@ -3,7 +3,6 @@
     mov rsi, [rdi]
     add rdi, 8
     shr rsi, 4
-    shl rsi, 3
     call read_line
     pop rsi
     xor rax, rax

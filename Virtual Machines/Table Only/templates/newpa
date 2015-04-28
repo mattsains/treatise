@@ -6,7 +6,6 @@
     mov [registers+{i}*8], rax
     mov rbx, rax
     mov rax, [registers+{j}*8]
-    inc rax
     shl rax, 4
     or rax, 1 ; PtrArray
     mov [rbx], rax ;set size and flags

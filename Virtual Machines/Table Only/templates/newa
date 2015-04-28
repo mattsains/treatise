@@ -4,7 +4,7 @@
     call malloc
     pop rsi
     mov [registers+{i}*8], rax
-    inc rdi
+    sub rdi, 8
     shl rdi, 4
     mov [rax], rdi ;set size and flags
     xor rax, rax

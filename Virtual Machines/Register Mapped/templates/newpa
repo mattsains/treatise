@@ -5,7 +5,6 @@
     popq
     mov {r[i]}, rax
     mov rax, {r[j]}
-    inc rax
     shl rax, 4
     or rax, 1 ; PtrArray
     mov [{r[i]}], rax ;set size and flags
