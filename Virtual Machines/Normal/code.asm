@@ -680,6 +680,7 @@ _newpa:
     mov rcx, [registers+rcx*8]
 
     mov rdi, rcx
+    shl rdi, 3
     add rdi, 8
     push rbx
     push rcx
