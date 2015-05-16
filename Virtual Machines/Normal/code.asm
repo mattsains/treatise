@@ -436,7 +436,7 @@ _getb:
     shr rdx, 6
     and rdx, 111b
     mov rdx, [registers+rdx*8]
-    mov r8, [rcx + rdx + 8]
+    movsx r8, byte [rcx + rdx + 8]
     mov [registers+rbx*8], r8
     dispatch
 _setb:
@@ -451,7 +451,7 @@ _setb:
     shr rdx, 6
     and rdx, 111b
     mov rdx, [registers+rdx*8]
-    mov [rbx + rcx + 8], rdx
+    mov byte [rbx + rcx + 8], dl
     dispatch
 _jmp:
     movsx rbx, word [rsi]
