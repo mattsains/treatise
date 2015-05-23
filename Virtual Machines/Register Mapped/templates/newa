@@ -1,7 +1,9 @@
     mov rdi, {r[j]}
     add rdi, 8
     pushq
-    call malloc
+    mov rsi, rsp
+    add rsi, 48
+    call gc_alloc
     popq
     mov {r[i]}, rax
     mov rax, {r[j]}

@@ -4,6 +4,7 @@ BITS 64
 %define NL 0x0A
 
 %macro pushq 0
+       push rbx
        push rcx
        push rdx
        push r8
@@ -19,6 +20,7 @@ BITS 64
        pop r8
        pop rdx
        pop rcx
+       pop rbx
 %endmacro
 
 FRAME_HEADER_SIZE equ 8

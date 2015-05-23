@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "gc.c"
+
 extern int vm_start(int argc, char* argv);
 int main(int argc, char** argv)
 {
