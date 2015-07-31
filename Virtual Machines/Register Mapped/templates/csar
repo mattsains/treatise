@@ -1,5 +1,5 @@
     lodsw
-    mov {s[0]}, [rsi + rax - 2]
+    mov {s[0]}, [rsi + rax - 4]
     xchg rcx, {r[i]}
     sar {s[0]}, cl
     mov rcx,  {r[i]}

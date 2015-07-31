@@ -1,5 +1,5 @@
     lodsw
-    mov rbx, [rsi + rax - 2]
+    mov rbx, [rsi + rax - 4]
     mov rax, [registers+{i}*8]
     cqo
     idiv rbx

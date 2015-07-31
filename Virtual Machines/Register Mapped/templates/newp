@@ -1,6 +1,5 @@
     lodsw
-    add rax, rsi
-    sub rax, 2
+    lea rax, [rax + rsi - 4]
     mov rdi, [rax]
     shl rdi, 3
     add rdi, 8

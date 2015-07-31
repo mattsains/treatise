@@ -1,5 +1,5 @@
     lodsw
-    lea rax, [rsi + rax - 2]
+    lea rax, [rsi + rax - 4]
     mov rdi, [rax] ;rdi holds size of string
     add rdi, 8
     pushq

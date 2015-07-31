@@ -1,2 +1,2 @@
     lodsw
-    mov {r[i]}, [rsi + rax - 2]
+    mov {r[i]}, [rsi + rax - 4]

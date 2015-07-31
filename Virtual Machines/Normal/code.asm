@@ -17,7 +17,7 @@ _addc:
     mov rcx, [registers+rbx*8]
     
     lodsw
-    mov rdx, [rsi + rax - 2]
+    mov rdx, [rsi + rax - 4]
     add rcx, rdx
     
     mov [registers+rbx*8], rcx
@@ -41,7 +41,7 @@ _csub:
     mov rcx, [registers+rbx*8]
     
     lodsw
-    mov rdx, [rsi + rax - 2]
+    mov rdx, [rsi + rax - 4]
     sub rdx, rcx
     
     mov [registers+rbx*8], rdx
@@ -65,7 +65,7 @@ _mulc:
     mov rcx, [registers+rbx*8]
     
     lodsw
-    mov rdx, [rsi + rax - 2]
+    mov rdx, [rsi + rax - 4]
     imul rcx, rdx
     
     mov [registers+rbx*8], rcx
@@ -92,7 +92,7 @@ _divc:
     and rbx, 111b
 
     lodsw
-    mov rcx, [rsi + rax - 2]
+    mov rcx, [rsi + rax - 4
     mov rax, [registers+rbx*8]
     cqo
     idiv rcx
@@ -107,7 +107,7 @@ _cdiv:
 
     lodsw
     mov rcx, [registers+rbx*8]
-    mov rax, [rsi + rax - 2]
+    mov rax, [rsi + rax - 4]
     cqo
     idiv rcx
     mov [registers+rbx*8], rax
@@ -134,7 +134,7 @@ _andc:
     mov rcx, [registers+rbx*8]
     
     lodsw
-    mov rdx, [rsi + rax - 2]
+    mov rdx, [rsi + rax - 4]
     and rcx, rdx
 
     mov [registers+rbx*8], rcx
@@ -158,7 +158,7 @@ _orc:
     mov rcx, [registers+rbx*8]
 
     lodsw
-    mov rdx, [rsi + rax - 2]
+    mov rdx, [rsi + rax - 4]
     or rcx, rdx
 
     mov [registers+rbx*8], rcx
@@ -195,7 +195,7 @@ _shlc:
     mov rdx, [registers+rbx*8]
 
     lodsw
-    mov rcx, [rsi + rax - 2]
+    mov rcx, [rsi + rax - 4]
     shl rdx, cl
 
     mov [registers+rbx*8], rdx
@@ -206,7 +206,7 @@ _cshl:
     mov rcx, [registers+rbx*8]
 
     lodsw
-    mov rdx, [rsi + rax - 2]
+    mov rdx, [rsi + rax - 4]
     shl rdx, cl
 
     mov [registers+rbx*8], rdx
@@ -230,7 +230,7 @@ _shrc:
     mov rdx, [registers+rbx*8]
 
     lodsw
-    mov rcx, [rsi + rax - 2]
+    mov rcx, [rsi + rax - 4]
     shr rdx, cl
 
     mov [registers+rbx*8], rdx
@@ -241,7 +241,7 @@ _cshr:
     mov rdx, [registers+rbx*8]
 
     lodsw
-    mov rcx, [rsi + rax - 2]
+    mov rcx, [rsi + rax - 4]
     shr rdx, cl
 
     mov [registers+rbx*8], rdx
@@ -265,7 +265,7 @@ _sarc:
     mov rdx, [registers+rbx*8]
 
     lodsw
-    mov rcx, [rsi + rax - 2]
+    mov rcx, [rsi + rax - 4]
     sar rdx, cl
 
     mov [registers+rbx*8], rdx
@@ -276,7 +276,7 @@ _csar:
     mov rdx, [registers+rbx*8]
 
     lodsw
-    mov rcx, [rsi + rax - 2]
+    mov rcx, [rsi + rax - 4]
     sar rdx, cl
 
     mov [registers+rbx*8], rdx
@@ -303,7 +303,7 @@ _movc:
     mov rbx, rax
     and rbx, 111b
     lodsw
-    mov rcx, [rsi + rax - 2]
+    mov rcx, [rsi + rax - 4]
     mov [registers+rbx*8], rcx
     dispatch
 _null:
@@ -469,12 +469,12 @@ _setb:
     dispatch
 _jmp:
     movsx rbx, word [rsi]
-    add rsi, rbx
+    lea rsi, [rsi + rbx - 2]
     dispatch
 _jmpf:
     movsx rax, word [rsi]
-    mov rbx, [rsi + rax]
-    add rsi, rbx
+    mov rbx, [rsi + rax - 2]
+    lea rsi, [rsi + rbx - 2]
     xor rax, rax
     dispatch
 _switch:
@@ -488,9 +488,7 @@ _switch:
     mov rax, rbx
 
     .default:
-    shl rax, 1
-    add rsi, rax
-    sub rsi, 2
+    lea rsi, [rax * 2 + rsi - 4]
     .dispatch:
     xor rax, rax
     dispatch
@@ -514,14 +512,14 @@ _jcmp:
     .gt:
     movsx rdx, word [rsi+4]
     .end:
-    add rsi, rdx
+    lea rsi, [rsi + rdx - 2]
     dispatch
 _jcmpc:
     mov rbx, rax
     and rbx, 111b
     mov rbx, [registers+rbx*8]
     lodsw
-    mov rcx, [rsi + rax - 2]
+    mov rcx, [rsi + rax - 4]
     cmp rbx, rcx
     jg .gt
     je .eq
@@ -534,8 +532,7 @@ _jcmpc:
     .gt:
     movsx rcx, word [rsi+4]
     .end:
-    sub rsi, 2
-    add rsi, rcx
+    lea rsi, [rsi + rcx - 2]
     dispatch
 _jeqp:
     mov rbx, rax
@@ -552,7 +549,7 @@ _jeqp:
     .ne:
     movsx rbx, word [rsi+2]
     .end:
-    add rsi, rbx
+    lea rsi, [rsi + rbx - 2]
     dispatch
 _jnullp:
     mov rbx, rax
@@ -566,13 +563,13 @@ _jnullp:
     .z:
     movsx rbx, word [rsi+2]
     .end:
-    add rsi, rbx
+    lea rsi, [rsi + rbx - 2]
     dispatch
 _call:
     mov rbx, rsi
     lodsw
     movsx rax, ax ;in case the displacement is negative
-    add rbx, rax ;s[0] location of function
+    lea rbx, [rbx + rax - 2] ;s[0] location of function
     mov rdi, [rbx] ;rdi number of locals
     mov r8, rdi ;remember how many locals for way later
     add rdi, 11 ;registers saved + td ptr
@@ -666,8 +663,7 @@ _newp:
     mov rbx, rax
     and rbx, 111b
     lodsw
-    add rax, rsi
-    sub rax, 2
+    lea rax, [rax + rsi - 4]
     mov rdi, [rax]
     shl rdi, 3
     add rdi, 8

@@ -6,8 +6,7 @@
     mov rax, {r[i]}
     
     .default:
-    shl rax, 1
-    add rsi, rax
-    sub rsi, 2
+    lea rsi, [rax * 2 + rsi - 4]
+
     .dispatch:
     xor rax, rax

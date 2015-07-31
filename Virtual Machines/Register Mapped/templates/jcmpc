@@ -1,5 +1,5 @@
     lodsw
-    mov {s[0]}, [rsi + rax - 2]
+    mov {s[0]}, [rsi + rax - 4]
     cmp {r[i]}, {s[0]}
     jg .gt
     je .eq
@@ -12,5 +12,4 @@
     .gt:
     movsx {s[0]}, word [rsi+4]
     .end:
-    sub rsi, 2
-    add rsi, {s[0]}
+    lea rsi, [rsi + {s[0]} - 4]

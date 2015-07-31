@@ -1,2 +1,2 @@
     movsx rbx, word [rsi]
-    add rsi, rbx
+    lea rsi, [rsi + rbx - 2]

@@ -7,4 +7,4 @@
     .ne:
     movsx rbx, word [rsi+2]
     .end:
-    add rsi, rbx
+    lea rsi, [rsi + rbx - 2]

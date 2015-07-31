@@ -12,4 +12,4 @@
     .gt:
     movsx rbx, word [rsi+4]
     .end:
-    add rsi, rbx
+    lea rsi, [rsi + rbx - 2]
