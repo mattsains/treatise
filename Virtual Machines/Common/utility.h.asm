@@ -9,3 +9,4 @@ extern file_to_memory
 extern exit
 extern malloc
 extern free
+extern memcpy

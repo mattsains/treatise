@@ -50,11 +50,11 @@ instructions +=
 
 #instructions with one register and one 16b immediate
 instructions +=
-  ['addc','mulc','divc','andc','orc','movc']
+  ['addc','mulc','divc','cdiv','andc','orc','movc']
   .collect {|opcode| Inst.new opcode, [:reg, :immptr64]}
 
 instructions +=
-  ['shlc','shrc','sarc','getl','getlp','newp']
+  ['shlc','shrc','sarc','getl','getlp','newp','movsc']
   .collect {|opcode| Inst.new opcode, [:reg, :imm16]}
 
 #instructions with one ptr and one register
@@ -68,8 +68,11 @@ instructions +=
 
 #Three-operand instructions
 instructions +=
-  ['getm','getmp','setm','setmp']
+  ['getm','getmp']
   .collect {|opcode| Inst.new opcode, [:reg, :reg, :imm16]}
+instructions +=
+  ['setm','setmp']
+  .collect {|opcode| Inst.new opcode, [:reg, :imm16, :reg]}
 
 instructions +=
   ['geta','getap','getb']
@@ -106,18 +109,16 @@ instructions +=
 
 offsets =
   {
-    'add' => 0, 'addc' => 36, 'sub' => 42, 'csub' => 78, 'mul' => 84,
-    'mulc' => 120, 'div' => 126, 'divc' => 162, 'and' => 168, 'andc' => 204,
-    'or' => 210, 'orc' => 246, 'xor' => 252, 'shl' => 288, 'shlc' => 324,
-    'cshl' => 330, 'shr' => 336, 'shrc' => 372, 'cshr' => 378, 'sar' => 384,
-    'sarc' => 420, 'csar' => 426, 'mov' => 432, 'movp' => 468, 'movc' => 504,
-    'null' => 510, 'getl' => 516, 'getlp' => 522, 'setl' => 528, 'setlp' => 534,
-    'getm' => 540, 'getmp' => 576, 'setm' => 612, 'setmp' => 648, 'geta' => 684,
-    'getap' => 900, 'seta' => 1116, 'setap' => 1332, 'getb' => 1548,
-    'setb' => 1764, 'jmp' => 1980, 'jmpf' => 1981, 'switch' => 1982,
-    'jcmp' => 1988, 'jcmpc' => 2024, 'jeqp' => 2030, 'jnullp' => 2066,
-    'call' => 2072, 'ret' => 2073, 'newp' => 2074, 'newpa' => 2080,
-    'newa' => 2116, 'in' => 2152, 'out' => 2158, 'err' => 2164
+    'add' => 0, 'addc' => 36, 'sub' => 42, 'csub' => 78, 'mul' => 84, 'mulc' => 120,
+    'div' => 126, 'divc' => 162, 'cdiv' => 168, 'and' => 174, 'andc' => 210, 'or' => 216,
+    'orc' => 252, 'xor' => 258, 'shl' => 294, 'shlc' => 330, 'cshl' => 336, 'shr' => 342,
+    'shrc' => 378, 'cshr' => 384, 'sar' => 390, 'sarc' => 426, 'csar' => 432, 'mov' => 438,
+    'movp' => 474, 'movc' => 510, 'null' => 516, 'getl' => 522, 'getlp' => 528, 'setl' => 534,
+    'setlp' => 540, 'getm' => 546, 'getmp' => 582, 'setm' => 618, 'setmp' => 654, 'geta' => 690,
+    'getap' => 906, 'seta' => 1122, 'setap' => 1338, 'getb' => 1554, 'setb' => 1770,
+    'jmp' => 1986, 'jmpf' => 1987, 'switch' => 1988, 'jcmp' => 1994, 'jcmpc' => 2030,
+    'jeqp' => 2036, 'jnullp' => 2072, 'call' => 2078, 'ret' => 2079, 'newp' => 2080,
+    'newpa' => 2086, 'newa' => 2122, 'movsc' => 2158, 'in' => 2164, 'out' => 2170, 'err' => 2176,
   }
 
 # Yeah this is bad but it is still the nicest way

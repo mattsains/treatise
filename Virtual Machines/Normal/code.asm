@@ -101,6 +101,20 @@ _divc:
     xor rax, rax
     
     dispatch
+_cdiv:
+    mov rbx, rax
+    and rbx, 111b
+
+    lodsw
+    mov rcx, [registers+rbx*8]
+    mov rax, [rsi + rax - 2]
+    cqo
+    idiv rcx
+    mov [registers+rbx*8], rax
+    mov [registers+0], rdx
+    xor rax, rax
+    
+    dispatch
 _and:
     mov rbx, rax
     and rbx, 111b

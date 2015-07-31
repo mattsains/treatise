@@ -1,0 +1,9 @@
+    lodsw
+    mov rax, [rsi + rax - 2]
+    mov {s[0]}, rdx
+    cqo
+    idiv {r[i]}
+    mov {r[i]}, rax
+    mov {r[0]}, rdx
+    mov rdx, {s[0]}
+    xor rax, rax

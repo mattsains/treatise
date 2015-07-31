@@ -1,0 +1,8 @@
+    lodsw
+    mov rbx, [registers+{i}*8]
+    mov rax, [rsi + rax - 2]
+    cqo
+    idiv rbx
+    mov [registers+{i}*8], rax
+    mov [registers+0], rdx
+    xor rax, rax

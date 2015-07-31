@@ -1,0 +1,18 @@
+    lodsw
+    lea rax, [rsi + rax - 2]
+    mov rdi, [rax] ;rdi holds size of string
+    add rdi, 8
+    pushq
+    push rdi
+    push rax
+    call malloc
+    mov {r[i]}, rax
+    mov rdi, rax ;1st argument is destination
+    pop rsi ;2nd argument is source
+    pop rdx ;3rd arg for memcpy is size
+    call memcpy
+    popq
+    mov {s[0]}, [{r[i]}]
+    shl {s[0]}, 4
+    mov [{r[i]}], {s[0]}
+    
