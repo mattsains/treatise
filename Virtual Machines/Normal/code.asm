@@ -566,10 +566,9 @@ _jnullp:
     lea rsi, [rsi + rbx - 2]
     dispatch
 _call:
-    mov rbx, rsi
     lodsw
     movsx rax, ax ;in case the displacement is negative
-    lea rbx, [rbx + rax - 2] ;s[0] location of function
+    lea rbx, [rsi + rax - 2] ;s[0] location of function
     mov rdi, [rbx] ;rdi number of locals
     mov r8, rdi ;remember how many locals for way later
     add rdi, 11 ;registers saved + td ptr
@@ -730,6 +729,32 @@ _newa:
     shl rax, 4
     mov [rcx], rax ;set size and flags
     xor rax, rax
+    dispatch
+_movsc:
+    mov rbx, rax
+    and rbx, 111b
+    mov rbx, [registers+rbx*8]
+
+    lodsw
+    lea rax, [rsi + rax - 4]
+    mov rdi, [rax] ;rdi holds size of string
+    add rdi, 8
+    push rsi
+    push rdi
+    push rax
+    call malloc
+    mov [registers+rbx*8], rax
+    mov rdi, rax ;1st argument is destination
+    pop rsi ;2nd argument is source
+    pop rdx ;3rd arg for memcpy is size
+    call memcpy
+    pop rsi
+    mov rax, [registers+rbx*8]
+    mov rbx, [rax]
+    shl rbx, 4
+    mov [rax], rbx
+    xor rax, rax
+    
     dispatch
 _in:
     mov rbx, rax

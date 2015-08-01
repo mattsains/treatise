@@ -1,7 +1,6 @@
-    mov rbx, rsi
     lodsw
     movsx rax, ax ;in case the displacement is negative
-    lea rbx, [rbx + rax - 2] ;s[0] location of function
+    lea rbx, [rsi + rax - 4] ;s[0] location of function
     mov rdi, [rbx] ;rdi number of locals
     mov r8, rdi ;remember how many locals for way later
     add rdi, 11 ;registers saved + td ptr
