@@ -92,7 +92,7 @@ _divc:
     and rbx, 111b
 
     lodsw
-    mov rcx, [rsi + rax - 4
+    mov rcx, [rsi + rax - 4]
     mov rax, [registers+rbx*8]
     cqo
     idiv rcx
@@ -532,7 +532,7 @@ _jcmpc:
     .gt:
     movsx rcx, word [rsi+4]
     .end:
-    lea rsi, [rsi + rcx - 2]
+    lea rsi, [rsi + rcx - 4]
     dispatch
 _jeqp:
     mov rbx, rax
@@ -568,7 +568,7 @@ _jnullp:
 _call:
     lodsw
     movsx rax, ax ;in case the displacement is negative
-    lea rbx, [rsi + rax - 2] ;s[0] location of function
+    lea rbx, [rsi + rax - 4] ;s[0] location of function
     mov rdi, [rbx] ;rdi number of locals
     mov r8, rdi ;remember how many locals for way later
     add rdi, 11 ;registers saved + td ptr
@@ -689,7 +689,6 @@ _newpa:
     mov rcx, [registers+rcx*8]
 
     mov rdi, rcx
-    shl rdi, 3
     add rdi, 8
     push rbx
     push rcx
@@ -697,13 +696,11 @@ _newpa:
     call malloc
     pop rsi
     pop rcx
-    push rbx
+    pop rbx
     mov [registers+rbx*8], rax
-    mov rdx, rax
-    mov rax, rcx
-    shl rax, 4
-    or rax, 1 ;PtrArray
-    mov [rdx], rax ;set size and flags
+    shl rcx, 4
+    or rcx, 1 ;PtrArray
+    mov [rax], rcx ;set size and flags
     xor rax, rax
     dispatch
 _newa:
@@ -724,10 +721,8 @@ _newa:
     pop rcx
     pop rbx
     mov [registers+rbx*8], rax
-    mov rcx, rax
-    mov rax, rcx
-    shl rax, 4
-    mov [rcx], rax ;set size and flags
+    shl rcx, 4
+    mov [rax], rcx ;set size and flags
     xor rax, rax
     dispatch
 _movsc:
@@ -776,11 +771,7 @@ _out:
     mov rdi, rbx
     add rdi, 8
     push rsi
-    push rbx
-    mov rsi, rbx
-    shr rsi, 4
     call println
-    pop rbx
     pop rsi
     dispatch
 _err:
