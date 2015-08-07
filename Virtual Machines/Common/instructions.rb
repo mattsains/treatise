@@ -26,7 +26,7 @@ instructions +=
 
 #instructions with just one operand (register)
 instructions +=
-  ['null', 'in', 'out']
+  ['null', 'in', 'out', 'print', 'printp']
   .collect {|opcode| Inst.new opcode, [:reg]}
 
 #instructions with just one operand (immediate)
@@ -110,15 +110,17 @@ instructions +=
 offsets =
   {
     'add' => 0, 'addc' => 36, 'sub' => 42, 'csub' => 78, 'mul' => 84, 'mulc' => 120,
-    'div' => 126, 'divc' => 162, 'cdiv' => 168, 'and' => 174, 'andc' => 210, 'or' => 216,
-    'orc' => 252, 'xor' => 258, 'shl' => 294, 'shlc' => 330, 'cshl' => 336, 'shr' => 342,
-    'shrc' => 378, 'cshr' => 384, 'sar' => 390, 'sarc' => 426, 'csar' => 432, 'mov' => 438,
-    'movp' => 474, 'movc' => 510, 'null' => 516, 'getl' => 522, 'getlp' => 528, 'setl' => 534,
-    'setlp' => 540, 'getm' => 546, 'getmp' => 582, 'setm' => 618, 'setmp' => 654, 'geta' => 690,
+    'div' => 126, 'divc' => 162, 'cdiv' => 168, 'and' => 174, 'andc' => 210,
+    'or' => 216, 'orc' => 252, 'xor' => 258, 'shl' => 294, 'shlc' => 330,
+    'cshl' => 336, 'shr' => 342, 'shrc' => 378, 'cshr' => 384, 'sar' => 390,
+    'sarc' => 426, 'csar' => 432, 'mov' => 438, 'movp' => 474, 'movc' => 510,
+    'null' => 516, 'getl' => 522, 'getlp' => 528, 'setl' => 534, 'setlp' => 540,
+    'getm' => 546, 'getmp' => 582, 'setm' => 618, 'setmp' => 654, 'geta' => 690,
     'getap' => 906, 'seta' => 1122, 'setap' => 1338, 'getb' => 1554, 'setb' => 1770,
     'jmp' => 1986, 'jmpf' => 1987, 'switch' => 1988, 'jcmp' => 1994, 'jcmpc' => 2030,
     'jeqp' => 2036, 'jnullp' => 2072, 'call' => 2078, 'ret' => 2079, 'newp' => 2080,
-    'newpa' => 2086, 'newa' => 2122, 'movsc' => 2158, 'in' => 2164, 'out' => 2170, 'err' => 2176,
+    'newpa' => 2086, 'newa' => 2122, 'movsc' => 2158, 'err' => 2164, 'in' => 2165,
+    'out' => 2171, 'print' => 2177, 'printp' => 2183, 
   }
 
 # Yeah this is bad but it is still the nicest way
