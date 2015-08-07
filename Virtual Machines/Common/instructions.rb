@@ -50,7 +50,7 @@ instructions +=
 
 #instructions with one register and one 16b immediate
 instructions +=
-  ['addc','mulc','divc','cdiv','andc','orc','movc']
+  ['addc','mulc','divc','andc','orc','movc']
   .collect {|opcode| Inst.new opcode, [:reg, :immptr64]}
 
 instructions +=
@@ -59,7 +59,7 @@ instructions +=
 
 #instructions with one ptr and one register
 instructions +=
-  ['csub','cshl','cshr','csar']
+  ['csub','cshl','cshr','cdiv','csar']
   .collect {|opcode| Inst.new opcode, [:immptr64, :reg]}
 
 instructions +=

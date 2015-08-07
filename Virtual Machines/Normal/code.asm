@@ -16,8 +16,9 @@ _addc:
     and rbx, 111b
     mov rcx, [registers+rbx*8]
     
-    lodsw
-    mov rdx, [rsi + rax - 4]
+    movsx rax, [rsi]
+    mov rdx, [rsi + rax - 2]
+    add rsi, 2
     add rcx, rdx
     
     mov [registers+rbx*8], rcx
@@ -40,8 +41,9 @@ _csub:
     and rbx, 111b
     mov rcx, [registers+rbx*8]
     
-    lodsw
-    mov rdx, [rsi + rax - 4]
+    movsx rax, word [rsi]
+    mov rdx, [rsi + rax - 2]
+    add rsi, 2
     sub rdx, rcx
     
     mov [registers+rbx*8], rdx
@@ -64,8 +66,8 @@ _mulc:
     and rbx, 111b
     mov rcx, [registers+rbx*8]
     
-    lodsw
-    mov rdx, [rsi + rax - 4]
+    movsx rax, word [rsi]
+    mov rdx, [rsi + rax - 2]
     imul rcx, rdx
     
     mov [registers+rbx*8], rcx
@@ -91,8 +93,9 @@ _divc:
     mov rbx, rax
     and rbx, 111b
 
-    lodsw
-    mov rcx, [rsi + rax - 4]
+    movsx rax, word [rsi]
+    mov rcx, [rsi + rax - 2]
+    add rsi, 2
     mov rax, [registers+rbx*8]
     cqo
     idiv rcx
@@ -105,9 +108,10 @@ _cdiv:
     mov rbx, rax
     and rbx, 111b
 
-    lodsw
+    movsx rax, word [rsi]
     mov rcx, [registers+rbx*8]
-    mov rax, [rsi + rax - 4]
+    mov rax, [rsi + rax - 2]
+    add rsi, 2
     cqo
     idiv rcx
     mov [registers+rbx*8], rax
@@ -133,8 +137,9 @@ _andc:
     and rbx, 111b
     mov rcx, [registers+rbx*8]
     
-    lodsw
-    mov rdx, [rsi + rax - 4]
+    movsx rax, [rsi]
+    mov rdx, [rsi + rax - 2]
+    add rsi, 2
     and rcx, rdx
 
     mov [registers+rbx*8], rcx
@@ -157,8 +162,9 @@ _orc:
     and rbx, 111b
     mov rcx, [registers+rbx*8]
 
-    lodsw
-    mov rdx, [rsi + rax - 4]
+    movsx rax, word [rsi]
+    mov rdx, [rsi + rax - 2]
+    add rsi, 2
     or rcx, rdx
 
     mov [registers+rbx*8], rcx
@@ -205,8 +211,9 @@ _cshl:
     and rbx, 111b
     mov rcx, [registers+rbx*8]
 
-    lodsw
-    mov rdx, [rsi + rax - 4]
+    movsx rax, word [rsi]
+    mov rdx, [rsi + rax - 2]
+    add rsi, 2
     shl rdx, cl
 
     mov [registers+rbx*8], rdx
@@ -240,8 +247,9 @@ _cshr:
     and rbx, 111b
     mov rdx, [registers+rbx*8]
 
-    lodsw
-    mov rcx, [rsi + rax - 4]
+    movsx rax, word [rsi]
+    mov rcx, [rsi + rax - 2]
+    add rsi, 2
     shr rdx, cl
 
     mov [registers+rbx*8], rdx
@@ -275,8 +283,9 @@ _csar:
     and rbx, 111b
     mov rdx, [registers+rbx*8]
 
-    lodsw
-    mov rcx, [rsi + rax - 4]
+    movsx rax, [rsi]
+    mov rcx, [rsi + rax - 2]
+    add rsi, 2
     sar rdx, cl
 
     mov [registers+rbx*8], rdx
@@ -302,8 +311,9 @@ _movp:
 _movc:
     mov rbx, rax
     and rbx, 111b
-    lodsw
-    mov rcx, [rsi + rax - 4]
+  
+    movsx rax, word [rsi]
+    mov rcx, [rsi + rax - 2]
     mov [registers+rbx*8], rcx
     dispatch
 _null:
@@ -518,21 +528,22 @@ _jcmpc:
     mov rbx, rax
     and rbx, 111b
     mov rbx, [registers+rbx*8]
-    lodsw
-    mov rcx, [rsi + rax - 4]
+  
+    movsx rax, word [rsi]
+    mov rcx, [rsi + rax - 2]
     cmp rbx, rcx
     jg .gt
     je .eq
     ;less than:
-    movsx rcx, word [rsi]
-    jmp .end
-    .eq:
     movsx rcx, word [rsi+2]
     jmp .end
-    .gt:
+    .eq:
     movsx rcx, word [rsi+4]
+    jmp .end
+    .gt:
+    movsx rcx, word [rsi+6]
     .end:
-    lea rsi, [rsi + rcx - 4]
+    lea rsi, [rsi + rcx - 2]
     dispatch
 _jeqp:
     mov rbx, rax
@@ -566,9 +577,9 @@ _jnullp:
     lea rsi, [rsi + rbx - 2]
     dispatch
 _call:
-    lodsw
-    movsx rax, ax ;in case the displacement is negative
-    lea rbx, [rsi + rax - 4] ;s[0] location of function
+    movsx rax, word [rsi]
+    lea rbx, [rsi + rax - 2] ;s[0] location of function
+    add rsi, 2
     mov rdi, [rbx] ;rdi number of locals
     mov r8, rdi ;remember how many locals for way later
     add rdi, 11 ;registers saved + td ptr
@@ -661,8 +672,10 @@ _ret:
 _newp:
     mov rbx, rax
     and rbx, 111b
-    lodsw
-    lea rax, [rax + rsi - 4]
+  
+    movsx rax, word [rsi]
+    lea rax, [rax + rsi - 2]
+    add rsi, 2
     mov rdi, [rax]
     shl rdi, 3
     add rdi, 8
@@ -730,8 +743,9 @@ _movsc:
     and rbx, 111b
     mov rbx, [registers+rbx*8]
 
-    lodsw
-    lea rax, [rsi + rax - 4]
+    movsx rax, word [rsi]
+    lea rax, [rsi + rax - 2]
+    add rsi, 2
     mov rdi, [rax] ;rdi holds size of string
     add rdi, 8
     push rsi
@@ -776,7 +790,7 @@ _out:
     dispatch
 _err:
     mov rdi, rsi
-    lodsw
+    movsx rax, word [rsi]
     add rdi, rax
     call print
     mov rdi, 1

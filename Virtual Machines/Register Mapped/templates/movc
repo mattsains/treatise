@@ -1,2 +1,3 @@
-    lodsw
-    mov {r[i]}, [rsi + rax - 4]
+    movsx rax, word [rsi]
+    mov {r[i]}, [rsi + rax - 2]
+    add rsi, 2

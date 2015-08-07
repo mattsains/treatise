@@ -1,6 +1,7 @@
-    lodsw
+    movsx rax, word [rsi]
     mov rbx, [registers+{i}*8]
-    mov rax, [rsi + rax - 4]
+    mov rax, [rsi + rax - 2]
+    add rsi, 2
     cqo
     idiv rbx
     mov [registers+{i}*8], rax

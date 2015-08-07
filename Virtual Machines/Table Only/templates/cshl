@@ -1,5 +1,6 @@
-    lodsw
+    movsx rax, word [rsi]
     mov rcx, [registers+{i}*8]
-    mov rbx, [rsi + rax - 4]
+    mov rbx, [rsi + rax - 2]
+    add rsi, 2
     shl rbx, cl
     mov [registers+{i}*8], rbx

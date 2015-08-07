@@ -1,16 +1,16 @@
-    lodsw
+    movsx rax, word [rsi]
     mov rbx, [registers+{i}*8]
-    mov rcx, [rsi + rax - 4]
+    mov rcx, [rsi + rax - 2]
     cmp rbx, rcx
     jg .gt
     je .eq
     ;less than:
-    movsx rbx, word [rsi]
-    jmp .end
-    .eq:
     movsx rbx, word [rsi+2]
     jmp .end
-    .gt:
+    .eq:
     movsx rbx, word [rsi+4]
+    jmp .end
+    .gt:
+    movsx rbx, word [rsi+6]
     .end:
-    lea rsi, [rsi + rbx - 4]
+    lea rsi, [rsi + rbx - 2]

@@ -1,5 +1,6 @@
-    lodsw
-    mov rax, [rsi + rax - 4]
+    movsx rax, word [rsi]
+    mov rax, [rsi + rax - 2]
+    add rsi, 2
     mov {s[0]}, rdx
     cqo
     idiv {r[i]}

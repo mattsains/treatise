@@ -1,15 +1,15 @@
-    lodsw
-    mov {s[0]}, [rsi + rax - 4]
+    movsx rax, word [rsi]
+    mov {s[0]}, [rsi + rax - 2]
     cmp {r[i]}, {s[0]}
     jg .gt
     je .eq
     ;less than:
-    movsx {s[0]}, word [rsi]
-    jmp .end
-    .eq:
     movsx {s[0]}, word [rsi+2]
     jmp .end
-    .gt:
+    .eq:
     movsx {s[0]}, word [rsi+4]
+    jmp .end
+    .gt:
+    movsx {s[0]}, word [rsi+6]
     .end:
-    lea rsi, [rsi + {s[0]} - 4]
+    lea rsi, [rsi + {s[0]} - 2]

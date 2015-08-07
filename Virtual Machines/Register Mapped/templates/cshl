@@ -1,5 +1,6 @@
-    lodsw
-    mov {s[0]}, [rsi + rax - 4]
+    movsx rax, word [rsi]
+    mov {s[0]}, [rsi + rax - 2]
+    add rsi, 2
     xchg rcx, {r[i]}
     shl {s[0]}, cl
     mov rcx,  {r[i]}

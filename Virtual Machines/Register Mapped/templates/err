@@ -1,5 +1,5 @@
     mov rdi, rsi
-    lodsw
+    movsx rax, word [rsi]
     add rdi, rax
     call print
     mov rdi, 1
