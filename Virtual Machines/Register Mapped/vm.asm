@@ -26,7 +26,7 @@ FRAME_HEADER_SIZE equ 8
 section .data
 ; These are constants
 file_error: db 'File not found.', NL, 0
-program_loaded: db 'Program loaded', NL, 0
+printf_int: db '%d\n', 0
 
 section .bss
 ; These are variables
@@ -43,11 +43,7 @@ vm_start:
         and rax, rax
         jz error_print
 
-        ;The file is now in RAM at rax
-        push rax
-        mov rdi, program_loaded
-        call print
-        pop rsi
+        mov rsi, rax
 
         ;Create the first stack frame
         lodsq ;number of locals
@@ -90,6 +86,6 @@ vm_start:
 
         error_print:
         mov rdi, file_error
-        call print
+        call printf
         
         

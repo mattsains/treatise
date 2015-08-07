@@ -9,11 +9,6 @@ int main(int argc, char** argv)
 }
 
 
-void print(char* str)
-{
-   printf(str);
-}
-
 void println(char* str)
 {
    printf(str);
