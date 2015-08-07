@@ -1,4 +1,4 @@
-    movsx rax, [rsi]
+    movsx rax, word [rsi]
     mov {s[0]}, [rsi + rax - 2]
     add rsi, 2
     imul {r[i]}, {s[0]}

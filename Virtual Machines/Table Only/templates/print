@@ -1,0 +1,5 @@
+    push rsi
+    mov rsi, [registers+{i}*8]
+    mov rdi, printf_int
+    call printf
+    pop rsi

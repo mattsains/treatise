@@ -1,4 +1,4 @@
-    mov rax, word [rsi]
+    movsx rax, word [rsi]
     mov rbx, [rsi + rax - 2]
     add rsi, 2
     mov [registers+{i}*8], rbx

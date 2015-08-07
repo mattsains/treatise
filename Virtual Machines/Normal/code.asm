@@ -16,7 +16,7 @@ _addc:
     and rbx, 111b
     mov rcx, [registers+rbx*8]
     
-    movsx rax, [rsi]
+    movsx rax, word [rsi]
     mov rdx, [rsi + rax - 2]
     add rsi, 2
     add rcx, rdx
@@ -137,7 +137,7 @@ _andc:
     and rbx, 111b
     mov rcx, [registers+rbx*8]
     
-    movsx rax, [rsi]
+    movsx rax, word [rsi]
     mov rdx, [rsi + rax - 2]
     add rsi, 2
     and rcx, rdx
@@ -283,7 +283,7 @@ _csar:
     and rbx, 111b
     mov rdx, [registers+rbx*8]
 
-    movsx rax, [rsi]
+    movsx rax, word [rsi]
     mov rcx, [rsi + rax - 2]
     add rsi, 2
     sar rdx, cl
@@ -779,6 +779,24 @@ _in:
     xor rax, rax
     dispatch
 _out:
+    push rsi
+    and rax, 111b
+    mov rsi, [registers+rax*8] ;buffer = pi
+    mov rdi, 1 ;handle = stdout
+    mov rdx, [rsi] ;nbyte = *pi
+    shr rdx, 4
+    add rsi, 8 ;advance past buffer descriptor
+    call write
+    pop rsi
+    dispatch
+_print:
+    push rsi
+    and rax, 111b
+    mov rsi, [registers+rax*8]
+    mov rdi, printf_int
+    call printf
+    pop rsi
+_printp:
     mov rbx, rax
     and rbx, 111b
     mov rbx, [registers+rbx*8]
@@ -792,7 +810,7 @@ _err:
     mov rdi, rsi
     movsx rax, word [rsi]
     add rdi, rax
-    call print
+    call printf
     mov rdi, 1
     call exit
     dispatch

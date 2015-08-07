@@ -1,7 +1,9 @@
-    mov rdi, [registers+{i}*8]
-    add rdi, 8
     push rsi
-    mov rsi, [registers+{i}*8]
-    shr rsi, 4
-    call println
+    mov rsi, [registers+{i}*8] ;buffer = pi
+    mov rdi, 1 ;handle = stdout
+    mov rdx, [rsi] ;nbyte = *pi
+    shr rdx, 4
+    add rsi, 8 ;advance past buffer descriptor
+    call write
     pop rsi
+    

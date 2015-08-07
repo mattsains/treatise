@@ -1,5 +1,9 @@
-    mov rdi, {r[i]}
-    add rdi, 8
     pushq
-    call println
+    mov rdi, 1 ;handle = stdout
+    mov rsi, {r[i]} ;buffer = pi
+    mov rdx, [rsi] ;nbyte = *pi
+    shr rdx, 4
+    add rsi, 8 ;advance past buffer descriptor
+    call write
     popq
+    
