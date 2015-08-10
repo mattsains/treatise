@@ -1,5 +1,4 @@
     push rsi
-    mov rsi, [registers+{i}*8]
-    mov rdi, printf_int
-    call printf
+    mov rdi, [registers+{i}*8]
+    call print_int
     pop rsi

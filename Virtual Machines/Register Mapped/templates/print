@@ -1,5 +1,4 @@
     pushq
-    mov rdi, printf_int ;'%d'
-    mov rsi, {r[i]}
-    call printf
+    mov rdi, {r[i]}
+    call print_int
     popq

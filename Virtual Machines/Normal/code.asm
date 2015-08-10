@@ -68,6 +68,7 @@ _mulc:
     
     movsx rax, word [rsi]
     mov rdx, [rsi + rax - 2]
+    add rsi, 2
     imul rcx, rdx
     
     mov [registers+rbx*8], rcx
@@ -201,7 +202,7 @@ _shlc:
     mov rdx, [registers+rbx*8]
 
     lodsw
-    mov rcx, [rsi + rax - 4]
+    mov cl, al
     shl rdx, cl
 
     mov [registers+rbx*8], rdx
@@ -237,7 +238,7 @@ _shrc:
     mov rdx, [registers+rbx*8]
 
     lodsw
-    mov rcx, [rsi + rax - 4]
+    mov cl, al
     shr rdx, cl
 
     mov [registers+rbx*8], rdx
@@ -273,7 +274,7 @@ _sarc:
     mov rdx, [registers+rbx*8]
 
     lodsw
-    mov rcx, [rsi + rax - 4]
+    mov cl, al
     sar rdx, cl
 
     mov [registers+rbx*8], rdx
@@ -314,6 +315,7 @@ _movc:
   
     movsx rax, word [rsi]
     mov rcx, [rsi + rax - 2]
+    add rsi, 2
     mov [registers+rbx*8], rcx
     dispatch
 _null:
@@ -490,8 +492,8 @@ _jmpf:
 _switch:
     and rax, 111b
     mov rbx, [registers+rax*8]
-    lodsw
-    movsx rax, ax
+    movsx rax, word [rsi]
+    add rsi, 2
     cmp rbx, rax
     jae .default
 
@@ -702,6 +704,7 @@ _newpa:
     mov rcx, [registers+rcx*8]
 
     mov rdi, rcx
+    shl rdi, 3 ;*8
     add rdi, 8
     push rbx
     push rcx
@@ -741,7 +744,6 @@ _newa:
 _movsc:
     mov rbx, rax
     and rbx, 111b
-    mov rbx, [registers+rbx*8]
 
     movsx rax, word [rsi]
     lea rax, [rsi + rax - 2]
@@ -792,10 +794,10 @@ _out:
 _print:
     push rsi
     and rax, 111b
-    mov rsi, [registers+rax*8]
-    mov rdi, printf_int
-    call printf
+    mov rdi, [registers+rax*8]
+    call print_int
     pop rsi
+    dispatch
 _printp:
     mov rbx, rax
     and rbx, 111b
@@ -810,7 +812,7 @@ _err:
     mov rdi, rsi
     movsx rax, word [rsi]
     add rdi, rax
-    call printf
+    call println
     mov rdi, 1
     call exit
     dispatch

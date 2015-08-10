@@ -26,7 +26,6 @@ FRAME_HEADER_SIZE equ 8
 section .data
 ; These are constants
 file_error: db 'File not found.', NL, 0
-printf_int: db '%d\n', 0
 
 section .bss
 ; These are variables
@@ -86,6 +85,6 @@ vm_start:
 
         error_print:
         mov rdi, file_error
-        call printf
+        call println
         
         

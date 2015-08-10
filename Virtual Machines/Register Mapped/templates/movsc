@@ -7,12 +7,12 @@
     push rdi
     push rax
     call malloc
-    mov {r[i]}, rax
     mov rdi, rax ;1st argument is destination
     pop rsi ;2nd argument is source
     pop rdx ;3rd arg for memcpy is size
     call memcpy
     popq
+    mov {r[i]}, rax
     mov {s[0]}, [{r[i]}]
     shl {s[0]}, 4
     mov [{r[i]}], {s[0]}

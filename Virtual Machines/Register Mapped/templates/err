@@ -1,7 +1,7 @@
     mov rdi, rsi
     movsx rax, word [rsi]
     add rdi, rax
-    call printf
+    call println
     mov rdi, 1
     call exit
     

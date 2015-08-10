@@ -5,7 +5,11 @@
     mov {s[0]}, rdx
     cqo
     idiv {s[1]}
+    {% if r[i] == 'rdx' %}
+    mov {s[0]}, rax
+    {% else %}
     mov {r[i]}, rax
+    {% endif %}
     mov {r[0]}, rdx
     mov rdx, {s[0]}
     xor rax, rax
