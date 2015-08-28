@@ -1,0 +1,2 @@
+#!/bin/bash
+../../../benchmarks/assembler/assembler.rb ../../../benchmarks/$1 ../Common/a.out -r
