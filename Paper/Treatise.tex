@@ -2,7 +2,7 @@
 
 \begin{document}
 
-\title{A JIT-less, Register-Mapped, Static-ISA Virtual Machine for Many-Instance Applications}
+\title{A JIT-less, Register-Mapped, Statically-Typed Virtual Machine for Interpreters}
 \author{Matthew Sainsbury}
 \date{\today}
 
@@ -30,47 +30,108 @@
 
 \nakedchapter{Glossary}
 \begin{description}
-	\item[Word] Definition
+	\item[Bytecode] Program code executed by a virtual machine.
+	\item[Virtual Machine] A class of programs which translate code written for one architecture to another.
 \end{description}
 
 
 % Main document body
 \chapter{Introduction}
 	\startrealnumbers
-	In this treatise, the investigation and analysis of a design for a new type of virtual machine for interpreters that supports efficient execution of many-instance programs will be investigated. Many-instance programs are programs which perform many process forking operations. This section aims to establish why such an endeavour is worthwhile by presenting a brief outline of the many existing designs for high level virtual machines
+	This treatise investigates a new implementation technique for interpreted virtual machines. Two ideas are presented: register mapping between virtual machine registers and real registers, and a new dispatch method which operates on full instruction words. It is thought \todo{Weazel words?} that these two novelties might make it easier for a modern superscalar CPU to predict the behaviour of the virtual machine by reducing the amount of data dependance.
+	
+	This section aims to establish why such an endeavour is worthwhile by presenting a brief outline of the many existing designs for high level virtual machines.
 	
 	\section{Background}
-		High level language interpreters are typically implemented with a compiler that compiles the input source code into an intermediary bytecode, which is then interpreted on a high level virtual machine. High level virtual machines are not simply system virtual machines that emulate a real instruction set architecture \citep{smithvmarticle}. Instead, they execute bytecode for a machine imagined by the developer which is typically more sophisticated and generic than any real machine. This imaginary machine more easily supports the high-level nature of typical interpreted languages and---crucially---is not tied to any specific real architecture. The practice of translating a high level interpreted language into an intermediary bytecode also helps modularize the structure of the interpreter by separating the language and context analysis structures from the host-specific implementation details \citep{structureinterpreters}.
-	
-		Traditionally, the high level virtual machines implemented in interpreters are stack machines. Stack machines are used over register machines for a few reasons. Instructions for stack machines are smaller, because instruction operands are implicit. This means that instruction fetching is faster. It is easier to compile code for a stack machine than a register machine because the compiler does not need to implement a register allocator \citep{caseregistervm}.
-	
-		On the other hand, register-based machines have some advantages over stack-based machines. For instance, many tasks can be performed in fewer register instructions than stack instructions \citep{caseregistervm}. Most real machines are register machines, so there is more opportunity for register virtual machines to take advantage of the host machine hardware machine. 
+		A virtual machine is a program that executes a machine code program by translating the instructions from one machine architecture to another. This allows a programmer to execute a program written for one architecture on a different architecture.
 		
-		Ultimately, however, executing bytecode on any virtual machine is significantly slower than executing native code \citep{optimizingindirectbranch}. Just-in-time (JIT) compilation tries to bring ``the best of both worlds'' together. Modern JIT interpreters begin with the normal interpretation process, but while interpreting, profiles the executing bytecode to determine which parts of the bytecode would most benefit from native execution. Once it has identified these sections of bytecode, it compiles them into the host machine's instruction set and executes them natively instead of interpreting them \citep{historyjit}. 
+		A subclass of virtual machines---high-level virtual machines---are of interest in this project. A high level virtual machine runs programs for a machine which is imagined by its designer. This machine is typically more sophisticated and generic than real machines. As a consequence, a high-level virtual machine is an abstraction layer which hides the intricacies of any particular real machine. This virtual machine can be implemented for any physical architecture, resulting in the extremely useful property that code written for a virtual machine is very portable. The ``machine code'' that a high-level virtual machine executes is called its \emph{bytecode}. 
+		
+		The primary use for high-level virtual machines is in high-level interpreted languages, such as C$^\sharp$, Java and Python. High-level language interpreters are typically implemented with a compiler that compiles the input source code into an intermediary bytecode, which is then interpreted on a high level virtual machine. This technique is much faster than interpreting the source code line-by-line. Because the virtual machine is designed to support high-level features of interpreted languages, it is easier to write a compiler for the language targeting the virtual machine. This approach also helps to modularise the structure of the interpreter by seperating the language and context analysis structures from the host-specific implementation details \citep{structureinterpreters}.
+		
+		The interpretation of bytecode on any virtual machine is significantly slower than executing native code \citep{optimizingindirectbranch}. Just-in-time (JIT) compilation tries to bring ``the best of both worlds'' together. Modern JIT interpreters begin with the normal interpretation process, but while interpreting, profiles the executing bytecode to determine which parts of the bytecode would most benefit from native execution. Once it has identified these sections of bytecode, it compiles them into the host machine's instruction set and executes them natively instead of interpreting them \citep{historyjit}. Most popular virtual machines utilise JIT compilation, such as Java's JVM, and C$^\sharp$'s Common Language Runtime (CLR).
+		
+		Although JIT compilation is a good strategy to improve the performance of virtual machines, they have disadvantages in certain use cases. For instance, in multi-instance programs, where many identical threads having the same code, are executed simultaneously. A real-world example of such a program is a web server, which spawns several identical program threads to serve web clients asynchronously. Unfortunately, multi-instance applications have become much more common as CPUs increase in core count, and stagnate in clock frequency.
+		
+		Native multi-instance programs share a read-only code space between instances. This is not possible in JIT interpreters because a JIT compiler alters the program code as it runs. A JIT compiler cannot do this with a shared code space because an in-progress JIT compilation might interfere with a different thread executing the same part of the program. The alternative is to maintain a separate code space for each process, which is wasteful because it means that the JIT compiler will compile interpreted code separately for every running instance---essentially compiling the same code over and over. It is useful to explore opportunities for improvement in JIT-less interpreters so that situations where JIT compilation is inappropriate are not neglected. With this in mind, ``traditional'' high-level virtual machines will be considered.
+		
+		\subsubsection{Traditional Virtual Machines}
+		There are two general types of virtual machine architectures: stack machines and register machines. 
+			
+		Unsurprisingly, a stack machine maintains a stack data structure where temporary values are stored, and the machine's instruction set consists mostly of operations on the stack. Figure \ref{fig:stackprogram} shows an example of code written for a stack machine. Notice that the operands of the instructions are implicit, and so instructions for stack machines tend to be shorter. This is the major difference between instructions for stack machines and register machines. 
+		
+		The bytecode of a stack machine is very simple. For each operation, a unique code (called an \emph{opcode}) is assigned. For instance, a word value~(``instruction word'') of \texttt{0x01} might represent push, while \texttt{0x02} might represent add, and so on. The introduction of literals, such as the $14$ and $8$ in the first two lines---as well as other types of additional data attached to instructions---complicates this picture, but the idea remains unchanged.
+		
+		A register machine contains a number of high-speed memory ``boxes'' into which temporary values are stored, and instructions generally specify which registers are involved in the operation~("operands"). Figure \ref{fig:registerprogram} shows the same program for a register machine. In the \texttt{add} instruction, the value of \texttt{regA} is added to \texttt{regB}, and the result is stored in \texttt{regA}. This is a convention in assembly programming which will be used throughout the text.
+		
+		A register machine's bytecode is different, because the operands of the instruction need to be part of the instruction encoding. Typically this is implemented using bitfields. For example, consider a twelve-bit instruction word. We can reserve the first 4 bits for the opcode. This gives us a maximum of 16 opcodes. The next four bits of the instruction word can encode the first operand as an enumeration, and the same for the last four bits which can encode the second operand. If an instruction only has one operand, the last four bits are undefined. This is illustrated in Figure \ref{fig:bitfields}
+		
+		\begin{figure}
+			\hrule
+			\begin{minipage}{\textwidth}
+				\texttt{
+					\\\\
+					\begin{tabular}{ | l | r | r |r | }
+						\hline
+						Meaning & opcode & dest & src \\ 
+						\hline
+						add regA, regB  & 0001 & 0000 & 0001 \\
+						\hline
+						add regD, regC & 0001 & 0011 & 0010 \\
+						\hline
+						divide regB, regA & 0010 & 0001 & 0000 \\
+						\hline
+						print regA & 0011 & 0000 & 0000 \\
+						\hline
+					\end{tabular}
+				}
+				\caption{Register instructions using bitfields}
+				\label{fig:bitfields}
+			\end{minipage}
+			\\\\\hrule
+		\end{figure}
+		
+		\begin{figure}
+			\hrule
+			\begin{minipage}[b]{0.45\textwidth}
+				\begin{lstlisting}
+push 14
+push 8
+add
+push 7
+divide
+print
+				\end{lstlisting}
+				\caption{Typical Stack machine program}
+				\label{fig:stackprogram}
+			\end{minipage}\hfill
+			\begin{minipage}[b]{0.45\textwidth}
+				\begin{lstlisting}
+mov regA, 14
+mov reg1, 8
+add regA, regB
+mov regB, 7
+divide regA, regB
+print regA
+				\end{lstlisting}
+				\caption{Typical Stack machine program}
+				\label{fig:registerprogram}
+			\end{minipage}
+			\newline\hrule
+		\end{figure}
 		
 	\section{Problem Description}
-		Although JIT compilation is a good strategy to improve the performance of virtual machines, they have disadvantages in certain use cases. For instance, in multi-instance programs, where many identical threads of the same code are executed simultaneously. A real-world example of such a program is a web server, which spawns several identical program threads to serve web clients asynchronously.
-		
-		Native multi-instance programs share a read-only code space between instances. This is not possible in JIT interpreters because a JIT compiler alters the program code as it runs. A JIT compiler cannot do this with a shared code space because an in-progress JIT compilation might interfere with a thread executing the same part of the program. The alternative is to maintain a separate code space for each process, which is wasteful because it means that the JIT compiler will compile interpreted code separately for every running instance---essentially compiling the same code over and over. It is useful to explore opportunities for improvement in JIT-less interpreters so that situations where JIT compilation is inappropriate are not neglected. With this in mind, ``traditional'' high level virtual machines will be considered.
-		
-		As mentioned in the previous section, most high level virtual machines are stack machines. However, \cite{stackregistershowdown} found that an efficient register virtual machine can execute benchmarks 32\% faster than an analogous stack machine. 
-		
-		Because most hosts are register machines, it would seem like a good idea to try to map virtual registers to real host registers. Unfortunately, unlike virtual registers that are implemented in host memory, real registers cannot be accessed by reference \citep{caseregistervm}. This complicates writing host implementations of virtual machine instructions because it means that a different version of implementing code must be written for every combination of virtual machine operands. Despite these difficulties, it is worthwhile to investigate designs of JIT-less register virtual machines that attempt to narrow the divide between the host and the guest architecture.
+		Most physical machines are register machines. It may seem like a good idea to try to map virtual registers to real host registers. Unfortunately, unlike virtual registers that are implemented in host memory, real registers cannot be accessed by "reference" \citep{caseregistervm}. This difference complicates the implementation of a register-mapped virtual machine. Despite these difficulties, it is worthwhile to investigate designs of JIT-less register virtual machines that attempt to narrow the divide between the host and the guest architecture.
 	
 	\section{Purpose and Scope}
-		The goal of this project is to investigate the feasibility of register virtual machines for interpreters running on a modern architecture. To this end, a high-level register virtual machine will be designed, implemented and evaluated.
+		The goal of this project is to investigate the feasibility of register virtual machines for interpreters running on a modern architecture. To this end, a high-level register virtual machine will be implemented.
 	
-		This virtual machine will have some unique design details that have not before been investigated or thought feasible. It will map some virtual machine registers to real registers. The virtual machine will perform dispatch not only on the opcodes of instructions, but on the entire instruction word including operands. The instruction word will be dispatched to a code table containing a subroutine for every combination of virtual machine opcode and operands. 
-		
-		Such a code table is likely to be very large, since it grows polynomially with the number of virtual opcodes and virtual machine registers. To remain practical, a method will be developed to generate implementation code automatically for every combination of virtual opcode and operands. 
+		This virtual machine will have some unique design details that have not before been investigated or thought feasible. It will map some virtual machine registers to real registers. The virtual machine will perform dispatch not only on the opcodes of instructions, but on the entire instruction word including operands. 
 	
 		An instruction set architecture will be designed which will be tailored for such a dispatch method. Naturally the goal will be to keep the number of unique instructions down, so that this code table is as small as possible, while remaining non-trivial.
 		
+		\subsection{Scope}
 		The virtual machine will target the Intel 64 host machine architecture, and will be written mostly in assembly, with some operating system-facing code written in C for ease of development. 
-		
-		To aid in evaluation of the design, a second, more traditional register virtual machine will also be implemented that supports an identical instruction set. This will be called the control virtual machine, where the other virtual machine is the experiment. The aim of the control virtual machine is to be a baseline comparison for the new virtual machine, hence its name. For the sake of fair comparison, the control will be as similar as possible to the experiment machine, except in the main detail of interpreting instructions, where the control machine will deviate and implement a traditional indirect threading dispatch, and will store virtual registers in an array.
-		
-		To compare these two machines, several benchmark programs will be used to test the machines. These benchmarks will be chosen to test a realistically wide range of runtime behaviours, such as integer arithmetic, string manipulation and data structure traversal. Each benchmark will be hand-written in the instruction set of the two machines. The results of these benchmarks should provide some meaningful information about the appropriateness of the new design over traditional register virtual machines.
 		
 		\subsection{Limitations}
 			The primary usefulness of virtual machines is that they can be ported to other architectures, and can be expected to perform similarly well on those other architectures. Unfortunately, however, there is only time to implement the virtual machine design on a single architecture, albeit a very popular one. To ensure the usefulness of this paper, a general comment about how the virtual machine is expected to perform on other architectures will be made, and a few suggestions of important considerations for implementation on architectures that are sufficiently  different from Intel 64 will be presented.
@@ -86,6 +147,10 @@
 \chapter{Problem Exposition}
 	\section{Literature Review}
 		\cite{structureinterpreters} reflect on why spending research and engineering effort on optimising interpreters is a worthwhile endeavour. Creating a host machine independent abstraction layer between original source code and machine architecture greatly simplifies writing compilers that must generate code for many platforms. This is because for every additional platform that must be supported, a separate version of the compiler targeting that platform must be developed. In a design incorporating an interpreter, only the interpreter portion needs to be rewritten for different platforms, (or perhaps not even the interpreter if a high-level language is used to implement the interpreter) and the compiler remains the same. Interpreters tend to be simple compared to compilers, so this advantage is quite significant. Interpreters also offer opportunity for more powerful usability features like debuggers compared to machine code, and have slower compilers, impacting on the write-compile-test cycle of modern software development methods.
+		
+
+		
+		Traditionally, the high level virtual machines implemented in interpreters are stack machines. Stack machines are used over register machines for a few reasons. Instructions for stack machines are smaller, because instruction operands are implicit. This means that instruction fetching is faster. It is easier to compile code for a stack machine than a register machine because the compiler does not need to implement a register allocator \citep{caseregistervm}. However, \cite{stackregistershowdown} found that an efficient register virtual machine can execute benchmarks 32\% faster than an analogous stack machine. 
 		
 		\cite{caseregistervm} mentions that the first successful virtual machine interpreter ran stack-based P-code for Pascal. This was the first in a line of stack-based bytecodes for popular languages like Smalltalk, Java and the Common Intermediate Language (CIL). This suggests that there might be historic factors involved in the prevalence of stack based virtual machines.
 		
