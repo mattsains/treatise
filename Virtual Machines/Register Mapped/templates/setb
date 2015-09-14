@@ -1,3 +1,11 @@
-    mov rax, {r[k]}
-    mov byte [{r[i]} + {r[j]} + 8], al
-    xor rax, rax
+{% if r[k] == 'rbx' %}
+   mov [{r[i]} + {r[j]} + 8], bl
+{% elsif r[k] == 'rcx' %}
+   mov [{r[i]} + {r[j]} + 8], cl
+{% elsif r[k] == 'rdx' %}
+   mov [{r[i]} + {r[j]} + 8], dl
+{% else %}
+   mov rax, {r[k]}
+   mov  byte [{r[i]} + {r[j]} + 8], al
+   xor rax, rax
+{% endif %}
