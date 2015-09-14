@@ -1,4 +1,4 @@
-start ../Common/a.out
+start a.out
 la p
 la p
 s
