@@ -790,6 +790,7 @@ _out:
     add rsi, 8 ;advance past buffer descriptor
     call write
     pop rsi
+    xor rax, rax
     dispatch
 _print:
     push rsi

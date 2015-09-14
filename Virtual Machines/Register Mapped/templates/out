@@ -6,4 +6,5 @@
     add rsi, 8 ;advance past buffer descriptor
     call write
     popq
+    xor rax, rax
     
