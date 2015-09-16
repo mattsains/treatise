@@ -103,3 +103,29 @@
 	\chapter*{#1}
 	\addcontentsline{toc}{chapter}{#1}
 }
+
+
+\newenvironment{myfigure}
+	{ 	\begin{figure}
+		\hrule \vskip 1em
+		\begin{minipage}{\textwidth} \centering
+	}
+	{	\end{minipage}
+		\vskip 1em \hrule
+		\end{figure}
+	}
+
+\newenvironment{doublefig}
+	{
+		\begin{figure}
+		\hrule \vskip 1em
+	}
+	{
+		\vskip 1em \hrule
+		\end{figure}
+	}
+\newenvironment{halffig}
+	{ \begin{minipage}[t]{0.45\textwidth}\centering }
+	{ \end{minipage}\hfill }
+
+\lstset{xleftmargin=1em}

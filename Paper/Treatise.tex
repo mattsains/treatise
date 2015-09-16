@@ -51,77 +51,103 @@
 		
 		The interpretation of bytecode on any virtual machine is significantly slower than executing native code \citep{optimizingindirectbranch}. Just-in-time (JIT) compilation tries to bring ``the best of both worlds'' together. Modern JIT interpreters begin with the normal interpretation process, but while interpreting, profiles the executing bytecode to determine which parts of the bytecode would most benefit from native execution. Once it has identified these sections of bytecode, it compiles them into the host machine's instruction set and executes them natively instead of interpreting them \citep{historyjit}. Most popular virtual machines utilise JIT compilation, such as Java's JVM, and C$^\sharp$'s Common Language Runtime (CLR).
 		
-		Although JIT compilation is a good strategy to improve the performance of virtual machines, they have disadvantages in certain use cases. For instance, in multi-instance programs, where many identical threads having the same code, are executed simultaneously. A real-world example of such a program is a web server, which spawns several identical program threads to serve web clients asynchronously. Unfortunately, multi-instance applications have become much more common as CPUs increase in core count, and stagnate in clock frequency.
+		Although JIT compilation is a good strategy to improve the performance of virtual machines, they have disadvantages in certain use cases. For instance, in multi-instance programs, where a program is started many times to produce many processes running the same code simultaneously. A real-world example of such a program is a web server, which spawns several identical program threads to serve web clients asynchronously. Unfortunately, multi-instance applications have become much more common as CPUs increase in core count, and stagnate in clock frequency.
 		
-		Native multi-instance programs share a read-only code space between instances. This is not possible in JIT interpreters because a JIT compiler alters the program code as it runs. A JIT compiler cannot do this with a shared code space because an in-progress JIT compilation might interfere with a different thread executing the same part of the program. The alternative is to maintain a separate code space for each process, which is wasteful because it means that the JIT compiler will compile interpreted code separately for every running instance---essentially compiling the same code over and over. It is useful to explore opportunities for improvement in JIT-less interpreters so that situations where JIT compilation is inappropriate are not neglected. With this in mind, ``traditional'' high-level virtual machines will be considered.
+		As shown in Figure \ref{fig:nativeprogram}, operating system kernels automatically arrange native multi-instance programs to share a read-only code space between instances \citep{sharedcodepatent}. This does not happen with an interpreted program, because the code is loaded by the interpreter, and not by the kernel itself. With an interpreter utilising a JIT compiler, each process will be doing its own tracing and JIT compilation of the bytecode, essentially compiling the same code over and over (Figure \ref{fig:interpretedprogram}). JIT compilation is a hefty procedure, so multiple compilations of the same identical code is not acceptable. Overcoming this problem require processes to have a mechanism to discover other running processes that are using the same interpreter, and then negotiate a code-sharing scheme. Implementing such a system would be very difficult. With this in mind, it is useful to explore opportunities for improvement in JIT-less interpreters so that situations where JIT compilation is inappropriate are not neglected. With this in mind, ``traditional'' high-level virtual machines will be considered. 
+		
+		\begin{doublefig}
+			\begin{halffig}
+				\begin{tikzpicture}
+				\draw (-0.2, 0.2) [dashed] rectangle (2.95, -3.2) node[below] at (1.375, -3.2) {Process 1};
+				\draw (3.2, 0.2) [dashed] rectangle (6.35, -3.2) node[below] at (4.75, -3.2) {Process 2};
+				\draw (0,0) [fill=white] rectangle (6.15,-1) node[midway] {Shared Interpreter Code Space};
+				\draw (0,-1) rectangle (2.8, -3) node[midway] {Data Space}; 
+				\draw (3.35,-1) rectangle (6.15, -3) node[midway] {Data Space}; 
+				\end{tikzpicture}
+				\caption{Two native programs}
+				\label{fig:nativeprogram}
+			\end{halffig}
+			\begin{halffig}
+				\begin{tikzpicture}
+				\draw (-0.2, 0.2) [dashed] rectangle (2.95, -4.25) node[below] at (1.375, -4.25) {Process 1};
+				\draw (3.2, 0.2) [dashed] rectangle (6.35, -4.25) node[below] at (4.75, -4.25) {Process 2};
+				\draw (0,0) [fill=white] rectangle (6.15,-1) node[midway] {Shared Interpreter Code Space};
+				\draw (0,-1) rectangle (2.8, -4.05) node[below] at (1.4,-1) {Data Space}; 
+				\draw (3.35, -1) rectangle (6.15, -4.05) node[below] at (4.7,-1) {Data Space};
+				\draw (0.15, -1.5) rectangle (2.65, -2.2) node[midway] {Bytecode Space};
+				\draw (3.5, -1.5) rectangle (6, -2.2) node[midway] {Bytecode Space};
+				\draw (0.15, -2.35) rectangle (2.65, -3.05) node[midway] {JIT Data};
+				\draw (3.5, -2.35) rectangle (6, -3.05) node[midway] {JIT Data};
+				\draw (0.15, -3.2) rectangle (2.65, -3.9) node[midway] {VM Data Space};
+				\draw (3.5, -3.2) rectangle (6, -3.9) node[midway] {VM Data Space};
+				\end{tikzpicture}
+				\caption{Two interpreted programs}
+				\label{fig:interpretedprogram}
+			\end{halffig}
+		\end{doublefig}
 		
 		\subsubsection{Traditional Virtual Machines}
-		There are two general types of virtual machine architectures: stack machines and register machines. 
+			There are two general types of high-level virtual machine architectures: stack machines and register machines. 
 			
-		Unsurprisingly, a stack machine maintains a stack data structure where temporary values are stored, and the machine's instruction set consists mostly of operations on the stack. Figure \ref{fig:stackprogram} shows an example of code written for a stack machine. Notice that the operands of the instructions are implicit, and so instructions for stack machines tend to be shorter. This is the major difference between instructions for stack machines and register machines. 
+			Unsurprisingly, a stack machine maintains a stack data structure where temporary values are stored, and the machine's instruction set consists mostly of operations on the stack.  \ref{fig:stackprogram} shows an example of code written for a stack machine. Notice that the operands of the instructions are implicit, and so instructions for stack machines tend to be shorter. This is the major difference between instructions for stack machines and register machines. 
 		
-		The bytecode of a stack machine is very simple. For each operation, a unique code (called an \emph{opcode}) is assigned. For instance, a word value~(``instruction word'') of \texttt{0x01} might represent push, while \texttt{0x02} might represent add, and so on. The introduction of literals, such as the $14$ and $8$ in the first two lines---as well as other types of additional data attached to instructions---complicates this picture, but the idea remains unchanged.
+			The bytecode of a stack machine is very simple. For each operation, a unique code (called an \emph{opcode}) is assigned. For instance, a word value~(``instruction word'') of \texttt{0x01} might represent push, while \texttt{0x02} might represent add, and so on. The introduction of literals, such as the $14$ and $8$ in the first two lines---as well as other types of additional data attached to instructions---complicates this picture, but the idea remains unchanged.
 		
-		A register machine contains a number of high-speed memory ``boxes'' into which temporary values are stored, and instructions generally specify which registers are involved in the operation~("operands"). Figure \ref{fig:registerprogram} shows the same program for a register machine. In the \texttt{add} instruction, the value of \texttt{regA} is added to \texttt{regB}, and the result is stored in \texttt{regA}. This is a convention in assembly programming which will be used throughout the text.
+			A register machine contains a number of high-speed memory ``boxes'' into which temporary values are stored, and instructions generally specify which registers are involved in the operation~("operands"). Figure \ref{fig:registerprogram} shows the same program for a register machine. In the \texttt{add} instruction, the value of \texttt{regA} is added to \texttt{regB}, and the result is stored in \texttt{regA}. This is a convention in assembly programming which will be used throughout the text.
 		
-		A register machine's bytecode is different, because the operands of the instruction need to be part of the instruction encoding. Typically this is implemented using bitfields. For example, consider a twelve-bit instruction word. We can reserve the first 4 bits for the opcode. This gives us a maximum of 16 opcodes. The next four bits of the instruction word can encode the first operand as an enumeration, and the same for the last four bits which can encode the second operand. If an instruction only has one operand, the last four bits are undefined. This is illustrated in Figure \ref{fig:bitfields}
-		
-		\begin{figure}
-			\hrule
-			\begin{minipage}{\textwidth}
-				\texttt{
-					\\\\
-					\begin{tabular}{ | l | r | r |r | }
-						\hline
-						Meaning & opcode & dest & src \\ 
-						\hline
-						add regA, regB  & 0001 & 0000 & 0001 \\
-						\hline
-						add regD, regC & 0001 & 0011 & 0010 \\
-						\hline
-						divide regB, regA & 0010 & 0001 & 0000 \\
-						\hline
-						print regA & 0011 & 0000 & 0000 \\
-						\hline
-					\end{tabular}
-				}
-				\caption{Register instructions using bitfields}
-				\label{fig:bitfields}
-			\end{minipage}
-			\\\\\hrule
-		\end{figure}
-		
-		\begin{figure}
-			\hrule
-			\begin{minipage}[b]{0.45\textwidth}
-				\begin{lstlisting}
+			A register machine's bytecode is different, because the operands of the instruction need to be part of the instruction encoding. Typically this is implemented using bitfields. For example, consider a twelve-bit instruction word. We can reserve the first 4 bits for the opcode. This gives us a maximum of 16 opcodes. The next four bits of the instruction word can encode the first operand as an enumeration, and the same for the last four bits which can encode the second operand. If an instruction only has one operand, the last four bits are undefined. This is illustrated in Figure \ref{fig:bitfields}
+			
+			\begin{myfigure}
+					\texttt{
+						\begin{tabular}{ | l | r | r |r | }
+							\hline
+							Meaning & opcode & dest & src \\ 
+							\hline
+							add regA, regB  & 0001 & 0000 & 0001 \\
+							\hline
+							add regD, regC & 0001 & 0011 & 0010 \\
+							\hline
+							divide regB, regA & 0010 & 0001 & 0000 \\
+							\hline
+							print regA & 0011 & 0000 & 0000 \\
+							\hline
+						\end{tabular}
+					}
+					\caption{Register instructions using bitfields}
+					\label{fig:bitfields}
+			\end{myfigure}
+			
+			\begin{doublefig}
+				\begin{halffig}
+					\begin{lstlisting}
 push 14
 push 8
 add
 push 7
 divide
 print
-				\end{lstlisting}
-				\caption{Typical Stack machine program}
-				\label{fig:stackprogram}
-			\end{minipage}\hfill
-			\begin{minipage}[b]{0.45\textwidth}
-				\begin{lstlisting}
+					\end{lstlisting}
+					\caption{Typical stack machine program}
+					\label{fig:stackprogram}
+				\end{halffig}
+				\begin{halffig}
+					\begin{lstlisting}
 mov regA, 14
 mov reg1, 8
 add regA, regB
 mov regB, 7
 divide regA, regB
 print regA
-				\end{lstlisting}
-				\caption{Typical Stack machine program}
-				\label{fig:registerprogram}
-			\end{minipage}
-			\newline\hrule
-		\end{figure}
+					\end{lstlisting}
+					\caption{Typical register machine program}
+					\label{fig:registerprogram}
+				\end{halffig}
+			\end{doublefig}
 		
 	\section{Problem Description}
-		Most physical machines are register machines. It may seem like a good idea to try to map virtual registers to real host registers. Unfortunately, unlike virtual registers that are implemented in host memory, real registers cannot be accessed by "reference" \citep{caseregistervm}. This difference complicates the implementation of a register-mapped virtual machine. Despite these difficulties, it is worthwhile to investigate designs of JIT-less register virtual machines that attempt to narrow the divide between the host and the guest architecture.
+		Most physical machines are register machines. It may seem like a good idea to try to map virtual registers to real host registers. Unfortunately, unlike virtual registers that are implemented in host memory, real registers cannot be accessed by "reference" \citep{caseregistervm}. This difference complicates the implementation of a register-mapped virtual machine. 
+		
+		Despite these difficulties, it is worthwhile to investigate designs of JIT-less register virtual machines that attempt to narrow the divide between the host and guest architecture.
 	
 	\section{Purpose and Scope}
 		The goal of this project is to investigate the feasibility of register virtual machines for interpreters running on a modern architecture. To this end, a high-level register virtual machine will be implemented.
@@ -131,31 +157,28 @@ print regA
 		An instruction set architecture will be designed which will be tailored for such a dispatch method. Naturally the goal will be to keep the number of unique instructions down, so that this code table is as small as possible, while remaining non-trivial.
 		
 		\subsection{Scope}
-		The virtual machine will target the Intel 64 host machine architecture, and will be written mostly in assembly, with some operating system-facing code written in C for ease of development. 
+			The virtual machine will target the Intel 64 host machine architecture, and will be written mostly in assembly, with some operating system-facing code written in C for ease of development. 
 		
 		\subsection{Limitations}
-			The primary usefulness of virtual machines is that they can be ported to other architectures, and can be expected to perform similarly well on those other architectures. Unfortunately, however, there is only time to implement the virtual machine design on a single architecture, albeit a very popular one. To ensure the usefulness of this paper, a general comment about how the virtual machine is expected to perform on other architectures will be made, and a few suggestions of important considerations for implementation on architectures that are sufficiently  different from Intel 64 will be presented.
+			
 				
 	\section{Overview of Treatise Structure}
-		\todo{Will have to wait until the rest of the treatise exists for this!}
-	
-% Optional
-%\chapter{Requirements Gathering}
-%	\todo{Leaning towards removing this section}
+		\todo{Will have to wait until the rest of the treatise exists for this! Tip: Design this for someone who doesn't feel like reading the whole thing. Make it easy to find specific, interesting sections.}
 
 % 10-12 pages
 \chapter{Problem Exposition}
 	\section{Literature Review}
-		\cite{structureinterpreters} reflect on why spending research and engineering effort on optimising interpreters is a worthwhile endeavour. Creating a host machine independent abstraction layer between original source code and machine architecture greatly simplifies writing compilers that must generate code for many platforms. This is because for every additional platform that must be supported, a separate version of the compiler targeting that platform must be developed. In a design incorporating an interpreter, only the interpreter portion needs to be rewritten for different platforms, (or perhaps not even the interpreter if a high-level language is used to implement the interpreter) and the compiler remains the same. Interpreters tend to be simple compared to compilers, so this advantage is quite significant. Interpreters also offer opportunity for more powerful usability features like debuggers compared to machine code, and have slower compilers, impacting on the write-compile-test cycle of modern software development methods.
-		
-
+		\cite{structureinterpreters} reflect on why spending research and engineering effort on optimising interpreters is a worthwhile endeavour. Creating a host machine independent abstraction layer between original source code and machine architecture greatly simplifies writing compilers that must generate code for many platforms. This is because for every additional platform that must be supported, a separate version of the compiler targeting that platform must be developed. In a high-level language interpreter utilising a virtual machine, only the interpreter portion needs to be rewritten for different platforms, (or perhaps not even the interpreter if a high-level language is used to implement the interpreter) and the compiler remains the same. Interpreters tend to be simple compared to compilers targeting machine code, so this advantage is quite significant. Compared to native execution, interpreters also offer opportunity for more powerful usability features like debuggers, and have faster compilers, improving the write-compile-test cycle of modern software development methods.
 		
 		Traditionally, the high level virtual machines implemented in interpreters are stack machines. Stack machines are used over register machines for a few reasons. Instructions for stack machines are smaller, because instruction operands are implicit. This means that instruction fetching is faster. It is easier to compile code for a stack machine than a register machine because the compiler does not need to implement a register allocator \citep{caseregistervm}. However, \cite{stackregistershowdown} found that an efficient register virtual machine can execute benchmarks 32\% faster than an analogous stack machine. 
 		
-		\cite{caseregistervm} mentions that the first successful virtual machine interpreter ran stack-based P-code for Pascal. This was the first in a line of stack-based bytecodes for popular languages like Smalltalk, Java and the Common Intermediate Language (CIL). This suggests that there might be historic factors involved in the prevalence of stack based virtual machines.
+		\cite{caseregistervm} mentions that the first successful virtual machine interpreter ran stack-based P-code for Pascal. This was the first in a large family of stack-based bytecodes for popular languages like Smalltalk, Java and the Common Intermediate Language (CIL). This suggests that there might be historic factors involved in the prevalence of stack based virtual machines.
 		
-		\cite{fastjava} believes that interpreters are not optimised for modern architectures features like pipelining, branch prediction and caches. They also provide encouragement by saying, ``if interpreters can be made much faster, they will become suitable for a wide range of applications that currently need a JIT.''
+		\cite{fastjava} believes that interpreters are not well designed to suit modern architectures features like pipelining, branch prediction and caches. They also provide encouragement by saying, ``if interpreters can be made much faster, they will become suitable for a wide range of applications that currently need a JIT.''
 		
+		\todo{Talk about JIT - This is the approach taken by many popular interpreters, such as the Java Virtual Machine and Microsoft's Common Language Runtime.}
+		
+		\subsection{Relevant Previous Work}
 		%mark
 		
 		The practice of mapping virtual machine resources to host machine registers has been investigated for stack machines by \cite{stackcaching}. Ertl measured the performance of stack machines which kept the top few elements of the stack in registers. He found that direct mapping of stack positions to machine registers was only useful for the case where just the top element of the stack was cached in a register. Further caching resulted in too many load-store instructions to shuffle register values around when positions on the stack change.
@@ -166,7 +189,7 @@ print regA
 	
 		However, this approach deserves further investigation, especially with the advent of modern processors with significantly larger cache sizes---for example, 4th generation Intel Core processors, which have 32 KB of L1 instruction cache \citep{haswellarch}, four times as much as the R4000.
 	
-		\todo{Talk about JIT - This is the approach taken by many popular interpreters, such as the Java Virtual Machine and Microsoft's Common Language Runtime.}
+		
 	\section{Difficulties}
 		Interpreters spend most of their execution time on instruction dispatch \citep{modernarchvm}. The main contributor is usually an indirect branch to the implementation code for the currently executing virtual machine instruction \citep{optimizingindirectbranch}. Every interpreter has at least one indirect branch in dispatch code \citep{modernarchvm}. Because these indirect branches are in the instruction dispatch portion of the interpreter, they are executed for every virtual machine instruction. This closely couples interpreter speed to efficiency of branching.
 		
