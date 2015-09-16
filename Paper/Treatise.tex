@@ -86,14 +86,14 @@
 			\end{halffig}
 		\end{doublefig}
 		
-		\subsubsection{Traditional Virtual Machines}
+		\subsection{Traditional Virtual Machines}
 			There are two general types of high-level virtual machine architectures: stack machines and register machines. 
 			
 			Unsurprisingly, a stack machine maintains a stack data structure where temporary values are stored, and the machine's instruction set consists mostly of operations on the stack.  \ref{fig:stackprogram} shows an example of code written for a stack machine. Notice that the operands of the instructions are implicit, and so instructions for stack machines tend to be shorter. This is the major difference between instructions for stack machines and register machines. 
 		
 			The bytecode of a stack machine is very simple. For each operation, a unique code (called an \emph{opcode}) is assigned. For instance, a word value~(``instruction word'') of \texttt{0x01} might represent push, while \texttt{0x02} might represent add, and so on. The introduction of literals, such as the $14$ and $8$ in the first two lines---as well as other types of additional data attached to instructions---complicates this picture, but the idea remains unchanged.
 		
-			A register machine contains a number of high-speed memory ``boxes'' into which temporary values are stored, and instructions generally specify which registers are involved in the operation~("operands"). Figure \ref{fig:registerprogram} shows the same program for a register machine. In the \texttt{add} instruction, the value of \texttt{regA} is added to \texttt{regB}, and the result is stored in \texttt{regA}. This is a convention in assembly programming which will be used throughout the text.
+			A register machine contains a number of high-speed memory ``boxes'' into which temporary values are stored, called registers. Instructions generally specify which registers are involved in the operation~(``operands''). Figure \ref{fig:registerprogram} shows the same program for a register machine. In the \texttt{add} instruction, the value of \texttt{regA} is added to \texttt{regB}, and the result is stored in \texttt{regA}. This is a convention in assembly programming which will be used throughout the text.
 		
 			A register machine's bytecode is different, because the operands of the instruction need to be part of the instruction encoding. Typically this is implemented using bitfields. For example, consider a twelve-bit instruction word. We can reserve the first 4 bits for the opcode. This gives us a maximum of 16 opcodes. The next four bits of the instruction word can encode the first operand as an enumeration, and the same for the last four bits which can encode the second operand. If an instruction only has one operand, the last four bits are undefined. This is illustrated in Figure \ref{fig:bitfields}
 			
@@ -143,23 +143,42 @@ print regA
 					\label{fig:registerprogram}
 				\end{halffig}
 			\end{doublefig}
-		
+			
+			\todo{Talk about dispatching, and virtual machine implementation in general}
+			
+		\subsection{The Nature of Modern Processors}
+			\todo{Talk about architectures, cache sizes and stratification, pipelining, branch prediction, etc.}
+	
 	\section{Problem Description}
-		Most physical machines are register machines. It may seem like a good idea to try to map virtual registers to real host registers. Unfortunately, unlike virtual registers that are implemented in host memory, real registers cannot be accessed by "reference" \citep{caseregistervm}. This difference complicates the implementation of a register-mapped virtual machine. 
+		Most physical machines are register machines. It is thought that the use of real machine registers to store the values of the virtual machine registers will help to make the operation of virtual machine programs more transparent to the physical CPU. Unfortunately, unlike virtual registers that are implemented in host memory, real registers cannot be accessed by ``reference'' \citep{caseregistervm}. This difference complicates the implementation of a register-mapped virtual machine. 
 		
 		Despite these difficulties, it is worthwhile to investigate designs of JIT-less register virtual machines that attempt to narrow the divide between the host and guest architecture.
 	
-	\section{Purpose and Scope}
-		The goal of this project is to investigate the feasibility of register virtual machines for interpreters running on a modern architecture. To this end, a high-level register virtual machine will be implemented.
-	
-		This virtual machine will have some unique design details that have not before been investigated or thought feasible. It will map some virtual machine registers to real registers. The virtual machine will perform dispatch not only on the opcodes of instructions, but on the entire instruction word including operands. 
-	
-		An instruction set architecture will be designed which will be tailored for such a dispatch method. Naturally the goal will be to keep the number of unique instructions down, so that this code table is as small as possible, while remaining non-trivial.
+		\todo{Do I need more?}
 		
-		\subsection{Scope}
-			The virtual machine will target the Intel 64 host machine architecture, and will be written mostly in assembly, with some operating system-facing code written in C for ease of development. 
+	\section{Purpose and Scope}
+		The goal of this project is to investigate the feasibility of JIT-less register virtual machines for interpreters running on a modern architecture. To this end, a high-level register virtual machine will be implemented with some unique architecture features that have not been investigated or thought feasible previously.
+		
+		A novel dispatch process will be investigated that seeks to allow the use of physical machine registers in the implementation of virtual machine registers. To circumvent the problem of referencing real machine registers, the virtual machine will dispatch not only based on the opcode of each instruction, but on the instruction as a whole. In other words, an implementation will exist for every combination of operands in each virtual machine instruction.
+	
+		An instruction set architecture will be designed which will be tailored for such a dispatch method. It is anticipated that having implementations for every combination of operands in each virtual machine instruction will cause the virtual machine implementation to become very large, and so the design of the instruction set architecture will focus on keeping the number of unique instructions low.
+		
+		The virtual machine will target the Intel 64 host machine architecture.
 		
 		\subsection{Limitations}
+			As the virtual machine implementation becomes very large, it will become unsuitable for operation on machines with small L1 and L2 instruction caches, because large portions of the virtual machine implementation will not remain in the instruction cache. The result is a virtual machine that is actually slower than traditional virtual machines. We will consider only modern processors with reasonably large first-level cache, for instance, the current Intel Core i7 range of processors containing 32KB of L1 instruction cache.
+			
+			Assuming any virtual machine register can be used as an operand for any instruction, the size of the virtual machine implementation proportional to:
+			
+			\[
+				\sum_{o~\in~opcodes} r^n : 
+					\begin{array}{l}
+						n \coloneqq \text{number of operands for o} \\
+						r \coloneqq \text{number of virtual machine registers}
+					\end{array}
+			\] 
+			
+			Every additional virtual machine register increases the size of the virtual machine by a polynomial factor. At some point, any performance gain received by exposing more physical registers will be negated by increasing incidence of cache misses. This is a source of a practical limitation on the number of registers in the virtual machine's architecture.
 			
 				
 	\section{Overview of Treatise Structure}
