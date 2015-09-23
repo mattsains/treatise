@@ -44,7 +44,7 @@
 \usepackage{fixltx2e}            % LaTeX bugfixes (yes really)
 
 \usepackage[authoryear, round, sort]{natbib} % References
-% "fix the natbib spacing character" - Kevin Naud�
+% "fix the natbib spacing character" - Kevin Naudé
 \makeatletter
 \ifdefined \NAT@spacechar
 	\def\NAT@spacechar{~}
@@ -126,7 +126,7 @@
 		\end{figure}
 	}
 \newenvironment{halffig}
-	{ \begin{minipage}[t]{0.45\textwidth}\centering }
+	{ \begin{minipage}[b]{0.45\textwidth}\centering }
 	{ \end{minipage}\hfill }
 
-\lstset{xleftmargin=1em}
+\lstset{xleftmargin=1em, basicstyle=\ttfamily}
