@@ -144,13 +144,59 @@ print regA
 				\end{halffig}
 			\end{doublefig}
 			
-			\todo{Talk about dispatching, and virtual machine implementation in general}
+			\todo{Should I talk about dispatching, and virtual machine implementation in general?}
 			
 		\subsection{The Nature of Modern Processors}
-			\todo{Talk about architectures, cache sizes and stratification, pipelining, branch prediction, etc.}
+			The landscape of processor design has changed significantly in the last thirty years. Rather than producing performance gains by arbitrarily increasing processor clock speeds, modern processor designers rely on trying to increase the per-cycle efficiency of their processors, using techniques such as instruction-level parallelism, larger and more complex cache systems, and speculative optimisation. These design issues caught the interest of academics and engineers in the 1980's \citep{modernprocessordesign}. Some of these topics will be briefly discussed in this section.
+			
+			\subsubsection{Instruction-Level Parallelism}
+			Traditional processors executed machine instructions one at a time. Every clock cycle, an instruction would be fetched, decoded, and executed. The result of this method is that activity on a processor would move through the architecture componentwise. Only one part of the process would be ``working'' at any time---for instance, when an instruction was being decoded, the entire execution component of the processor was unused.
+			
+			On a processor with instruction-level parallelism, these functions can operate in parallel. An instruction can be fetched while another instruction is being decoded, and yet another instruction's operands are being fetched. A processor that can operate this way is said to have an \emph{instruction pipeline.} This results in far better utilisation of processor hardware, but introduces complexity in the processor. For instance, if one instruction writes to a memory address, and later instruction reads from the same address, the second instruction cannot complete the operand fetch stage until the first instruction has been executed. A situation where an instruction has to wait for another to complete is known as a \emph{pipeline stall,} and is a subject of much academic writing and engineering effort.
+			
+			\subsubsection{Cache Arrangement}
+			Modern processors contain portions of high-speed memory which act as a cache to the main memory of the machine. The behaviour of this cache is an important factor for processor performance, because main memory is quite slow compared to the speed of a CPU. Modern caches are orders of magnitude larger than processors twenty years ago. 
+			
+			Most modern processors contain a series of specialised caches. For instance, a fourth-generation Intel Core processor has three grades or \emph{levels} of cache, and make a distinction between cache for instructions and cache for program data. Figure \ref{fig:cachenumbers} shows the arrangement of cache on such a processor. As can be seen, L1 cache is much faster, but much smaller than L2 cache. The latency in L1 instruction cache is not shown because instruction fetch is transparent to programs, but it does influence branch prediction (see later). It is advantageous for a program if most of its application data can fit in L1 data cache, and most of its code can fit in L1 instruction cache. 
+			
+			\begin{myfigure}
+				\begin{tabular}{ | l | l | l | l | }
+					\hline
+					Level & Type & Size & Latency \\ 
+					\hline
+					\multirow{2}{*}{L1} & Instruction & 32KB & N/A \\
+					& Data & 32KB & 4 cycles \\
+					\hline
+					L2 & Data & 256KB & 11 cycles \\
+					\hline
+					L3 & Data & Varies & Varies \\
+					\hline
+				\end{tabular}
+				\caption{Cache on 4th-Gen Intel Core CPUs \citep{optimisationreference}}
+				\label{fig:cachenumbers}
+			\end{myfigure}
+			
+			\subsubsection{Branch Prediction \& Branch Target Prediction}
+			Branch prediction in a process refers to the processor's ability to continue the pipelining process during a branch instruction. Ordinarily, the location of the next instruction is known to the processor---it is simply the instruction adjacent to the previous one. If the previous instruction was an instruction to branch (go somewhere else in the program), the picture becomes more complex. There are three types of branches worth mentioning:
+			
+			\begin{description}
+				\item[Unconditional Branch:] This instruction always causes the processor to jump to the same location. The target of the branch is known as soon as the instruction is decoded.
+				\item[Conditional Branch:] This branch type branches to a constant location if a condition is true. For instance, if a register is zero (``branch if zero''). The location of the next instruction is only known once the branch instruction is executed.
+				\item[Indirect Branch:] A branch whose branch location is based on program data, whether in memory or in a register, or both. 
+			\end{description}
+			
+			An unconditional branch is the easiest branch to pipeline, since the location of the next instruction is encoded in the branch instruction itself. The next instruction can be fetched as soon as the branch instruction is decoded. 
+			
+			A conditional branch is harder to pipeline because it is not known whether the condition is true or false before the instruction is executed, and thus what the next instruction should be. To prevent cache stalls on conditional branch instructions, modern processors implement a \emph{branch predictor}. The branch predictor will use some heuristic to predict the conditional, and load the most likely next instruction. A pipeline stall will only occur if the prediction was wrong.
+			
+			An indirect branch is the worst type of branch for a pipelined processor. It is very hard to predict because the branch location could depend on any data anywhere in main memory or in registers. This influence that data has on the behaviour of the program is known as \emph{data dependance} and is to be avoided whenever possible. Modern processors implement a \emph{branch target predictor} in an attempt to reduce the number of pipeline stalls. A branch target predictor is not to be confused with a branch predictor---a branch predictor predicts whether the branch will be taken, whereas a branch target predictor tries to predict where the branch will lead. A conditional branch can only lead two places---the next instruction, or the constant branch location.
+			
+			One common branch target predictor is a branch target buffer. A branch target buffer maintains a mapping between each indirect branch instruction, and the last target location of the branch. This strategy works well if an indirect branch always branches to the same location, but is no help if it is always different.
+			
+			These concepts form the background to this research, and the problems which motivate it.
 	
 	\section{Problem Description}
-		Most physical machines are register machines. It is thought that the use of real machine registers to store the values of the virtual machine registers will help to make the operation of virtual machine programs more transparent to the physical CPU. Unfortunately, unlike virtual registers that are implemented in host memory, real registers cannot be accessed by ``reference'' \citep{caseregistervm}. This difference complicates the implementation of a register-mapped virtual machine. 
+		Most physical machines are register machines. It is thought that the use of real machine registers to store the values of the virtual machine registers will help to make the operation of virtual machine programs more transparent to the physical CPU by reducing data-dependant fetches from main memory, where virtual machine registers are usually stored. Unfortunately, unlike virtual registers that are implemented in memory, real registers cannot be accessed by ``reference'' \citep{caseregistervm}. This difference complicates the implementation of a register-mapped virtual machine.
 		
 		Despite these difficulties, it is worthwhile to investigate designs of JIT-less register virtual machines that attempt to narrow the divide between the host and guest architecture.
 	
@@ -195,8 +241,6 @@ print regA
 		
 		\cite{fastjava} believes that interpreters are not well designed to suit modern architectures features like pipelining, branch prediction and caches. They also provide encouragement by saying, ``if interpreters can be made much faster, they will become suitable for a wide range of applications that currently need a JIT.''
 		
-		\todo{Talk about JIT - This is the approach taken by many popular interpreters, such as the Java Virtual Machine and Microsoft's Common Language Runtime.}
-		
 		\subsection{Relevant Previous Work}
 		%mark
 		
@@ -206,7 +250,7 @@ print regA
 		
 		In the same paper, Ertl writes the first mention of the idea of achieving register mapping between a register virtual machine and a host register machine through a table of implementations for each combination of opcode and operands, but quickly dismisses it because it would ``cause code explosion, and will probably suffer a severe performance hit on machines with small first-level caches.'' He then went on to use the R4000 MIPS processor as an example, having 8 KB of level one (L1) instruction cache.
 	
-		However, this approach deserves further investigation, especially with the advent of modern processors with significantly larger cache sizes---for example, 4th generation Intel Core processors, which have 32 KB of L1 instruction cache \citep{haswellarch}, four times as much as the R4000.
+		However, this approach deserves further investigation, especially with the advent of modern processors with significantly larger cache sizes---for example, 4th generation Intel Core processors, which have 32 KB of L1 instruction cache \citep{optimisationreference}, four times as much as the R4000.
 	
 		
 	\section{Difficulties}
