@@ -446,32 +446,466 @@ add(instr):
 		\end{myfigure}
 			
 		We now present our instruction set.
-		
+		\todo{Notational Conventions}
+		\todo{Omg a lot of the PC-relative are wrong here}
 		\subsection{Arithmetic Operations}
 		
-		\begin{tabular}{|l|l|}
+		\begin{longtable}{|p{10em}|p{30em}|}
 			\hline
 			\multirow{2}{*}{Instruction} & Meaning \\
 			& $RTL~Description$ \\
 			\hline
 			\texttt{add $r_i$, $r_j$} & Add an int in register $r_j$ to $r_i$ \\
 			& $\begin{array}{lcl} 
-			r_i \rightarrow (r_i + r_j)_{64} \\
-			pc \rightarrow pc + 2  
+			r_i \leftarrow (r_i + r_j)_{64} \\
+			pc \leftarrow pc + 2  
 			\end{array}$ \\
 			\hline 
-			\texttt{addc $r_i$, $const_{64}$} & Add a constant int to register $r_i$ \\
+			\texttt{addc $r_i$, $const_{64}$} & Add a constant int to $r_i$ \\
 			& $\begin{array}{lcl} 
-			r_i \rightarrow (r_i + r_j)_{64} \\
-			pc \rightarrow pc + 2  
+			r_i \leftarrow (r_i + const)_{64} \\
+			pc \leftarrow pc + 4  
 			\end{array}$ \\
 			\hline 
-			\texttt{add $r_i$, $r_j$} & And so on  \\
-			& \todo{Finish this} \\
-			\hline  
-		\end{tabular}
+			\texttt{sub $r_i$, $r_j$} & Subtract $r_j$ from $r_i$, $i\neq j$ \\
+			& $\begin{array}{lcl} 
+			r_i \leftarrow (r_i - r_j)_{64} \\
+			pc \leftarrow pc + 2  
+			\end{array}$ \\
+			\hline 
+			\texttt{csub $const_{64}$, $r_i$} & Subtract constant from $r_i$ \\
+			& $\begin{array}{lcl} 
+			r_i \leftarrow (const - r_i)_{64} \\
+			pc \leftarrow pc + 4
+			\end{array}$ \\
+			\hline 
+			\texttt{mul $r_i$, $r_j$} & Multiply $r_i$ by $r_j$ \\
+			& $\begin{array}{lcl} 
+			r_i \leftarrow (r_i \times r_j)_{64} \\
+			pc \leftarrow pc + 2
+			\end{array}$ \\
+			\hline 
+			\texttt{mulc $r_i$, $const_{64}$} & Multiply $r_i$ by constant \\
+			& $\begin{array}{lcl} 
+			r_i \leftarrow (r_i \times const)_{64} \\
+			pc \leftarrow pc + 4
+			\end{array}$ \\
+			\hline 
+			\texttt{div $r_i$, $r_j$} & Divide $r_i$ by $r_j$, $i \neq j$. Store remainder in $r_0$ \\
+			& $\begin{array}{lcl}
+			div \leftarrow (r_i \div r_j)_{64} \\
+			r_0 \leftarrow (r_i ~\%~ r_j)_{64} \\
+			r_i \leftarrow div \\
+			pc \rightarrow pc + 2
+			\end{array}$ \\
+			\hline 
+			\texttt{divc $r_i$, $const_{64}$} & Divide $r_i$ by constant. Store remainder in $r_0$ \\
+			& $\begin{array}{lcl}
+			div \leftarrow (r_i \div const)_{64} \\
+			r_0 \leftarrow (r_i ~\%~ const)_{64} \\
+			r_i \leftarrow div \\
+			pc \rightarrow pc + 4
+			\end{array}$ \\
+			\hline 
+			\texttt{cdiv $const_{64}$, $r_i$} & Divide constant by $r_i$. Store result in $r_i$. Store remainder in $r_0$ \\
+			& $\begin{array}{lcl}
+			div \leftarrow (const \div r_i)_{64} \\
+			r_0 \leftarrow (const ~\%~ r_i)_{64} \\
+			r_i \leftarrow div \\
+			pc \rightarrow pc + 4
+			\end{array}$ \\
+			\hline
+		\end{longtable}
 		
-	
+		\subsection{Bit Manipulation}
+		\begin{longtable}{|p{10em}|p{30em}|}
+			\hline \endfoot
+			\hline 
+			\multirow{2}{*}{Instruction} & Meaning \\*
+			& $RTL~Description$ \\
+			\hline \endhead
+			\texttt{and $r_i$, $r_j$} & Bitwise and $r_j$ to $r_i$, $i \neq j$ \\*
+			& $\begin{array}{lcl}
+			r_i \leftarrow (r_i ~\&~ r_j)_{64} \\
+			pc \leftarrow pc + 2
+			\end{array}$ \\
+			\hline
+			\texttt{andc $r_i$, $const_{64}$} & Bitwise and const to $r_i$ \\*
+			& $\begin{array}{lcl}
+			r_i \leftarrow (r_i ~\&~ const)_{64} \\
+			pc \leftarrow pc + 4
+			\end{array}$ \\
+			\hline
+			\texttt{or $r_i$, $r_j$} & Bitwise or $r_j$ to $r_i$, $i \neq j$ \\*
+			& $\begin{array}{lcl}
+			r_i \leftarrow (r_i ~|~ r_j)_{64} \\
+			pc \leftarrow pc + 2
+			\end{array}$ \\
+			\hline
+			\texttt{orc $r_i$, $const_{64}$} & Bitwise or $const$ to $r_i$ \\*
+			& $\begin{array}{lcl}
+			r_i \leftarrow (r_i ~\&~ const)_{64} \\
+			pc \leftarrow pc + 4
+			\end{array}$ \\
+			\hline
+			\texttt{xor $r_i$, $r_j$} & Bitwise xor $r_j$ to $r_i$, $i \neq j$ \\*
+			& $\begin{array}{lcl}
+			r_i \leftarrow (r_i \wedge{} r_j)_{64} \\
+			pc \leftarrow pc + 2
+			\end{array}$ \\
+			\hline
+			\texttt{shl $r_i$, $r_j$} & Logical shift left $r_i$ by $r_j$, $i \neq j$ \\*
+			& $\begin{array}{lcl}
+			r_i \leftarrow (r_i \ll (r_j ~\&~ 0xFF))_{64} \\
+			pc \leftarrow pc + 2
+			\end{array}$ \\
+			\hline
+			\texttt{shlc $r_i$, $const_{16}$} & Logical shift left $r_i$ by $const$ \\*
+			& $\begin{array}{lcl}
+			r_i \leftarrow (r_i \ll (const ~\&~ 0xFF))_{64} \\
+			pc \leftarrow pc + 4
+			\end{array}$ \\
+			\hline
+			\texttt{cshl $const_{64}$, $r_i$} & Logical shift left $const$ by $r_i$ \\*
+			& $\begin{array}{lcl}
+			r_i \leftarrow (const \ll (r_i ~\&~ 0xFF))_{64} \\
+			pc \leftarrow pc + 4
+			\end{array}$ \\
+			\hline
+			\texttt{shr $r_i$, $r_j$} & Logical shift right $r_i$ by $r_j$, $i \neq j$ \\*
+			& $\begin{array}{lcl}
+			r_i \leftarrow (r_i \gg (r_j ~\&~ 0xFF))_{64} \\
+			pc \leftarrow pc + 2
+			\end{array}$ \\
+			\hline
+			\texttt{shrc $r_i$, $const_{16}$} & Logical shift right $r_i$ by $const$ \\*
+			& $\begin{array}{lcl}
+			r_i \leftarrow (r_i \gg (const ~\&~ 0xFF))_{64} \\
+			pc \leftarrow pc + 4
+			\end{array}$ \\
+			\hline
+			\texttt{cshr $const_{64}$, $r_i$} & Logical shift right $const$ by $r_i$ \\*
+			& $\begin{array}{lcl}
+			r_i \leftarrow (const \gg (r_i ~\&~ 0xFF))_{64} \\
+			pc \leftarrow pc + 4
+			\end{array}$ \\
+			\hline
+			\texttt{sar $r_i$, $r_j$} & Arithmetic shift right $r_i$ by $r_j$, $i \neq j$ \\*
+			& $\begin{array}{lcl}
+			r_i \leftarrow (r_i \ggg (r_j ~\&~ 0xFF))_{64} \\
+			pc \leftarrow pc + 2
+			\end{array}$ \\
+			\hline
+			\texttt{sarc $r_i$, $const_{16}$} & Arithmetic shift right $r_i$ by $const$ \\*
+			& $\begin{array}{lcl}
+			r_i \leftarrow (r_i \ggg (const ~\&~ 0xFF))_{64} \\
+			pc \leftarrow pc + 4
+			\end{array}$ \\
+			\hline
+			\texttt{csar $const_{64}$, $r_i$} & Arithmetic shift right $const$ by $r_i$ \\*
+			& $\begin{array}{lcl}
+			r_i \leftarrow (const \ggg (r_i ~\&~ 0xFF))_{64} \\
+			pc \leftarrow pc + 4
+			\end{array}$ \\
+		\end{longtable}
+		
+		\subsection{Data Movement}
+		\begin{longtable}{|p{10em}|p{30em}|}
+			\hline \endfoot
+			\hline 
+			\multirow{2}{*}{Instruction} & Meaning \\*
+			& $RTL~Description$ \\
+			\hline \endhead
+			\texttt{mov $r_i$, $r_j$} & Move the value in $r_j$ to $r_i$, $i \neq j$ \\*
+			& $\begin{array}{lcl}
+			r_i \leftarrow r_j \\
+			pc \leftarrow pc + 2
+			\end{array}$ \\
+			\hline
+			\texttt{movp $r_i$, $r_j$} & Make $r_i$ point to the same object as $r_j$, $i \neq j$ \\*
+			& $\begin{array}{lcl}
+			r_i \leftarrow r_j \\
+			pc \leftarrow pc + 2
+			\end{array}$ \\
+			\hline
+			\texttt{movc $r_i$, $const_{64}$} & Copy $const$ into $r_i$ \\*
+			& $\begin{array}{lcl}
+			r_i \leftarrow const \\
+			pc \leftarrow pc + 4
+			\end{array}$ \\
+			\hline
+			\texttt{null $r_i$} & Set $r_i$ to the null pointer \\*
+			& $\begin{array}{lcl}
+			r_i \leftarrow null \\
+			pc \leftarrow pc + 2
+			\end{array}$ \\
+			\hline
+		\end{longtable}
+		
+		\subsection{Memory Access}
+		\begin{longtable}{|p{10em}|p{30em}|}
+			\hline \endfoot
+			\hline 
+			\multirow{2}{*}{Instruction} & Meaning \\*
+			& $RTL~Description$ \\
+			\hline \endhead
+			\texttt{getl $r_i$, $index_{16}$} & Put the $indexth$ local variable into $r_i$ \\*
+			& $\begin{array}{lcl}
+			r_i \leftarrow mem[fp + header\mbox{-}size + index]_{64} \\
+			pc \leftarrow pc + 4
+			\end{array}$ \\
+			\hline
+			\texttt{getlp $p_i$, $index_{16}$} & Put the $indexth$ local variable into $p_i$ \\*
+			& $\begin{array}{lcl}
+			p_i \leftarrow mem[fp + header\mbox{-}size + index]_{64} \\
+			pc \leftarrow pc + 4
+			\end{array}$ \\
+			\hline
+			\texttt{setl $r_i$, $index_{16}$} & Set the $indexth$ local variable to $r_i$ \\*
+			& $\begin{array}{lcl}
+			 mem[fp + header\mbox{-}size + index] \leftarrow r_i \\
+			pc \leftarrow pc + 4
+			\end{array}$ \\
+			\hline
+			\texttt{setlp $p_i$, $index_{16}$} & Set the $indexth$ local variable to $p_i$ \\*
+			& $\begin{array}{lcl}
+			mem[fp + header\mbox{-}size + index] \leftarrow p_i \\
+			pc \leftarrow pc + 4
+			\end{array}$ \\
+			\hline
+			\texttt{getm $r_i$, $p_j$, $index_{16}$} & Put the $indexth$ member of $p_j$ into $r_i$ \\*
+			& $\begin{array}{lcl}
+			r_i \leftarrow mem[p_j + header\mbox{-}size + index]_{64} \\
+			pc \leftarrow pc + 4
+			\end{array}$ \\
+			\hline
+			\texttt{getmp $p_i$, $p_j$, $index_{16}$} & Put the $indexth$ member of $p_j$ into $p_i$ \\*
+			& $\begin{array}{lcl}
+			r_i \leftarrow mem[p_j + header\mbox{-}size + index]_{64} \\
+			pc \leftarrow pc + 4
+			\end{array}$ \\
+			\hline
+			\texttt{setm $p_i$, $r_j$, $index_{16}$} & Set the $indexth$ member of $p_i$ to $r_j$ \\*
+			& $\begin{array}{lcl}
+			mem[p_i + header\mbox{-}size + index] \leftarrow r_j \\
+			pc \leftarrow pc + 4
+			\end{array}$ \\
+			\hline
+			\texttt{setmp $p_i$, $p_j$, $index_{16}$} & Set the $indexth$ member of $p_i$ to $p_j$ \\*
+			& $\begin{array}{lcl}
+			mem[p_i + header\mbox{-}size + index] \leftarrow p_j \\
+			pc \leftarrow pc + 4
+			\end{array}$ \\
+			\hline
+			\texttt{geta $r_i$, $p_j$, $r_k$} & Put the $r_kth$ element of $p_j$ into $r_i$, $j\neq k$ \\*
+			& $\begin{array}{lcl}
+			r_i \leftarrow mem[p_j + header\mbox{-}size + r_k\times 8]_{64} \\
+			pc \leftarrow pc + 2
+			\end{array}$ \\
+			\hline
+			\texttt{getap $r_i$, $p_j$, $r_k$} & Put the $r_kth$ element of $p_j$ into $p_i$, $j\neq k$ \\*
+			& $\begin{array}{lcl}
+			p_i \leftarrow mem[p_j + header\mbox{-}size + r_k\times 8]_{64} \\
+			pc \leftarrow pc + 2
+			\end{array}$ \\
+			\hline
+			\texttt{seta $p_i$, $r_j$, $r_k$} & Set the $r_jth$ element of $p_i$ to $r_k$, $i\neq j$ \\*
+			& $\begin{array}{lcl}
+			mem[p_i + header\mbox{-}size + r_j] \leftarrow r_k \\
+			pc \leftarrow pc + 2
+			\end{array}$ \\
+			\hline
+			\texttt{setap $p_i$, $r_j$, $p_k$} & Set the $r_jth$ element of $p_i$ to $p_k$, $i\neq j$ \\*
+			& $\begin{array}{lcl}
+			mem[p_i + header\mbox{-}size + r_j] \leftarrow p_k \\
+			pc \leftarrow pc + 2
+			\end{array}$ \\
+			\hline
+			\texttt{getb $r_i$, $p_j$, $r_k$} & Put the $r_kth$ byte of $p_j$ into $r_i$, zero extended; $j\neq k$ \\*
+			& $\begin{array}{lcl}
+			r_i \leftarrow extend(mem[p_j + header\mbox{-}size + r_k]_{8}) \\
+			pc \leftarrow pc + 2
+			\end{array}$ \\
+			\hline
+			\texttt{setb $p_i$, $r_j$, $r_k$} & Set the $r_jth$ byte of $p_i$ to $(r_k ~\&~ 0xFF)$, $i\neq j$ \\*
+			& $\begin{array}{lcl}
+			mem[p_i + header\mbox{-}size + r_j] \leftarrow (r_k~\&~0xFF) \\
+			pc \leftarrow pc + 2
+			\end{array}$ \\
+			\hline
+		\end{longtable}
+		
+		\subsection{Control Flow}
+		\begin{longtable}{|p{10em}|p{30em}|}
+			\hline \endfoot
+			\hline 
+			\multirow{2}{*}{Instruction} & Meaning \\*
+			& $RTL~Description$ \\
+			\hline \endhead
+			\texttt{jmp $disp_{16}$} & Jump signed displacement \\*
+			& $\begin{array}{lcl}
+			pc \leftarrow pc + 4 + disp
+			\end{array}$ \\
+			\hline
+			\texttt{jmpf $disp_{64}$} & Far jump signed displacement \\*
+			& $\begin{array}{lcl}
+			pc \leftarrow pc + 4 + disp
+			\end{array}$ \\
+			\hline
+			\texttt{switch $r_i$, $table\mbox{-}size_{16}$} & Switch on $r_i$ \\*
+			& $\begin{array}{lcl}
+			pc \leftarrow pc + \begin{cases}
+			mem[pc + 4 + r_i \times 2] & : r_i \ge 0 \land r_i < table\mbox{-}size \\
+			mem[pc + 4 + table\mbox{-}size\times 2] & : otherwise
+			\end{cases}
+			\end{array}$ \\
+			\hline
+			\texttt{jcmp $r_i$, $r_j$, $less_{16}$, $equal_{16}$, $greater_{16}$} & Comparison-based jump, $i\neq j$ \\*
+			& $\begin{array}{lcl}
+			pc \leftarrow pc + \begin{cases}
+			less & : r_i < r_j \\
+			equal & : r_i = r_j \\
+			greater & : r_i > r_j
+			\end{cases}
+			\end{array}$ \\
+			\hline
+			\texttt{jcmpc $r_i$, $const_{64}$, $less_{16}$, $equal_{16}$, $greater_{16}$} & Constant comparison jump \\*
+			& $\begin{array}{lcl}
+			pc \leftarrow pc + \begin{cases}
+			less & : r_i < const \\
+			equal & : r_i = const \\
+			greater & : r_i > const
+			\end{cases}
+			\end{array}$ \\
+			\hline
+			\texttt{jeqp $p_i$, $p_j$, $not\mbox{-}equal_{16}$, $equal_{16}$} & Pointer comparison jump, $i\neq j$ \\*
+			& $\begin{array}{lcl}
+			pc \leftarrow pc + 4 + \begin{cases}
+			not\mbox{-}equal & : p_i \neq p_j \\
+			equal & : r_i = r_j \\
+			\end{cases}
+			\end{array}$ \\
+			\hline
+			\texttt{jnullp $p_i$, $not\mbox{-}null_{16}$, $null_{16}$} & Null comparison jump \\*
+			& $\begin{array}{lcl}
+			pc \leftarrow pc + \begin{cases}
+			not\mbox{-}null & : p_i \neq null \\
+			null & : p_i = null \\
+			\end{cases}
+			\end{array}$ \\
+			\hline
+		\end{longtable}
+		
+		\subsection{Function Call and Return}
+		Function prototypes work similarly to object prototypes, as shown in Figure \ref{fig:funcproto}. A function prototype begins with an eight-byte field which contains the number of locals the function needs. The corresponding amount of space is allocated for accessing these variables through \texttt{getl}, \texttt{setl}, \texttt{getlp} and \texttt{setlp}. The next few eight-byte words contain bitmaps which store the type of each local. Immediately following the appropriate number of these bitmap words, the bytecode for the function begins.
+		
+		\begin{myfigure}
+			\begin{tabular}{|l|l| }
+				\hline
+				Word & Meaning \\
+				\hline
+				0 & Number of locals ($n$) \\
+				\hline
+				$i \in 1, 2, ...$ & Bitmap: bit $b$ is set if local $i\times64 + b$ is a pointer \\
+				\hline
+			\end{tabular}
+			\caption{Function Prototype Definition}
+			\label{fig:funcproto}
+		\end{myfigure}
+		
+		When a function is called, a new stack frame is initialised for the function. Registers $r_1$ through $r_4$ are saved automatically, while registers $r_0$ and $r_5$ are used for return values. A number of locals from the caller are copied into the callee's local space, as determined by the caller's invocation of the \texttt{call} instruction.
+		
+		A bytecode program is expected to start with a function prototype, which is automatically called by the virtual machine at execution start, much like C and its \texttt{main()} method. When this method calls \texttt{ret}, the program terminates.
+		
+		\begin{longtable}{|p{10em}|p{30em}|}
+			\hline \endfoot
+			\hline 
+			\multirow{2}{*}{Instruction} & Meaning \\*
+			& $RTL~Description$ \\
+			\hline \endhead
+			\texttt{call $disp_{16}$, $first_{16}$, $count_{16}$} & Perform a function call \\*
+			& $\begin{array}{lcl}
+			newpc \leftarrow pc + disp \\
+			size \leftarrow 80 + func\mbox{-}header\mbox{-}size + newpc \\
+			base \leftarrow allocFrame(size) \\
+			mem[base] \leftarrow g_1,...,g_4,pc,fp \\
+			newfp \leftarrow base + 48 \\
+			mem[newfp] \leftarrow makeFuncHeader(newpc) \\
+			pc \leftarrow newpc + 8 + (mem[newpc] + 63)/64 \\
+			memcopy(newfp + func\mbox{-}header\mbox{-}size, fp + first*8, count*8) \\
+			fp \leftarrow newfp
+			\end{array}$ \\
+			\hline
+			\texttt{ret} & Return from function \\*
+			& $\begin{array}{lcl}
+			base \leftarrow fp - 80 \\
+			g_1,...,g_4,pc,fp \leftarrow mem[base] \\
+			releaseFrame(base) \\
+			\mbox{if}~ fp = null ~\mbox{then halt} \\
+			pc \leftarrow pc + 8
+			\end{array}$ \\
+			\hline
+		\end{longtable}
+		
+		\subsection{Pragmatic Instructions}
+		In some of the instructions that follow, an array of integers is treated as an array of bytes. This is useful for string processing in conjunction with the \texttt{getb} and \texttt{setb} instructions. When an array is treated this way, it is called a buffer.
+		
+		\begin{longtable}{|p{10em}|p{30em}|}
+			\hline \endfoot
+			\hline 
+			\multirow{2}{*}{Instruction} & Meaning \\*
+			& $RTL~Description$ \\
+			\hline \endhead
+			\texttt{newp $p_i$, $disp_{16}$} & Instantiate a new object \\*
+			& $\begin{array}{lcl}
+			proto \leftarrow pc + disp \\
+			size \leftarrow mem[td] \\
+			base \leftarrow allocObject(size) \\
+			mem[base] \leftarrow makeObjHeader(proto)
+			p_i \leftarrow base
+			\end{array}$ \\
+			\hline
+			\texttt{newpa $p_i$, $r_i$} & Instantiate a new array of pointers, $i\neq j$ \\*
+			& $\begin{array}{lcl}
+			base \leftarrow allocObject(r_j) \\
+			mem[base] \leftarrow makeArrHeader(r_j, PTR) \\
+			p_i \leftarrow base \\
+			pc \leftarrow pc + 2
+			\end{array}$ \\
+			\hline
+			\texttt{newa $p_i$, $r_i$} & Instantiate a new array of integers, $i\neq j$ \\*
+			& $\begin{array}{lcl}
+			base \leftarrow allocObject(r_j) \\
+			mem[base] \leftarrow makeArrHeader(r_j, INT) \\
+			p_i \leftarrow base \\
+			pc \leftarrow pc + 2
+			\end{array}$ \\
+			\hline
+			\texttt{movsc $p_i$, $disp$} & Create a new byte buffer with content at $pc+disp$ \\*
+			& $\begin{array}{lcl}
+			size \leftarrow mem[pc+disp+4]_{64} \\
+			base \leftarrow allocObject(size+8) \\
+			mem[base] \leftarrow makeArrHeader(size, INT) \\
+			memcopy(base, pc+disp+8, size)   \\
+			p_i \leftarrow base \\
+			pc \leftarrow pc + 4 
+			\end{array}$ \\
+			\hline
+			\texttt{err $disp_16$} & Report error string at $pc+disp$, then halt \\*
+			& $\begin{array}{lcl}
+			print(mem[pc+disp]) \\
+			\mbox{halt}
+			\end{array}$ \\
+			\hline
+			\texttt{in $p_i$} & Attempt to fill the buffer at $p_i$ from standard input \\
+			\hline
+			\texttt{out $p_i$} & Write the entire contents of the buffer at $p_i$ to standard output \\
+			\hline
+			\texttt{printp $p_i$} & Write the contents of the buffer at $p_i$ as a null-terminated string to standard output\\
+			\hline
+			\texttt{print $r_i$} & Write the value of $r_i$ to standard output \\
+			\hline
+		\end{longtable}
 	\section{Implementation Details}
 		\todo{Something here}
 		
