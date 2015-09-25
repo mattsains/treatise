@@ -907,9 +907,97 @@ add(instr):
 			\hline
 		\end{longtable}
 	\section{Implementation Details}
+		Because we need to map machine registers to virtual ones, our virtual machine must be able to manage registers directly. For this reason, the virtual machine is written mostly in Intel 64 assembly. It also makes use of standard C utility libraries for easy interface with the operating system.
+		
+		The basic structure of the assembly looks like the code sample in Figure \ref{fig:vmstructure}. The vectors section contains an array of references to implementations for each instruction and operand combination. This array can be indexed using the instruction itself. In the code sample below, the instruction \texttt{0x0000} corresponds to \texttt{add r0, r0}, the instruction \texttt{0x0002} corresponds to \texttt{add r0, r2} and so on. Again, unlike traditional instruction sets, the actual value of the instruction has no meaning, and is just a unique index into this array.
+		
+		\begin{myfigure}
+			\begin{lstlisting}
+vectors:
+dq add_0_0
+dq add_0_1
+dq add_0_2
+...
+dq add_1_0
+...
+dq sub_0_0
+...
+
+add_0_0:
+add rbx, rbx
+lodsw
+jmp [vectors+rax*8]
+
+add_0_1:
+add rbx, rcx
+lodsw
+jmp [vectors+rax*8]
+...
+sub_0_0:
+sub rbx, rbx
+lodsw
+jmp [vectors+rax*8]
+...
+			\end{lstlisting}
+			\caption{Basic Structure of Virtual Machine}
+			\label{fig:vmstructure}
+		\end{myfigure}
+		
+		The complete virtual machine is much too large to write by hand---it is over 15 000 lines long. Instead, an automated script written in Ruby is provided with templates for each instruction. These templates are then expanded into the full source code for the virtual machine. Templates use a version of the Liquid templating language which has been modified for berevity. Figure \ref{fig:addtemplate} and \ref{fig:shrtemplate} shows an example of one of these templates. Text surrounded by \texttt{\{ \}} is evaluated as a Ruby expression, and \texttt{\{\% \%\}} surrounds Liquid programming constructs like if statements.
+		
+		\begin{doublefig}
+			\begin{halffig}
+				\begin{lstlisting}
+add {r[i]}, {r[j]}
+				\end{lstlisting}
+				\caption{Add Instruction Template}
+				\label{fig:addtemplate}
+			\end{halffig}
+			\begin{halffig}
+				\begin{lstlisting}
+{% if r[j] != 'rcx' %}
+  xchg rcx, {r[j]}
+{% endif %}
+  shr {r[i]}, cl
+{% if r[j] != 'rcx' %}
+  xchg rcx, {r[j]}
+{% endif %}
+				\end{lstlisting}
+				\caption{Shift Right Instruction Template}
+				\label{fig:shrtemplate}
+			\end{halffig}
+		\end{doublefig}
+		
+		The name \texttt{r} referred to in the templates is an array containing the mapping between virtual registers and real registers. For our implementation, the mapping is as follows:
+		
+		\begin{tabular}{|l|l|}
+			\hline
+			From & To \\
+			\hline
+			0 & 'rbx' \\
+			\hline
+			1 & 'rcx' \\
+			\hline
+			2 & 'rdx' \\
+			\hline
+			3 & 'r8' \\
+			\hline
+			4 & 'r9' \\
+			\hline
+			5 & 'r10' \\
+			\hline
+			'pc' & 'rsi' \\
+			\hline
+			'fp' & 'rbp' \\ 
+			\hline
+		\end{tabular}
+		
+		The Ruby script defines the \texttt{i}, \texttt{j} and \texttt{k} variables for each template expansion to represent the operands to the instruction, and also appends a dispatch template to the end of each implementation.
+			
+			
 		\todo{Something here}
 		
-		In our implementation, every data structure begins with a 64-bit header field with an organisation described in Figure \ref{fig:objheader}. This is not gaurant
+		In our implementation, every data structure begins with a 64-bit header field with an organisation described in Figure \ref{fig:objheader}. 
 		
 		\begin{myfigure}
 			\begin{tabular}{|l|c| c| c|c|c|}
