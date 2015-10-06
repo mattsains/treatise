@@ -461,11 +461,11 @@ add_1_1:
 		
 		There are two notional registers which are not visible to the programmer at all. These are \texttt{pc}, the virtual machine instruction pointer, and \texttt{fp} the stack frame pointer.
 		
-		Instructions are sixteen bits long. Unlike the majority of virtual machines, the instruction words are not bitfields. Since every unique instruction word corresponds to its own implementation code, and dispatch occurs over the entire word, bitfields serve no purpose, and actually make token threading more difficult because instructions with bitfields are not sequential.
+		Instructions are sixteen bits long. Unlike the majority of virtual machines, the instruction words are not bitfields. Since every unique instruction word corresponds to its own implementation code, and dispatch occurs over the entire word, bit fields serve no purpose, and actually make token threading more difficult because instructions with bitfields are not sequential.
 		
-		An instruction is sometimes followed by a sixteen-bit immediate value. This immediate value can be either a sixteen-bit constant, or a relative displacement to a position elsewhere in the program. This interpretation depends on the meaning of the preceeding instruction.
+		An instruction is sometimes followed by a sixteen-bit immediate value. This immediate value can be either a sixteen-bit constant, or a relative displacement to a position elsewhere in the program. This interpretation depends on the meaning of the preceding instruction.
 		
-		A pointer can refer to one of three data structures: an object, an array of integers, or an array of pointers. An object is a collection of variables of different types in an order specified by an object prototype. The prototype is found in the program's bytecode and has the format specified in \reffig{objproto}. Since the virtual machine is statically typed, it is necessary to keep track of the type of each member in an object, and the prototype serves this purpose. However, this is not necessary for arrays, since they are homogenous---either all pointers or all integers.
+		A pointer can refer to one of three data structures: an object, an array of integers, or an array of pointers. An object is a collection of variables of different types in an order specified by an object prototype. The prototype is found in the program's bytecode and has the format specified in \reffig{objproto}. Since the virtual machine is statically typed, it is necessary to keep track of the type of each member in an object, and the prototype serves this purpose. However, this is not necessary for arrays, since they are homogeneous---either all pointers or all integers.
 		
 		\begin{myfigure}
 			\begin{tabular}{|l|l| }
