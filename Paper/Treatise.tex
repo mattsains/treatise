@@ -103,7 +103,9 @@
 		\subsection{Conventional Virtual Machines}
 			There are two common types of high-level virtual machine architectures: stack machines and register machines. Stack machines store temporary values in a stack data structure, while register machines store temporary values in storage ``boxes'' called registers. A stack machine's stack is used not just for temporary data, but serves a double purpose as the call stack. This is contrasted with a register machine, which maintains a dedicated call stack alongside the registers.
 			
-			Most of a stack machine's instruction set consists mostly of operations on the stack.  \reffig{stackprogram} shows an example of code written for a stack machine. Notice that the operands of the instructions (such as \texttt{add} and \texttt{divide}) are implicit, and so instructions for stack machines tend to be shorter. The complexity of individual instructions is major difference between stack machines and register machines. 
+			Real register machines implement registers in high-speed memory hardware as part of their design. However, virtual machines have difficulty emulating high-speed registers because virtual machine registers are typically stored in the host's main memory.
+			
+			Most of a stack machine's instruction set consists of operations on the stack.  \reffig{stackprogram} shows an example of code written for a stack machine. Notice that the operands of the instructions (such as \texttt{add} and \texttt{divide}) are implicit, and so instructions for stack machines tend to be shorter. The complexity of individual instructions is major difference between stack machines and register machines. 
 		
 			\begin{doublefig}
 				\begin{halffig}
@@ -132,15 +134,28 @@ print regA
 				\end{halffig}
 			\end{doublefig}
 			
-			The bytecode of a stack machine is very simple. For each operation, a unique code (called an \emph{opcode}) is assigned. For instance, a word value~(``instruction word'') of \texttt{0x01} might represent push, while \texttt{0x02} might represent add, and so on. The introduction of literals, such as the $14$ and $8$ in the first two lines---as well as other types of additional data attached to instructions---complicates this picture, but the idea remains unchanged.
+			Unlike stack machine instructions, a register machine's instructions additionally specify the registers involved in the instruction. \reffig{registerprogram} shows the same program for a register machine. In the \texttt{add} instruction, the value of \texttt{regA} is added to \texttt{regB}, and the result is stored in \texttt{regA}.
 		
-			A register machine contains a number of high-speed memory ``boxes'' into which temporary values are stored, called registers. Instructions generally specify which registers are involved in the operation~(``operands''). \reffig{registerprogram} shows the same program for a register machine. In the \texttt{add} instruction, the value of \texttt{regA} is added to \texttt{regB}, and the result is stored in \texttt{regA}. This is a convention in assembly programming which will be used throughout the text.
-		
-			A register machine's bytecode is different, because the operands of the instruction need to be part of the instruction encoding. Typically this is implemented using bitfields. For example, consider a twelve-bit instruction word. We can reserve the first 4 bits for the opcode. This gives us a maximum of 16 opcodes. The next four bits of the instruction word can encode the first operand as an enumeration, and the same for the last four bits which can encode the second operand. If an instruction only has one operand, the last four bits are undefined. This is illustrated in \reffig{bitfields}
+			Each instruction in a program is encoded as a series of bytes called an \emph{instruction word}. The component of the instruction word which specifies the operation to be performed (eg., \texttt{add}) is called the \emph{opcode}. 
 			
-
+			In a stack machine, the instruction encoding is simple. Each opcode is assigned a unique instruction word. For instance, the program listed in \reffig{stackprogram} might be represented:
 			
+			\texttt{
+				\begin{tabular} {| l | l |}
+					\hline
+					Encoding & Instruction \\
+					\hline
+					0x01 & push \\
+					0x01 & push \\
+					0x00 & add \\
+					0x01 & push \\
+					0x02 & divide \\
+					0x03 & print \\
+					\hline
+				\end{tabular}
+			}
 			
+			A register machine's instruction encoding is more complicated because the operands of the instruction need to be part of the instruction encoding. The conventional implementation uses bitfields. The first few bits are reserved for encoding the opcode, which follows the same format as with a stack machine. The rest of the bits are divided into segments, into which each operand is encoded. For example, consider a twelve-bit instruction word. The first four bits can be reserved for the opcode encoding, resulting in a maximum of 16 unique opcodes. The next four bits of the instruction word can encode the first operand as an enumeration, and the same for the last four bits which can encode the second operand. If an instruction only has one operand, the last four bits are undefined. This is illustrated in \reffig{bitfields}	
 			
 			\begin{myfigure}
 				\texttt{
@@ -163,17 +178,17 @@ print regA
 			\end{myfigure}
 			
 		\subsection{The Nature of Modern Processors}
-			The landscape of processor design has changed significantly in the last thirty years. Rather than producing performance gains by arbitrarily increasing processor clock speeds, modern processor designers rely on trying to increase the per-cycle efficiency of their processors, using techniques such as instruction-level parallelism, larger and more complex cache systems, and speculative optimisation. These design issues caught the interest of academics and engineers in the 1980's \citep{modernprocessordesign}. Some of these topics will be briefly discussed in this section.
+			The landscape of processor design has changed significantly in the last thirty years. Rather than producing performance gains by arbitrarily increasing processor clock speeds, modern processor designers rely on trying to increase the per-cycle efficiency of their processors, using techniques such as instruction pipelining, larger and more complex cache systems, and speculative optimisation. These design issues caught the interest of academics and engineers in the 1980's \citep{modernprocessordesign}. Some of these design changes significantly alter the performance characteristics of virtual machine interpreters, and are briefly discussed in this section.
 			
 			\subsubsection{Instruction Pipelining}
-			Traditional processors executed machine instructions one at a time. Every clock cycle, an instruction would be fetched, decoded, and executed. The result of this method is that activity on a processor would move through the architecture componentwise. Only one part of the process would be ``working'' at any time---for instance, when an instruction was being decoded, the entire execution component of the processor was unused.
+			Early processors executed machine instructions one at a time. Every clock cycle, an instruction would be fetched, decoded, and executed. The result of this method is that activity on a processor would move through the architecture component-wise. Only one part of the process would be ``working'' at any time---for instance, when an instruction was being decoded, the entire execution component of the processor was unused.
 			
-			On a processor with instruction-level parallelism, these functions can operate in parallel. An instruction can be fetched while another instruction is being decoded, and yet another instruction's operands are being fetched. A processor that can operate this way is said to have an \emph{instruction pipeline.} This results in far better utilisation of processor hardware, but introduces complexity in the processor. For instance, if one instruction writes to a memory address, and later instruction reads from the same address, the second instruction cannot complete the operand fetch stage until the first instruction has been executed. A situation where an instruction has to wait for another to complete is known as a \emph{pipeline stall,} and is a subject of much academic writing and engineering effort.
+			On a processor with pipelining, these functions can operate independently in parallel. An instruction can be fetched while another instruction is being decoded, and yet another instruction's operands are being fetched. A processor that can operate this way is said to have an \emph{instruction pipeline.} This results in far better utilisation of processor hardware, but introduces complexity in the processor. For instance, if one instruction writes to a memory address, and later instruction reads from the same address, the second instruction cannot complete the operand fetch stage until the first instruction has been executed. A situation where an instruction has to wait for another to complete is known as a \emph{pipeline stall,} and is a subject of much academic writing and engineering effort.
 			
 			\subsubsection{Cache Arrangement}
 			Modern processors contain portions of high-speed memory which act as a cache to the main memory of the machine. The behaviour of this cache is an important factor for processor performance, because main memory is quite slow compared to the speed of a CPU. Modern caches are orders of magnitude larger than processors twenty years ago. 
 			
-			Most modern processors contain a series of specialised caches. For instance, a fourth-generation Intel Core processor has three grades or \emph{levels} of cache, and make a distinction between cache for instructions and cache for program data. \reffig{cachenumbers} shows the arrangement of cache on such a processor. As can be seen, L1 cache is much faster, but much smaller than L2 cache. The latency in L1 instruction cache is not shown because instruction fetch is transparent to programs, but it does influence branch prediction (see later). It is advantageous for a program if most of its application data can fit in L1 data cache, and most of its code can fit in L1 instruction cache. 
+			Most modern processors contain a series of specialised caches. For instance, a fourth-generation Intel Core processor has three grades or \emph{levels} of cache, and make a distinction between cache for instructions and cache for program data. \reffig{cachenumbers} shows the arrangement of cache on such a processor. As can be seen, L1 cache is much faster, but much smaller than L2 cache. The latency in L1 instruction cache is not shown because instruction fetch is transparent to programs, but it does influence branch prediction (see later). It is advantageous for a program if most of its application data can fit in L1 data cache, and most of its code can fit in L1 instruction cache. However, traditional virtual machines have not been designed to take advantage of the large amount of cache available on modern processors.
 			
 			\begin{myfigure}
 				\begin{tabular}{ | l | l | l | l | }
@@ -208,6 +223,8 @@ print regA
 			An indirect branch is the worst type of branch for a pipelined processor. It is very hard to predict because the branch location could depend on any data anywhere in main memory or in registers. This influence that data has on the behaviour of the program is known as \emph{data dependance} and is to be avoided whenever possible. Modern processors implement a \emph{branch target predictor} in an attempt to reduce the number of pipeline stalls. A branch target predictor is not to be confused with a branch predictor---a branch predictor predicts whether the branch will be taken, whereas a branch target predictor tries to predict where the branch will lead. A conditional branch can only lead two places---the next instruction, or the constant branch location.
 			
 			One common branch target predictor is a \emph{branch target buffer} (BTB). A branch target buffer maintains a table storing the last target location of each indirect branch encountered. Thus a BTB makes the assumption that an indirect branch target is unlikely to change  \citep{yeti}. This strategy works well if an indirect branch always branches to the same location, but is no help if it is always different.
+			
+			Indirect branches are a big issue in virtual machine design, since an indirect branch is unavoidable during the dispatch process of a virtual machine \citep{structureinterpreters}. An indirect branch may be unavoidable, but it may be possible to significantly increase the dispatch performance of a virtual machine by increasing the likelihood that indirect branches are predicted correctly by a branch target predictor.
 			
 			These concepts form the background to this research, and the problems which motivate it.
 	
