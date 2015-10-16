@@ -188,7 +188,7 @@ print regA
 			\subsubsection{Cache Arrangement}
 			Modern processors contain portions of high-speed memory which act as a cache to the main memory of the machine. The behaviour of this cache is an important factor for processor performance, because main memory is quite slow compared to the speed of a CPU. Modern caches are orders of magnitude larger than processors twenty years ago. 
 			
-			Most modern processors contain a series of specialised caches. For instance, a fourth-generation Intel Core processor has three grades or \emph{levels} of cache, and make a distinction between cache for instructions and cache for program data. \reffig{cachenumbers} shows the arrangement of cache on such a processor. As can be seen, L1 cache is much faster, but much smaller than L2 cache. The latency in L1 instruction cache is not shown because instruction fetch is transparent to programs, but it does influence branch prediction (see later). It is advantageous for a program if most of its application data can fit in L1 data cache, and most of its code can fit in L1 instruction cache. However, traditional virtual machines have not been designed to take advantage of the large amount of cache available on modern processors.
+			Most modern processors contain a series of specialised caches. For instance, a fourth-generation Intel Core processor has three grades or \emph{levels} of cache, and make a distinction between cache for instructions and cache for program data. \reffig{cachenumbers} shows the arrangement of cache on such a processor. As can be seen, L1 cache is much faster, but much smaller than L2 cache. The latency in L1 instruction cache is not shown because instruction fetch is transparent to programs, but it does influence branch prediction (see later). It is advantageous for a program if most of its application data can fit in L1 data cache, and most of its code can fit in L1 instruction cache. However, conventional virtual machines have not been designed to take advantage of the large amount of cache available on modern processors.
 			
 			\begin{myfigure}
 				\begin{tabular}{ | l | l | l | l | }
@@ -386,11 +386,14 @@ print:
 \chapter{Solution Design}
 	In this section the design of the virtual machine will be discussed. \todo{more}
 	
+	
 	The overarching design goal for this virtual machine is to enable register mapping between virtual machine and host machine.
 	
 	In conventional virtual machines, an implementation for a virtual machine instruction will look like \reffig{operandfetch}. Notice how the virtual registers are implemented as an array in memory, and that the index of the virtual register is encoded into the instruction word (a bitfield, as explained earlier). If we are to store the virtual registers in real registers, we cannot access the register using an index.
 	
 	\todo{expand on dispatching, and virtual machine implementation in general}
+	
+	\todo{Talk about traditional nuts and bolts}
 	
 	\begin{myfigure}
 		\begin{lstlisting}
@@ -448,7 +451,7 @@ add_1_1:
 	
 	There are several things we can do to attempt to reduce the inevitably large size of the implementation. The most obvious thing we can do is reduce the number of instructions supported by the VM architecture. This is more possible in high-level virtual machines than real machines, because the instructions tend to be more sophisticated. The second thing we can do is to reduce the number of registers exposed through the VM architecture. Because the size of the implementation has a polynomial relation to the number of exposed registers, this will probably have the largest effect. Our last attempt to reduce the size of the implementation will be to prohibit certain trivial combinations of operands for certain instructions. For instance, the instruction `\texttt{sub regA, regA}' is useless because the result will always be the same as `\texttt{mov regA, 0}'. Similar arguments lead us to remove combinations like `\texttt{xor regA, regA}', `\texttt{and regA, regA}' and so on. Removing these instructions from our specification means we can remove their implementations, because every combination of operands has its own implementation in our virtual machine.
 	
-	Since our virtual machine is designed to be run as a user process under an operating system, we should include instructions that help the program interact with its environment under the operating system. We call these instructions ``pragmatic'' instructions.
+	\todo{Talk about how duplicating this code improves branch target prediction - there is a citation for this somewhere near where some guy talks about superinstructions}
 	
 	With all these constraints and goals in mind, we can design the virtual machine architecture.
 	
@@ -465,6 +468,9 @@ add_1_1:
 		
 		An instruction is sometimes followed by a sixteen-bit immediate value. This immediate value can be either a sixteen-bit constant, or a relative displacement to a position elsewhere in the program. This interpretation depends on the meaning of the preceding instruction.
 		
+		Since our virtual machine is designed to be run as a user process under an operating system, we should include instructions that help the program interact with its environment under the operating system. We call these instructions ``pragmatic'' instructions.
+		
+		\subsection{Types}
 		A pointer can refer to one of three data structures: an object, an array of integers, or an array of pointers. An object is a collection of variables of different types in an order specified by an object prototype. The prototype is found in the program's bytecode and has the format specified in \reffig{objproto}. Since the virtual machine is statically typed, it is necessary to keep track of the type of each member in an object, and the prototype serves this purpose. However, this is not necessary for arrays, since they are homogeneous---either all pointers or all integers.
 		
 		\begin{myfigure}
@@ -594,7 +600,6 @@ add {r[i]}, {r[j]}
 		
 		The Ruby script defines the \texttt{i}, \texttt{j} and \texttt{k} variables for each template expansion to represent the operands to the instruction, and also appends a dispatch template to the end of each implementation.
 			
-			
 		\todo{Something here}
 		
 		In our implementation, every data structure begins with a 64-bit header field with an organisation described in \reffig{objheader}. 
@@ -622,7 +627,323 @@ add {r[i]}, {r[j]}
 		If the header describes an integer array, \todo{Continue}
 
 \chapter{Evaluation Methods and Results}
+	The main idea in the virtual machine design is to map virtual machine registers to real registers. Being able to do this requires that the implementation for each instruction be expanded to provide a different implementation for every combination of operands. Although the idea of expanding instruction implementations is forced on us by our goal of mapping registers, there is a case to be made for expanding these implementations in the absence of register mapping---as discussed in the previous chapter, duplicating code may improve the performance in two key ways. Firstly, it removes the need to perform an operand fetch and store for every instruction. Secondly, it will improve the ability of the physical processor to perform branch target prediction on the virtual machine dispatch, because there are are an increased number of places where indirect branches occur.
+	
+	Naturally, we want to test whether this new virtual machine design is faster than a conventional virtual machine. However, we also want to test whether register mapping is actually necessary. It is possible that a virtual machine which duplicates implementation code, but does \emph{not} do register mapping will still perform better than a conventional virtual machine. If it is the case that it is possible to improve conventional virtual machine performance without register mapping, then the code duplication may be able to be used in the design of a virtual machine for a high level language which does not support direct register access. This is a lucrative possibility because writing a virtual machine in low-level assembly is very difficult compared to using a high-level language like C.
+	
+	To test these two possibilities, three different virtual machines have been implemented, all sharing the common instruction set architecture described in the previous chapter.
+	
+	\begin{description}
+		\item[Conventional Virtual Machine:] This virtual machine will be used in both experiments as a control for comparison. Its implementation matches that of virtual machines which already exist. There is no code duplication or register mapping, and it resembles \reffig{fig:operandfetch} in structure. It also expects a conventional instruction representation using bitfields, unlike the other two virtual machines.
+		\item[Duplicated Code Machine:] This virtual will have duplicated implementation code, but no register mapping. It will be used to test the hypothesis that improved performance is possible without register mapping. To determine whether the hypothesis is true, the performance of this virtual machine will be compared to the conventional virtual machine and the register mapped machine.
+		\item[Register Mapped Machine:] This virtual machine will implement both register mapping and, by necessity, implementation code duplication. If this virtual machine is significantly faster than both the conventional machine and the duplicated code machine, then register mapping will be confirmed as a strategy for performance improvement.
+	\end{description}
+	
+	To test the performance of each of these benchmarks, a number of benchmark programs were written for these virtual machine's instruction set. Each benchmark is designed to test specific performance aspects of the virtual machine. The benchmarks were also translated to C to compare the interpreted benchmark programs to natively compiled programs.
+	
+	\begin{description}
+		\item[Ackermann Function:] This benchmark is designed to do an extreme amount of function calls (recursion). It is designed to test the performance characteristics of function calls on the three virtual machines.
+		\item[Prime Sieve:] This benchmark uses linked lists to implement a sieve of Eratosthenes. This benchmark is designed to test performance characteristics of pointer operations in the virtual machine. The benchmark begins with a linked list of sequential numbers. Composite numbers are progressively removed from the list through pointer manipulation (removing nodes from a linked list).
+		\item[Fannkuch (Pancake):] This benchmark implements an iterative integer algorithm, and is designed to test the performance of simple load and store operations in an integer array.
+		\item[Mersenne Twister:] This benchmark implements a random number generator. It is designed to test binary operations (\texttt{and}, \texttt{shl}, etc.) on a large array of integers.
+		\item[Mandelbrot:] This benchmark renders an approximation of the mandelbrot set to a bitmap file. This benchmark allocates and writes to a large integer array. This benchmark was designed to do no function calls, in order to provide statistics isolated from the effects of function calls on the performance of the virtual machines.
+		\item[Fasta:] This benchmark produces a long string of characters representing nucleotides in a DNA sequence. It produces these through a simple linear congruence random number generator. 
+		\item[Reverse Complement:] This benchmark takes as input a long string of characters representing nucleotides, like the output of the previous benchmark. The benchmark then reverses this string, and performs a character-level substitution to generate a complementary DNA sequence. This benchmark tests the performance characteristics of stream processing on the virtual machines.
+	\end{description}
+	
+	These benchmarks were assembled for the virtual machines using a purpose-build assembler program which was designed to have a flexible code generator so that benchmarks could be easily re-targeted for each of the virtual machines during development. The assembler defines a fairly typical assembly language. \reffig{ackermann} shows an excerpt of the assembly code for the ackermann benchmark.
+	
+	\begin{myfigure}
+		\begin{lstlisting}
+function A
+  int m
+  int n
 
+  getl r1, A.m
+  getl r2, A.n
+
+  jcmpc r1, 0, .c1, .c1, .c23
+  .c1:
+  addc r2, 1
+  mov r0, r2
+  ret
+  .c23:
+  jcmpc r2, 0, .c2, .c2, .c3
+  .c2:
+  addc r1, -1
+  setl A.m, r1
+  movc r2, 1
+  setl A.n, r2
+  call A, A.m, 2
+  ret
+  .c3:
+  addc r2, -1
+  setl A.n, r2
+  call A, A.m, 2
+  ;r0 now result
+  setl A.n, r0
+  addc r1, -1
+  setl A.m, r1
+  call A, A.m, 2
+ret
+		\end{lstlisting}
+		\caption{Excerpt of Ackermann Benchmark}
+		\label{fig:ackermann}
+	\end{myfigure}
+	
+	Each benchmark was run on every virtual machine ten times, and the execution time was recorded. The graphs in \reffig{execgraphs} show the execution time in seconds, with the error bars representing the standard deviation. 
+	
+	\begin{myfigure}
+	\begin{tikzpicture}
+	\begin{axis}[
+	title = {Ackermann Benchmark},
+	width={0.42\linewidth},
+	ytick={1,...,3},
+	yticklabels={
+		Register Mapped VM,
+		Duplicated Code VM,
+		Conventional VM		
+		},
+	grid=major,
+	xbar,
+	xlabel=Execution Time (seconds),
+	xmin=0,
+	y tick label style={text width=2cm,align=center}
+	]
+	
+	\addplot[
+	fill=blue!25,
+	draw=black,
+	every node near coord/.style={inner ysep=5pt},
+	error bars/.cd,
+	x dir=both,
+	x explicit
+	] 
+	table [x error=error] {
+		x   	y	error
+		142.25  3	1.20923
+		130.431	2	2.17705433
+		130.821	1	3.64046
+	};
+	\end{axis}
+	\end{tikzpicture}
+	\begin{tikzpicture}
+	\begin{axis}[
+	title = {Fasta Benchmark},
+	width={0.42\linewidth},
+	ytick={1,...,4},
+	yticklabels={%
+		Register Mapped VM,
+		Duplicated Code VM,
+		Conventional VM,
+		C
+		},
+	grid=major,
+	xbar,
+	xlabel=Execution Time (seconds),
+	xmin=0,
+	y tick label style={text width=2cm,align=center}
+	]
+	
+	\addplot[
+	fill=blue!25,
+	draw=black,
+	every node near coord/.style={inner ysep=5pt},
+	error bars/.cd,
+	x dir=both,
+	x explicit
+	] 
+	table [x error=error] {
+		x   	y	error
+		6.113 	4  	0.1539
+		45.785  3  	3.974385
+		39.63   2	2.7534
+		34.956	1	0.35116
+	};
+	\end{axis}
+	\end{tikzpicture}
+	\begin{tikzpicture}
+	\begin{axis}[
+	title = {Reverse Complement Benchmark},
+	width={0.42\linewidth},
+	ytick={1,...,4},
+	yticklabels={%
+		Register Mapped VM,
+		Duplicated Code VM,
+		Conventional VM,
+		C
+	},
+	grid=major,
+	xbar,
+	xlabel=Execution Time (seconds),
+	xmin=0,
+	y tick label style={text width=2cm,align=center}
+	]
+	
+	\addplot[
+	fill=blue!25,
+	draw=black,
+	every node near coord/.style={inner ysep=5pt},
+	error bars/.cd,
+	x dir=both,
+	x explicit
+	] 
+	table [x error=error] {
+		x   	y	error
+		1.925 	4  	0.88735
+		7.863  	3  	0.2343
+		6.149   2	0.00875
+		5.698	1	0.023475
+	};
+	\end{axis}
+	\end{tikzpicture}
+	\begin{tikzpicture}
+	\begin{axis}[
+	title = {Mersenne Benchmark},
+	width={0.42\linewidth},
+	ytick={1,...,4},
+	yticklabels={%
+		Register Mapped VM,
+		Duplicated Code VM,
+		Conventional VM,
+		C
+	},
+	grid=major,
+	xbar,
+	xlabel=Execution Time (seconds),
+	xmin=0,
+	y tick label style={text width=2cm,align=center}
+	]
+	
+	\addplot[
+	fill=blue!25,
+	draw=black,
+	every node near coord/.style={inner ysep=5pt},
+	error bars/.cd,
+	x dir=both,
+	x explicit
+	] 
+	table [x error=error] {
+		x   	y	error
+		12.087 	4  	0.79
+		30.81	3  	3.36936
+		26.229	2	2.47198
+		26.718	1	3.394485
+	};
+	\end{axis}
+	\end{tikzpicture}
+	
+	
+	\begin{tikzpicture}
+	\begin{axis}[
+	title = {Fannkuch Benchmark},
+	width={0.42\linewidth},
+	ytick={1,...,4},
+	yticklabels={%
+		Register Mapped VM,
+		Duplicated Code VM,
+		Conventional VM,
+		C
+	},
+	grid=major,
+	xbar,
+	xlabel=Execution Time (seconds),
+	xmin=0,
+	y tick label style={text width=2cm,align=center}
+	]
+	
+	\addplot[
+	fill=blue!25,
+	draw=black,
+	every node near coord/.style={inner ysep=5pt},
+	error bars/.cd,
+	x dir=both,
+	x explicit
+	] 
+	table [x error=error] {
+		x   	y	error
+		10.475 	4  	0.3511
+		35.24	3  	0.0828
+		31.041	2	1.47051
+		27.693	1	1.3622
+	};
+	\end{axis}
+	\end{tikzpicture}
+	\begin{tikzpicture}
+	\begin{axis}[
+	title = {Prime Sieve Benchmark},
+	width={0.42\linewidth},
+	ytick={1,...,4},
+	yticklabels={%
+		Register Mapped VM,
+		Duplicated Code VM,
+		Conventional VM,
+		C
+	},
+	grid=major,
+	xbar,
+	xlabel=Execution Time (seconds),
+	xmin=0,
+	y tick label style={text width=2cm,align=center}
+	]
+	
+	\addplot[
+	fill=blue!25,
+	draw=black,
+	every node near coord/.style={inner ysep=5pt},
+	error bars/.cd,
+	x dir=both,
+	x explicit
+	] 
+	table [x error=error] {
+		x   	y   error
+		131.628	4  	6.0634
+		157.396	3  	9.2844
+		150.447	2	13.1281
+		137.208	1	6.0634
+	};
+	\end{axis}
+	\end{tikzpicture}
+	
+	\begin{tikzpicture}
+	\begin{axis}[
+	title = {Mandelbrot Benchmark},
+	width={0.42\linewidth},
+	ytick={1,...,4},
+	yticklabels={%
+		Register Mapped VM,
+		Duplicated Code VM,
+		Conventional VM,
+		C
+	},
+	grid=major,
+	xbar,
+	xlabel=Execution Time (seconds),
+	xmin=0,
+	y tick label style={text width=2cm,align=center}
+	]
+	
+	\addplot[
+	fill=blue!25,
+	draw=black,
+	every node near coord/.style={inner ysep=5pt},
+	error bars/.cd,
+	x dir=both,
+	x explicit
+	] 
+	table [x error=error] {
+		x   	y   error
+		119.761	4  	0.3601
+		527.373	3  	34.407
+		460.722	2	19.204
+		310.399	1	4.4663
+	};
+	\end{axis}
+	\end{tikzpicture}
+	
+	\caption{Execution Times for Each Benchmark}
+	\label{fig:execgraphs}
+	\end{myfigure}
 % Last chapter
 \chapter{Conclusion}
 	
