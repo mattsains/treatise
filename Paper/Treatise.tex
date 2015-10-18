@@ -17,14 +17,22 @@
 
 % Prefaces
 \nakedchapter{Acknowledgements}
-	To all my loyal fans
+	To all my loyal fans.\todo{lol remember to remove this}
+	
+	The financial assistance of the National Research Foundation (NRF) towards this research is hereby acknowledged. Opinions expressed and conclusions arrived at, are those of the author and are not necessarily to be attributed to the NRF.
 
 \nakedchapter{Abstract}
 	\todo{align this with project proposal}
 	Conventional JIT-less high-level register virtual machines simulate virtual registers in random access memory (RAM) and load virtual registers from RAM whenever they are accessed \citep{caseregistervm}. This treatise investigates an alternative approach where virtual registers are mapped to physical registers, and instructions are dispatched not only on the opcode, but also on the operands of the instruction. To emulate a virtual instruction, the interpreter jumps to the appropriate code segment in a table of implementation code based on the instruction word to be executed. This table grows in a polynomial fashion with increased virtual registers, and therefore the performance balance between table size and register pressure is investigated.
 
 \nakedchapter{Declaration of Own Work}
-
+	I declare that the entirety of the work contained in this treatise is my own, original work, that I am the sole author thereof (save to the extent explicitly otherwise stated), that reproduction	and publication thereof by Nelson Mandela Metropolitan University will not infringe any third	party rights that I have not previously in its entirety or in part submitted it for obtaining any qualification.
+	
+	\vskip 1em
+	
+	Signature: \underline{\hspace{3cm}}
+	
+	Date: \today
 
 \tableofcontents
 
@@ -138,26 +146,31 @@ print regA
 		
 			Each instruction in a program is encoded as a series of bytes called an \emph{instruction word}. The component of the instruction word which specifies the operation to be performed (eg., \texttt{add}) is called the \emph{opcode}. 
 			
-			In a stack machine, the instruction encoding is simple. Each opcode is assigned a unique instruction word. For instance, the program listed in \reffig{stackprogram} might be represented:
+			In a stack machine, the instruction encoding is simple. Each opcode is assigned a unique instruction word. For instance, the program listed in \reffig{stackprogram} might be represented as in \reffig{stackencoding}.
 			
-			\texttt{
-				\begin{tabular} {| l | l |}
-					\hline
-					Encoding & Instruction \\
-					\hline
-					0x01 & push \\
-					0x01 & push \\
-					0x00 & add \\
-					0x01 & push \\
-					0x02 & divide \\
-					0x03 & print \\
-					\hline
-				\end{tabular}
-			}
+			A register machine's instruction encoding is more complicated because the operands of the instruction need to be part of the instruction encoding. The conventional implementation uses bitfields. The first few bits are reserved for encoding the opcode, which follows the same format as with a stack machine. The rest of the bits are divided into segments, into which each operand is encoded. For example, consider a twelve-bit instruction word. The first four bits can be reserved for the opcode encoding, resulting in a maximum of 16 unique opcodes. The next four bits of the instruction word can encode the first operand as an enumeration, and the same for the last four bits which can encode the second operand. If an instruction only has one operand, the last four bits are undefined. This is illustrated in \reffig{bitfields}.
 			
-			A register machine's instruction encoding is more complicated because the operands of the instruction need to be part of the instruction encoding. The conventional implementation uses bitfields. The first few bits are reserved for encoding the opcode, which follows the same format as with a stack machine. The rest of the bits are divided into segments, into which each operand is encoded. For example, consider a twelve-bit instruction word. The first four bits can be reserved for the opcode encoding, resulting in a maximum of 16 unique opcodes. The next four bits of the instruction word can encode the first operand as an enumeration, and the same for the last four bits which can encode the second operand. If an instruction only has one operand, the last four bits are undefined. This is illustrated in \reffig{bitfields}	
-			
-			\begin{myfigure}
+			\begin{doublefig}
+				\begin{halffig}
+					
+				\texttt{
+					\begin{tabular} {| l | l |}
+						\hline
+						Encoding & Instruction \\
+						\hline
+						0x01 & push \\
+						0x01 & push \\
+						0x00 & add \\
+						0x01 & push \\
+						0x02 & divide \\
+						0x03 & print \\
+						\hline
+					\end{tabular}
+				}
+				\caption{Stack Instruction Encoding}
+				\label{fig:stackencoding}
+				\end{halffig}
+				\begin{halffig}
 				\texttt{
 					\begin{tabular}{ | l | r | r |r | }
 						\hline
@@ -173,17 +186,13 @@ print regA
 						\hline
 					\end{tabular}
 				}
-				\caption{Register instructions using bitfields}
+				\caption{Register Instructions as Bitfields}
 				\label{fig:bitfields}
-			\end{myfigure}
+				\end{halffig}
+			\end{doublefig}
 			
 		\subsection{The Nature of Modern Processors}
-			The landscape of processor design has changed significantly in the last thirty years. Rather than producing performance gains by arbitrarily increasing processor clock speeds, modern processor designers rely on trying to increase the per-cycle efficiency of their processors, using techniques such as instruction pipelining, larger and more complex cache systems, and speculative optimisation. These design issues caught the interest of academics and engineers in the 1980's \citep{modernprocessordesign}. Some of these design changes significantly alter the performance characteristics of virtual machine interpreters, and are briefly discussed in this section.
-			
-			\subsubsection{Instruction Pipelining}
-			Early processors executed machine instructions one at a time. Every clock cycle, an instruction would be fetched, decoded, and executed. The result of this method is that activity on a processor would move through the architecture component-wise. Only one part of the process would be ``working'' at any time---for instance, when an instruction was being decoded, the entire execution component of the processor was unused.
-			
-			On a processor with pipelining, these functions can operate independently in parallel. An instruction can be fetched while another instruction is being decoded, and yet another instruction's operands are being fetched. A processor that can operate this way is said to have an \emph{instruction pipeline.} This results in far better utilisation of processor hardware, but introduces complexity in the processor. For instance, if one instruction writes to a memory address, and later instruction reads from the same address, the second instruction cannot complete the operand fetch stage until the first instruction has been executed. A situation where an instruction has to wait for another to complete is known as a \emph{pipeline stall,} and is a subject of much academic writing and engineering effort.
+			The landscape of processor design has changed significantly in the last thirty years. Rather than producing performance gains by arbitrarily increasing processor clock speeds, modern processor designers rely on trying to increase the per-cycle efficiency of their processors, using techniques such as instruction pipelining, larger and more complex cache systems, and speculative optimisation. These new design ideas caught the interest of academics and engineers in the 1980's \citep{modernprocessordesign}. Some of these new processor features significantly alter the performance characteristics of virtual machine interpreters, and are briefly discussed in this section.
 			
 			\subsubsection{Cache Arrangement}
 			Modern processors contain portions of high-speed memory which act as a cache to the main memory of the machine. The behaviour of this cache is an important factor for processor performance, because main memory is quite slow compared to the speed of a CPU. Modern caches are orders of magnitude larger than processors twenty years ago. 
@@ -206,6 +215,11 @@ print regA
 				\caption{Cache on 4th-Gen Intel Core CPUs \citep{optimisationreference}}
 				\label{fig:cachenumbers}
 			\end{myfigure}
+			
+			\subsubsection{Instruction Pipelining}
+			Early processors executed machine instructions one at a time. Every clock cycle, an instruction would be fetched, decoded, and executed. The result of this method is that activity on a processor would move through the architecture component-wise. Only one part of the process would be ``working'' at any time---for instance, when an instruction was being decoded, the entire execution component of the processor was unused.
+			
+			On a processor with pipelining, these functions can operate independently in parallel. An instruction can be fetched while another instruction is being decoded, and yet another instruction's operands are being fetched. A processor that can operate this way is said to have an \emph{instruction pipeline.} This results in far better utilisation of processor hardware, but introduces complexity in the processor. For instance, if one instruction writes to a memory address, and later instruction reads from the same address, the second instruction cannot complete the operand fetch stage until the first instruction has been executed. A situation where an instruction has to wait for another to complete is known as a \emph{pipeline stall,} and is a subject of much academic writing and engineering effort. Modern processors try to avoid stalls by predicting in advance what data is likely to be needed. This is an important consideration in the design of virtual machines, especially with predicting the behaviour of branches.
 			
 			\subsubsection{Branch Prediction \& Branch Target Prediction}
 			Branch prediction in a process refers to the processor's ability to continue the pipelining process during a branch instruction. Ordinarily, the location of the next instruction is known to the processor---it is simply the instruction adjacent to the previous one. If the previous instruction was an instruction to branch (go somewhere else in the program), the picture becomes more complex. There are three types of branches worth mentioning:
@@ -258,10 +272,13 @@ print regA
 			\] 
 			
 			Every additional virtual machine register increases the size of the virtual machine by a polynomial factor. At some point, any performance gain received by exposing more physical registers will be negated by increasing incidence of cache misses. This is a source of a practical limitation on the number of registers in the virtual machine's architecture.
-			
 				
 	\section{Overview of Treatise Structure}
-		\todo{Will have to wait until the rest of the treatise exists for this! Tip: Design this for someone who doesn't feel like reading the whole thing. Make it easy to find specific, interesting sections.}
+		This treatise documents the process of evaluating new ideas in virtual machine design. In Chapter 2, an outline of relevant research in the field of virtual machine, interpreter and processor design is presented. We also mention previous work which is similar to this one. This helps to form a framework around which we present our new ideas.
+		
+		In Chapter 3 we present the main ideas of this research, and launch into a detailed description of the virtual machine design that will embody these ideas. We also touch on some interesting implementation details.
+		
+		In Chapter 4 we describe how these ideas will be evaluated by subjecting the virtual machine to empirical testing, and present the results of these tests. This flows into Chapter 5 where these results are interpreted, conclusions drawn, and recommendations made in terms of future engineering and research possibilities.
 
 % 10-12 pages
 \chapter{Problem Exposition}
@@ -931,7 +948,7 @@ ret
 		error bars/.cd,
 		x dir=both,
 		x explicit
-		] 
+		]  
 		table [x error=error] {
 			x   	y   error
 			119.761	4  	0.3601
@@ -977,8 +994,11 @@ ret
 	
 		The benchmarks were executed on each virtual machine running under Cachegrind, along with the C benchmark programs. Because Cachegrind is a simulator, this process took a large amount of time, and so multiple Cachegrind runs were not economical. 
 		
-		The Cachegrind results were very encouraging. None of the programs showed almost no cache misses - under 0.01\% of all instruction loads resulted in a cache miss. We expected to see more instruction cache misses because of the large code size, but there is a possible explanation for its absence. Though there is a large amount of implementation code, a typical assembly program will not use absolutely all instruction-operand combinations. It is not necessary for the processor to cache the implementation code that is not used by the program, so a large percentage of the code does not even make it into the cache. This frees up space for code which does need to be cached.
+		The Cachegrind results were very encouraging. None of the programs showed almost no cache misses---under 0.01\% of all instruction loads resulted in a cache miss. We expected to see more instruction cache misses because of the large code size, but there is a possible explanation for its absence. Though there is a large amount of implementation code, a typical assembly program will not use absolutely all instruction-operand combinations. It is not necessary for the processor to cache the implementation code that is not used by the program, so a large percentage of the code does not even make it into the cache. This frees up space for code which does need to be cached.
 		
+		\section{Branch Target Prediction}
+		
+		\iffalse
 		\begin{myfigure}
 			\begin{tikzpicture}
 			\begin{axis}[
@@ -992,7 +1012,7 @@ ret
 			},
 			grid=major,
 			xbar,
-			xlabel=Execution Time (seconds),
+			xlabel=Indirect Branch Mispredict (\%),
 			xmin=0,
 			y tick label style={text width=2cm,align=center}
 			]
@@ -1001,15 +1021,12 @@ ret
 			fill=blue!25,
 			draw=black,
 			every node near coord/.style={inner ysep=5pt},
-			error bars/.cd,
-			x dir=both,
-			x explicit
 			] 
-			table [x error=error] {
-				x   	y	error
-				142.25  3	1.20923
-				130.431	2	2.17705433
-				130.821	1	3.64046
+			table {
+				x	y
+					3
+					2
+					1
 			};
 			\end{axis}
 			\end{tikzpicture}
@@ -1026,7 +1043,7 @@ ret
 			},
 			grid=major,
 			xbar,
-			xlabel=Execution Time (seconds),
+			xlabel=Indirect Branch Mispredict (\%),
 			xmin=0,
 			y tick label style={text width=2cm,align=center}
 			]
@@ -1035,16 +1052,13 @@ ret
 			fill=blue!25,
 			draw=black,
 			every node near coord/.style={inner ysep=5pt},
-			error bars/.cd,
-			x dir=both,
-			x explicit
 			] 
-			table [x error=error] {
-				x   	y	error
-				6.113 	4  	0.1539
-				45.785  3  	3.974385
-				39.63   2	2.7534
-				34.956	1	0.35116
+			table{
+				x	y
+					4
+					3
+					2
+					1
 			};
 			\end{axis}
 			\end{tikzpicture}
@@ -1061,7 +1075,7 @@ ret
 			},
 			grid=major,
 			xbar,
-			xlabel=Execution Time (seconds),
+			xlabel=Indirect Branch Mispredict (\%),
 			xmin=0,
 			y tick label style={text width=2cm,align=center}
 			]
@@ -1070,16 +1084,13 @@ ret
 			fill=blue!25,
 			draw=black,
 			every node near coord/.style={inner ysep=5pt},
-			error bars/.cd,
-			x dir=both,
-			x explicit
 			] 
-			table [x error=error] {
-				x   	y	error
-				1.925 	4  	0.88735
-				7.863  	3  	0.2343
-				6.149   2	0.00875
-				5.698	1	0.023475
+			table{
+				x	y
+					4
+					3
+					2
+					1
 			};
 			\end{axis}
 			\end{tikzpicture}
@@ -1096,7 +1107,7 @@ ret
 			},
 			grid=major,
 			xbar,
-			xlabel=Execution Time (seconds),
+			xlabel=Indirect Branch Mispredict (\%),
 			xmin=0,
 			y tick label style={text width=2cm,align=center}
 			]
@@ -1105,16 +1116,13 @@ ret
 			fill=blue!25,
 			draw=black,
 			every node near coord/.style={inner ysep=5pt},
-			error bars/.cd,
-			x dir=both,
-			x explicit
 			] 
-			table [x error=error] {
-				x   	y	error
-				12.087 	4  	0.79
-				30.81	3  	3.36936
-				26.229	2	2.47198
-				26.718	1	3.394485
+			table {
+				x	y
+					4
+					3
+					2
+					1
 			};
 			\end{axis}
 			\end{tikzpicture}
@@ -1133,7 +1141,7 @@ ret
 			},
 			grid=major,
 			xbar,
-			xlabel=Execution Time (seconds),
+			xlabel=Indirect Branch Mispredict (\%),
 			xmin=0,
 			y tick label style={text width=2cm,align=center}
 			]
@@ -1142,16 +1150,13 @@ ret
 			fill=blue!25,
 			draw=black,
 			every node near coord/.style={inner ysep=5pt},
-			error bars/.cd,
-			x dir=both,
-			x explicit
 			] 
-			table [x error=error] {
-				x   	y	error
-				10.475 	4  	0.3511
-				35.24	3  	0.0828
-				31.041	2	1.47051
-				27.693	1	1.3622
+			table {
+				x	y
+					4
+					3
+					2
+					1
 			};
 			\end{axis}
 			\end{tikzpicture}
@@ -1168,7 +1173,7 @@ ret
 			},
 			grid=major,
 			xbar,
-			xlabel=Execution Time (seconds),
+			xlabel=Indirect Branch Mispredict (\%),
 			xmin=0,
 			y tick label style={text width=2cm,align=center}
 			]
@@ -1177,16 +1182,13 @@ ret
 			fill=blue!25,
 			draw=black,
 			every node near coord/.style={inner ysep=5pt},
-			error bars/.cd,
-			x dir=both,
-			x explicit
 			] 
-			table [x error=error] {
-				x   	y   error
-				131.628	4  	6.0634
-				157.396	3  	9.2844
-				150.447	2	13.1281
-				137.208	1	6.0634
+			table {
+				x	y
+					4
+					3
+					2
+					1
 			};
 			\end{axis}
 			\end{tikzpicture}
@@ -1204,7 +1206,7 @@ ret
 			},
 			grid=major,
 			xbar,
-			xlabel=Execution Time (seconds),
+			xlabel=Indirect Branch Mispredict (\%),
 			xmin=0,
 			y tick label style={text width=2cm,align=center}
 			]
@@ -1213,24 +1215,21 @@ ret
 			fill=blue!25,
 			draw=black,
 			every node near coord/.style={inner ysep=5pt},
-			error bars/.cd,
-			x dir=both,
-			x explicit
-			] 
-			table [x error=error] {
-				x   	y   error
-				119.761	4  	0.3601
-				527.373	3  	34.407
-				460.722	2	19.204
-				310.399	1	4.4663
+			]  
+			table {
+				x	y
+					4
+					3
+					2
+					1
 			};
 			\end{axis}
 			\end{tikzpicture}
 			\thisfloatpagestyle{empty}
-			\caption{Execution Times for Each Benchmark}
-			\label{fig:cachegraphs}
+			\caption{Indirect Branch Prediction for Each Benchmark}
+			\label{fig:btbgraph}
 		\end{myfigure}
-		
+		\fi
 		
 % Last chapter
 \chapter{Conclusion}
