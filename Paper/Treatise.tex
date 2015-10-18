@@ -59,7 +59,7 @@
 	\section{Background}
 		A virtual machine is a program that executes programs by emulating the instruction-level behaviour of a chosen machine. In some cases, virtual machines allow programmers to execute programs written for one kind of computer on a machine that has an unrelated architecture. In other cases, virtual machines run programs designed for theoretical machines that do not have a physical device to run them.
 		
-		This second kind of virtual machine may sound worthless to someone who has only been exposed to the more immediately visible applications of virtual machines, like playing games designed for obsolete game consoles\todo{just trying to make it more relatable}, but virtual machines like these serve as convenient and powerful design patterns in high-level programming language interpreters. These virtual machines are known as high-level virtual machines.
+		This second kind of virtual machine may sound worthless to someone who has only been exposed to the more immediately visible applications of virtual machines, like playing games designed for obsolete game consoles, but virtual machines like these serve as convenient and powerful design patterns in high-level programming language interpreters. These virtual machines are known as high-level virtual machines.
 		
 		A high level virtual machine runs programs for a machine which is imagined by its designer. Because it is not bound by the practical limitations of machines with real implementations, it may have more sophisticated features and other desirable properties which would be difficult to build into a real machine. High-level virtual machines can be considered to be an abstraction layer that hides the intricacies of any particular real machine. Virtual machines can be implemented on any physical architecture, resulting in the extremely useful property that code written for a virtual machine is very portable. The portable ``machine code'' that high-level virtual machines execute is usually called its \emph{bytecode}. 
 		
@@ -69,7 +69,7 @@
 		
 		Interpreters implemented with virtual machines are among the fastest kinds of interpreters\citep{modernarchvm}. However, they remain significantly slower than executing native code \citep{optimizingindirectbranch}. An important and widely used optimisation technique for virtual machine interpreters is Just-in-time (JIT) compilation. JIT is not explored in this research, but is a relevant and complementary technique. JIT tries to bring ``the best of both worlds'' together. Modern JIT interpreters execute an instrumented interpreter which gathers profiling data to determine which parts of the bytecode would most benefit from native execution. Once it has identified these sections of bytecode, it compiles them into the host machine's instruction set and executes them natively instead of interpreting them \citep{historyjit}. Most popular virtual machines utilise JIT compilation, such as Java's JVM, and C$^\sharp$'s Common Language Runtime (CLR).
 		
-		Although JIT compilation is a good strategy to improve the performance of virtual machines, it has disadvantages in certain use cases. An example is found in multi-instance programs, where a program is started many times, concurrently, so that multiple instances run as separate processes at the same time. A real-world case of such a program is a \todo{PHP thing} web server, which spawns several identical program instances to serve web clients asynchronously.
+		Although JIT compilation is a good strategy to improve the performance of virtual machines, it has disadvantages in certain use cases. An example is found in multi-instance programs, where a program is started many times, concurrently, so that multiple instances run as separate processes at the same time. A real-world example of such a program is a PHP web server, which spawns several identical program instances to serve web clients asynchronously.
 		
 		Operating systems allow distinct processes to share memory under certain conditions. If two processes load the same resource into read-only memory blocks, the resource can be loaded into one memory location which is shared by both processes. This mechanism is automatic and transparent to the process, so long as the memory blocks concerned are read-only, and cannot be altered by the other process. An example of this in action is shown in \reffig{nativeprogram}, where two instances of the same program share a read-only code space in memory \citep{sharedcodepatent}. 
 		
@@ -354,7 +354,8 @@ print:
 		
 		\cite{yeti} explains this by saying ``the control transfer from one body to the next is data dependent on the sequence of instructions making up the virtual program.'' This is an atypical scenario for modern processors, and they are not designed optimally for this task.
 		
-		Consider the virtual machine dispatch process on a modern processor with a branch target buffer (BTB). When a dispatch's indirect branch is encountered for the second time, BTB predicts the target will remain the same. However, this is not the case for the dispatch's branch, because the indirect branch is based on the current virtual machine opcode, which could be any of the instructions in the virtual machine instruction set. For each of these opcodes, the interpreter will branch to a particular section of code to emulate the virtual machine instruction. In other words, \emph{the BTB prediction will be accurate only if the opcode being dispatched is the same as the previous dispatch}. Because it is not very likely that the virtual machine will see many of the same opcode over and over, the BTB fails to predict the branch target most of the time. Opcodes ``fight'' for the single target record in the BTB that corresponds with the indirect branch in the dispatch code. It is now clear why the illustration of a conventional interpreter in \reffig{directthreading} duplicates the indirect branch per instruction.
+		\todo{this whole section needs work, it trips over itself}
+		Consider the virtual machine dispatch process on a modern processor with a branch target buffer (BTB). When a dispatch's indirect branch is encountered for the second time, BTB predicts the target will remain the same. However, this is not the case for the dispatch's branch, because the indirect branch is based on the current virtual machine opcode, which could be any of the instructions in the virtual machine instruction set. For each of these opcodes, the interpreter will branch to a particular section of code to emulate the virtual machine instruction. In other words, \emph{the BTB prediction will be accurate only if the opcode being dispatched is the same as the previous dispatch}. Because it is not very likely that the virtual machine will see many of the same opcode over and over, the BTB fails to predict the branch target most of the time. Opcodes ``fight'' for the single target record in the BTB that corresponds with the indirect branch in the dispatch code. It is for this reason that a conventional interpreter in \reffig{directthreading} duplicates the indirect branch per instruction in attempt to increase the number of distinct indirect branch instructions, in an attempt to increase . \reffig{interpreterbtb} shows how the indirect branch in the \texttt{add} instruction could go to a variety of different locations in the code.
 		
 		\begin{myfigure}
 			\begin{tabular}{c c}
@@ -385,9 +386,22 @@ print:
 				\end{lstlisting}
 			} & 
 			{
-				\begin{tikzpicture}
-					\draw (0,7) -- (1, 7);
-				\end{tikzpicture}
+				\hspace{-9em}
+				\raisebox{-10.2em}{
+					\begin{tikzpicture}
+						\draw[arrows=->] (0,7) -- (1.5, 7);
+						\node[anchor=west,draw] (q) at (1.5, 7) {???};
+						
+						
+						\draw (q.north) -- +(0, 0.5);
+						\draw[arrows=->] (q.north)+(0, 0.5) -- +(-3, 0.5);
+						
+						\draw[arrows=->] (q.south)+(0,-0.7) -- +(-3, -0.7);
+						
+						\draw (q.south)+(0,0) -- +(0, -2.4);
+						\draw[arrows=->] (q.south)+(0,-2.4) -- +(-3, -2.4);
+					\end{tikzpicture}
+				}
 			}
 			\end{tabular}
 			\caption{Illustration of Indirect Branch Problems in Interpreters}
@@ -997,9 +1011,10 @@ ret
 		The Cachegrind results were very encouraging. None of the programs showed almost no cache misses---under 0.01\% of all instruction loads resulted in a cache miss. We expected to see more instruction cache misses because of the large code size, but there is a possible explanation for its absence. Though there is a large amount of implementation code, a typical assembly program will not use absolutely all instruction-operand combinations. It is not necessary for the processor to cache the implementation code that is not used by the program, so a large percentage of the code does not even make it into the cache. This frees up space for code which does need to be cached.
 		
 		\section{Branch Target Prediction}
+		Cachegrind is also able to simulate the branch prediction behaviour of programs. We used Cachegrind to characterise the indirect branch prediction behaviour. The frequency of indirect branches that were predicted correctly, and those that weren't, are graphed in \reffig{btbgraph}. The indirect branch behaviour of the C programs is omitted, because it doesn't contribute to the discussion of the predictability of virtual machines.
 		
-		\iffalse
 		\begin{myfigure}
+			\pgfplotsset{scaled x ticks=false}
 			\begin{tikzpicture}
 			\begin{axis}[
 			title = {Ackermann Benchmark},
@@ -1008,26 +1023,39 @@ ret
 			yticklabels={
 				Register Mapped VM,
 				Duplicated Code VM,
-				Conventional VM		
+				Conventional VM
 			},
 			grid=major,
-			xbar,
-			xlabel=Indirect Branch Mispredict (\%),
+			xbar stacked,
+			xlabel=Indirect Branch Instances,
 			xmin=0,
 			y tick label style={text width=2cm,align=center}
 			]
 			
 			\addplot[
-			fill=blue!25,
+			fill=green!25,
 			draw=black,
 			every node near coord/.style={inner ysep=5pt},
 			] 
 			table {
 				x	y
-					3
-					2
-					1
+				28629447240		1
+				14314985800		3
+				28629447240		2
 			};
+			\addplot[
+			fill=red!25,
+			draw=black,
+			every node near coord/.style={inner ysep=5pt},
+			] 
+			table {
+				x	y
+				2863442739	1
+				17177904179	3
+				2863442739	2
+				
+			};
+			
 			\end{axis}
 			\end{tikzpicture}
 			\begin{tikzpicture}
@@ -1038,27 +1066,36 @@ ret
 			yticklabels={%
 				Register Mapped VM,
 				Duplicated Code VM,
-				Conventional VM,
-				C
+				Conventional VM
 			},
 			grid=major,
-			xbar,
-			xlabel=Indirect Branch Mispredict (\%),
+			xbar stacked,
+			xlabel=Indirect Branch Instances,
 			xmin=0,
 			y tick label style={text width=2cm,align=center}
 			]
 			
 			\addplot[
-			fill=blue!25,
+			fill=green!25,
 			draw=black,
 			every node near coord/.style={inner ysep=5pt},
 			] 
 			table{
 				x	y
-					4
-					3
-					2
-					1
+				7279455249		1
+				5045052543		3
+				6682704349		2				
+			};
+			\addplot[
+			fill=red!25,
+			draw=black,
+			every node near coord/.style={inner ysep=5pt},
+			] 
+			table {
+				x	y
+				2923312485	1
+				5157715191	3
+				3520063385	2
 			};
 			\end{axis}
 			\end{tikzpicture}
@@ -1070,27 +1107,39 @@ ret
 			yticklabels={%
 				Register Mapped VM,
 				Duplicated Code VM,
-				Conventional VM,
-				C
+				Conventional VM
 			},
 			grid=major,
-			xbar,
-			xlabel=Indirect Branch Mispredict (\%),
+			xbar stacked,
+			xlabel=Indirect Branch Instances,
 			xmin=0,
 			y tick label style={text width=2cm,align=center}
 			]
 			
 			\addplot[
-			fill=blue!25,
+			fill=green!25,
 			draw=black,
 			every node near coord/.style={inner ysep=5pt},
 			] 
 			table{
 				x	y
-					4
-					3
-					2
-					1
+				2777331430		1
+				2527207846		3
+				3025248687		2
+				
+				
+			};
+			\addplot[
+			fill=red!25,
+			draw=black,
+			every node near coord/.style={inner ysep=5pt},
+			] 
+			table {
+				x	y
+				302084202	1
+				552207786	3
+				54166945	2
+				
 			};
 			\end{axis}
 			\end{tikzpicture}
@@ -1102,27 +1151,36 @@ ret
 			yticklabels={%
 				Register Mapped VM,
 				Duplicated Code VM,
-				Conventional VM,
-				C
+				Conventional VM
 			},
 			grid=major,
-			xbar,
-			xlabel=Indirect Branch Mispredict (\%),
+			xbar stacked,
+			xlabel=Indirect Branch Instances,
 			xmin=0,
 			y tick label style={text width=2cm,align=center}
 			]
 			
 			\addplot[
-			fill=blue!25,
+			fill=green!25,
 			draw=black,
 			every node near coord/.style={inner ysep=5pt},
 			] 
 			table {
 				x	y
-					4
-					3
-					2
-					1
+				4549678295		1
+				3100143151		3
+				4899360247		2
+			};
+			\addplot[
+			fill=red!25,
+			draw=black,
+			every node near coord/.style={inner ysep=5pt},
+			] 
+			table {
+				x	y
+				1851826825	1
+				3301361969	3
+				1502144873	2
 			};
 			\end{axis}
 			\end{tikzpicture}
@@ -1136,27 +1194,36 @@ ret
 			yticklabels={%
 				Register Mapped VM,
 				Duplicated Code VM,
-				Conventional VM,
-				C
+				Conventional VM
 			},
 			grid=major,
-			xbar,
-			xlabel=Indirect Branch Mispredict (\%),
+			xbar stacked,
+			xlabel=Indirect Branch Instances,
 			xmin=0,
 			y tick label style={text width=2cm,align=center}
 			]
 			
 			\addplot[
-			fill=blue!25,
+			fill=green!25,
 			draw=black,
 			every node near coord/.style={inner ysep=5pt},
 			] 
 			table {
 				x	y
-					4
-					3
-					2
-					1
+				10437208229		1
+				4517212205		3
+				9244315131		2
+			};
+			\addplot[
+			fill=red!25,
+			draw=black,
+			every node near coord/.style={inner ysep=5pt},
+			] 
+			table {
+				x	y
+				3069689230	1
+				8989685254	3
+				4262582328	2
 			};
 			\end{axis}
 			\end{tikzpicture}
@@ -1168,27 +1235,36 @@ ret
 			yticklabels={%
 				Register Mapped VM,
 				Duplicated Code VM,
-				Conventional VM,
-				C
+				Conventional VM
 			},
 			grid=major,
-			xbar,
-			xlabel=Indirect Branch Mispredict (\%),
+			xbar stacked,
+			xlabel=Indirect Branch Instances,
 			xmin=0,
 			y tick label style={text width=2cm,align=center}
 			]
 			
 			\addplot[
-			fill=blue!25,
+			fill=green!25,
 			draw=black,
 			every node near coord/.style={inner ysep=5pt},
 			] 
 			table {
 				x	y
-					4
-					3
-					2
-					1
+				24686942677		1
+				12346481823		3
+				24687099667		2
+			};
+			\addplot[
+			fill=red!25,
+			draw=black,
+			every node near coord/.style={inner ysep=5pt},
+			] 
+			table {
+				x	y
+				3314133	1
+				12343774987	3
+				3157143	2
 			};
 			\end{axis}
 			\end{tikzpicture}
@@ -1201,36 +1277,53 @@ ret
 			yticklabels={%
 				Register Mapped VM,
 				Duplicated Code VM,
-				Conventional VM,
-				C
+				Conventional VM
 			},
 			grid=major,
-			xbar,
-			xlabel=Indirect Branch Mispredict (\%),
+			xbar stacked,
+			area legend,
+			legend style={
+				at={(2.6,0.4)},
+				anchor=east,
+				legend cell align=left
+			},
+			xlabel=Indirect Branch Instances,
 			xmin=0,
 			y tick label style={text width=2cm,align=center}
 			]
 			
 			\addplot[
-			fill=blue!25,
+			fill=green!25,
 			draw=black,
 			every node near coord/.style={inner ysep=5pt},
-			]  
+			]
 			table {
 				x	y
-					4
-					3
-					2
-					1
+				128183200940		1
+				75257786444		3
+				128183216939		2
 			};
+			\addlegendentry{ Indirect Branches Predicted}
+			\addplot[
+			fill=red!25,
+			draw=black,
+			every node near coord/.style={inner ysep=5pt},
+			] 
+			table {
+				x	y
+				54104775594	1
+				107030190090	3
+				54104759595	2
+			};
+			\addlegendentry{ Indirect Branches Mispredicted}
 			\end{axis}
 			\end{tikzpicture}
 			\thisfloatpagestyle{empty}
 			\caption{Indirect Branch Prediction for Each Benchmark}
 			\label{fig:btbgraph}
 		\end{myfigure}
-		\fi
 		
+		The virtual machines all performed a similar number of indirect branches for each benchmark. However, the 50\% of the conventional VM's indirect branches were mispredicted on average, whereas the register-mapped VM and the duplicated code VM's indirect branches were mispredicted 18.4\% and 18.6\% respectively. This is a dramatic difference. The processor was far more successful in predicting the behaviour of the duplicated code and the register-mapped machine than it was with the conventional VM.
 % Last chapter
 \chapter{Conclusion}
 	
