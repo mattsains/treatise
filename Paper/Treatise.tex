@@ -334,6 +334,8 @@ print:
 		Ertl also attempted a technique he calls ``dynamic stack caching'' where stack elements are cached in whatever register is convenient, and an internal state machine remembers the mapping between stack context and registers. The technique employs multiple versions of code to emulate each virtual machine instruction; the version which is executed depends on the current state of the state machine (register-stack state mapping). Ertl found that this technique halves the cost of operand fetching for each additional register involved in the caching, but adds an instruction dispatch cost because of the increased number of states. A possible explanation for this is the increase in dispatch complexity, and increased cache miss rate due to the large number of states.
 		
 		In the same paper, Ertl writes the first mention of the idea of achieving register mapping between a register virtual machine and a host register machine through a table of implementations for each combination of opcode and operands. However, the idea is quickly dismissed, as it would ``cause code explosion, and will probably suffer a severe performance hit on machines with small first-level caches.'' The R4000 MIPS processor was a contemporary example, having only 8 KB of level one (L1) instruction cache.
+		
+		\cite{optimizingindirectbranch} discuss a technique they call dynamic replication. In this technique, the interpreter dynamically adds duplicates of instruction implementations to the virtual machine for each instruction emitted by the compiler. The bytecode produced by an interpreter utilising this technique consists of no duplicate instructions, because if two of the same instruction exist, they will correspond to different implementation instances in the virtual machine. This technique dramatically reduce indirect branch mispredictions at the cost of increased code size.
 	
 		The state of cache availability has changed for modern processors. Consequently, this approach deserves further investigation. Modern processors have significantly larger cache sizes. For example, 4th generation Intel Core processors have 32 KB of L1 instruction cache \citep{optimisationreference}, four times as much as the R4000. They also have much larger second and third level caches.
 		
@@ -412,16 +414,11 @@ print:
 		
 % 10-12 pages
 \chapter{Solution Design}
-	In this section the design of the virtual machine will be discussed. \todo{more}
-	
-	
-	The overarching design goal for this virtual machine is to enable register mapping between virtual machine and host machine.
+	In this section, the design of the virtual machine will be discussed. The overarching design goal for this virtual machine is to enable register mapping between virtual machine and host machine.
 	
 	In conventional virtual machines, an implementation for a virtual machine instruction will look like \reffig{operandfetch}. Notice how the virtual registers are implemented as an array in memory, and that the index of the virtual register is encoded into the instruction word (a bitfield, as explained earlier). If we are to store the virtual registers in real registers, we cannot access the register using an index.
 	
-	\todo{expand on dispatching, and virtual machine implementation in general}
-	
-	\todo{Talk about traditional nuts and bolts}
+	\todo{Talk about traditional nuts and bolts?}
 	
 	\begin{myfigure}
 		\begin{lstlisting}
@@ -437,7 +434,7 @@ add(instr):
 		\label{fig:operandfetch}
 	\end{myfigure}
 	
-	Instead, we will duplicate the implementation code for every combination of registers, as in \reffig{dupimplementation}. Notice how the implementation is much simpler (we have managed to remove all the operand fetch code from before), although there is a significantly larger amount of code. By hard-coding the registers instead of dynamically accessing them, we are able to circumvent the restriction that real registers cannot be dynamically indexed.
+	Instead, we will duplicate the implementation code for every combination of registers, as shown in \reffig{dupimplementation}. Notice how the implementation is much simpler (we have managed to remove all the operand fetch code from before), although there is a significantly larger amount of code. By hard-coding the registers instead of dynamically accessing them, we are able to circumvent the restriction that real registers cannot be dynamically indexed.
 	
 	\begin{myfigure}
 		\begin{lstlisting}
@@ -467,7 +464,7 @@ add_1_1:
 		\label{fig:dupimplementation}
 	\end{myfigure}
 	
-	This method raises the problem that the virtual machine implementation code might become extremely large. If this happens, it is less likely that a particular part of the code will be found in the processor's cache, and will perform badly. We repeat the equation presented in the limitations discussion which characterizes the size of the implementation:
+	This method raises the problem that the virtual machine implementation code might become extremely large. If this happens, it is less likely that a particular part of the code will be found in the processor's cache, and it will perform badly. We repeat the equation presented in the limitations discussion which characterizes the size of the implementation:
 	
 	\[
 	\sum_{o~\in~opcodes} r^n : 
@@ -479,20 +476,22 @@ add_1_1:
 	
 	There are several things we can do to attempt to reduce the inevitably large size of the implementation. The most obvious thing we can do is reduce the number of instructions supported by the VM architecture. This is more possible in high-level virtual machines than real machines, because the instructions tend to be more sophisticated. The second thing we can do is to reduce the number of registers exposed through the VM architecture. Because the size of the implementation has a polynomial relation to the number of exposed registers, this will probably have the largest effect. Our last attempt to reduce the size of the implementation will be to prohibit certain trivial combinations of operands for certain instructions. For instance, the instruction `\texttt{sub regA, regA}' is useless because the result will always be the same as `\texttt{mov regA, 0}'. Similar arguments lead us to remove combinations like `\texttt{xor regA, regA}', `\texttt{and regA, regA}' and so on. Removing these instructions from our specification means we can remove their implementations, because every combination of operands has its own implementation in our virtual machine.
 	
-	\todo{Talk about how duplicating this code improves branch target prediction - there is a citation for this somewhere near where some guy talks about superinstructions}
+	Duplicating code in this way will reduce the indirect branch misprediction rate in the same way that dynamic replication (as mentioned in the literature review) does. By making instructions more diverse (ie., increasing the number of instructions by dispatching on both opcode and operands), the dispatch attached to a particular implementation has more information about the current instruction associated with it. The BTB record for the dispatch's indirect branch will be more specific for the instruction case, and better able to predict which instruction comes next.
 	
 	With all these constraints and goals in mind, we can design the virtual machine architecture.
 	
 	\section{Virtual Machine Architecture Design}
-		When designing the virtual machine architecture, it will be beneficial to remember this heuristic by \cite{structureinterpreters}: ``Well-designed VMs are tailored for both easy compilation from the source language and fast interpretation on real machines.'' \todo{too fluffy?}
+		When designing the virtual machine architecture, it will be beneficial to remember this heuristic by \cite{structureinterpreters}: ``Well-designed VMs are tailored for both easy compilation from the source language and fast interpretation on real machines.''
 		
-		Our virtual machine will be developed for a static language. Consequently, we do not have to do type checking in the virtual machine. Registers in our virtual machine will notionally be one of two types---64-bit integer or pointer. The machine will have six general purpose registers, each of which can contain either a pointer or an integer. However, it is illegal to treat a pointer as an integer or vice versa. For this reason, a general-purpose register $g_i$ can be thought of as two distinct registers: an integer $r_i$ and a pointer $p_i$, only one of which is ``alive'' at any time. In fact, on real architectures that make a distinction between pointers an integers, these two ``virtual registers'' will be mapped to two distinct physical registers, so our strange convention is justified.
+		One direct application of this is that the virtual machine design must be designed with many real architectures in mind, all of which have their own idiosyncrasies. For instance, some architectures do not allow unaligned memory accesses, so our virtual machine does not require it. Other such limitations will be discussed when aspects of the VM architecture address these issues.
+		
+		Our virtual machine will be developed for a static language. Consequently, we do not have to do type checking in the virtual machine. Registers in our virtual machine will notionally be one of two types---64-bit integer or pointer. The machine will have six general purpose registers, each of which can contain either a pointer or an integer. However, it is illegal to treat a pointer as an integer or vice versa. For this reason, a general-purpose register $g_i$ can be thought of as two distinct registers: an integer $r_i$ and a pointer $p_i$, only one of which is ``alive'' at any time. The justification for this strange convention of these pairs of ``virtual registers'' is justified by the existence of real architectures that make a distinction between pointer an integer registers. In this case, $p_i$ and $r_i$ will be mapped to two distinct physical registers.
 		
 		Because this is a high-level virtual machine, pointers work like high-level languages in which pointer arithmetic is transparent. It is illegal to do arithmetic on pointers. This decision was made to make the interpreted language memory safe.
 		
-		There are two notional registers which are not visible to the programmer at all. These are \texttt{pc}, the virtual machine instruction pointer, and \texttt{fp} the stack frame pointer.
+		There are two notional registers which are not visible to the programmer at all. These are \texttt{pc}, the virtual machine instruction pointer, and \texttt{fp} the stack frame pointer. The programmer may indirectly influence these registers through operations like branches and function calls.
 		
-		Instructions are sixteen bits long. Unlike the majority of virtual machines, the instruction words are not bitfields. Since every unique instruction word corresponds to its own implementation code, and dispatch occurs over the entire word, bit fields serve no purpose, and actually make token threading more difficult because instructions with bitfields are not sequential.
+		Instructions are sixteen bits long. Unlike the majority of virtual machines, the instruction words are not bitfields. In a conventional virtual machine, bitfields are useful because they simplify decoding the instruction words into opcode and operands. Since every unique instruction word corresponds to its own implementation code, and dispatch occurs over the entire word, bit fields serve no purpose, and actually make token threading more difficult because instructions with bitfields are not sequential.
 		
 		An instruction is sometimes followed by a sixteen-bit immediate value. This immediate value can be either a sixteen-bit constant, or a relative displacement to a position elsewhere in the program. This interpretation depends on the meaning of the preceding instruction.
 		
@@ -520,7 +519,7 @@ add_1_1:
 		
 		When a function is called, a local variable space is created for the function. A function defines how much space it needs for local variables, and the types of those locals, in a \emph{function prototype}. 
 		
-		Function prototypes work similarly to object prototypes, as shown in \reffig{funcproto}. A function prototype begins with an eight-byte field which contains the number of locals the function needs. The corresponding amount of space is allocated for accessing these variables through \texttt{getl}, \texttt{setl}, \texttt{getlp} and \texttt{setlp}. The next few eight-byte words contain bitmaps which store the type of each local. Immediately following the appropriate number of these bitmap words, the bytecode for the function begins.
+		Function prototypes work similarly to object prototypes, as shown in \reffig{funcproto}. A function prototype begins with an eight-byte field which contains the number of locals the function needs. The corresponding amount of space is allocated for accessing these variables through \texttt{getl}, \texttt{setl}, \texttt{getlp} and \texttt{setlp}. The next few eight-byte words contain bitmaps which store the type of each local. The types of variables and objects is always known to facilitate future implementation of a garbage collector, which must always be able to determine whether a given entity is a pointer or not. Immediately following the appropriate number of these bitmap words, the bytecode for the function begins.
 		
 		\begin{myfigure}
 			\begin{tabular}{|l|l| }
@@ -536,7 +535,7 @@ add_1_1:
 			\label{fig:funcproto}
 		\end{myfigure}
 		
-		When a function is called, a new stack frame is initialised for the function. Registers $r_1$ through $r_4$, $pc$ and $fp$ are saved automatically, while registers $r_0$ and $r_5$ are used for return values. A number of locals from the caller are copied into the callee's local space, as determined by an immediate value passed to the \texttt{call} instruction.
+		When a function is called, a new stack frame is initialised for the function. Registers $r_1$ through $r_4$, $pc$ and $fp$ are saved automatically, while registers $r_0$ and $r_5$ are used for return values. A number of locals from the caller are copied into the callee's local space, as determined by an immediate value passed to the \texttt{call} instruction. A pointer to the function definition is also saved to the new stack frame so that the types of locals can be known.
 		
 		A bytecode program is expected to start with a function prototype, which is automatically called by the virtual machine at execution start, much like C and its \texttt{main()} method. When this method calls \texttt{ret}, the program terminates.
 		
@@ -577,7 +576,7 @@ jmp [vectors+rax*8]
 			\label{fig:vmstructure}
 		\end{myfigure}
 		
-		The complete virtual machine is much too large to write by hand---it is over 15 000 lines long. Instead, an automated script written in Ruby is provided with templates for each instruction. These templates are then expanded into the full source code for the virtual machine. Templates use a version of the Liquid templating language which has been modified for berevity. \reffig{addtemplate} and \reffig{shrtemplate} shows an example of one of these templates. Text surrounded by \texttt{\{ \}} is evaluated as a Ruby expression, and \texttt{\{\% \%\}} surrounds Liquid programming constructs like if statements.
+		The complete virtual machine is much too large to write by hand---it is over 15 000 lines long. Instead, an automated script written in Ruby is provided with templates for each instruction. These templates are then expanded into the full source code for the virtual machine. Templates use a version of the Liquid templating language which has been modified for berevity. \reffig{addtemplate} and \reffig{shrtemplate} shows an example of one of these templates. Text surrounded by \texttt{\{ \}} is evaluated as a Ruby expression, and \texttt{\{\% \%\}} surrounds Liquid programming constructs like \texttt{if} statements. This Ruby script was designed to expose the layout of instructions as an API, so that a flexible assembler (discussed later) could read the layout of instructions and produce appropriate bytecode.
 		
 		\begin{doublefig}
 			\begin{halffig}
@@ -602,35 +601,39 @@ add {r[i]}, {r[j]}
 			\end{halffig}
 		\end{doublefig}
 		
-		The name \texttt{r} referred to in the templates is an array containing the mapping between virtual registers and real registers. For our implementation, the mapping is as follows:
+		The name \texttt{r} referred to in the templates is an array containing the mapping between virtual registers and real registers. For our implementation, the mapping is as in \reffig{regmap}.
 		
-		\begin{tabular}{|l|l|}
-			\hline
-			From & To \\
-			\hline
-			0 & 'rbx' \\
-			\hline
-			1 & 'rcx' \\
-			\hline
-			2 & 'rdx' \\
-			\hline
-			3 & 'r8' \\
-			\hline
-			4 & 'r9' \\
-			\hline
-			5 & 'r10' \\
-			\hline
-			'pc' & 'rsi' \\
-			\hline
-			'fp' & 'rbp' \\ 
-			\hline
-		\end{tabular}
+		\begin{myfigure}
+			\begin{tabular}{|l|l|}
+				\hline
+				From & To \\
+				\hline
+				0 & 'rbx' \\
+				\hline
+				1 & 'rcx' \\
+				\hline
+				2 & 'rdx' \\
+				\hline
+				3 & 'r8' \\
+				\hline
+				4 & 'r9' \\
+				\hline
+				5 & 'r10' \\
+				\hline
+				'pc' & 'rsi' \\
+				\hline
+				'fp' & 'rbp' \\ 
+				\hline
+			\end{tabular}
+			\caption{Register Mapping in Virtual Machine}
+			\label{fig:regmap}
+		\end{myfigure}
 		
 		The Ruby script defines the \texttt{i}, \texttt{j} and \texttt{k} variables for each template expansion to represent the operands to the instruction, and also appends a dispatch template to the end of each implementation.
-			
-		\todo{Something here}
 		
-		In our implementation, every data structure begins with a 64-bit header field with an organisation described in \reffig{objheader}. 
+		\clearpage
+		\subsection{Internal Representations of Object Instances}
+		In our implementation, every data structure begins with a 64-bit header field with an organisation described in \reffig{objheader}. This header is invisible to the bytecode program, and is only useful to the implementation code of the virtual machine.
 		
 		\begin{myfigure}
 			\begin{tabular}{|l|c| c| c|c|c|}
@@ -642,8 +645,8 @@ add {r[i]}, {r[j]}
 			\end{tabular}
 			\newline
 			\begin{description}
-				\item[GC1:] Reserved for garbage collector
-				\item[GC0:] Reserved for garbage collector
+				\item[GC1:] Reserved for future use by garbage collector
+				\item[GC0:] Reserved for future use by garbage collector
 				\item[OB:] Bit set if structure is an object type
 				\item[PA:] Bit set if structure is an array of pointers
 			\end{description}
@@ -652,7 +655,7 @@ add {r[i]}, {r[j]}
 			\label{fig:objheader}
 		\end{myfigure}
 		
-		If the header describes an integer array, \todo{Continue}
+		If the header describes an integer array, the numeric data section is set to the number of bytes in the array. If the header describes an array of pointers, the numeric data section is set to the number of pointers in the array. The reason for the difference in meaning for pointer arrays and integer arrays is that integer arrays serve a double purpose as byte buffers (for instance, to implement strings) and therefore need byte-level granularity on their size. If the header describes an object, the numeric data section is set to the address of the object prototype, so that the types of object members can be known.
 
 \chapter{Evaluation Methods and Results}
 	The main idea in the virtual machine design is to map virtual machine registers to real registers. Being able to do this requires that the implementation for each instruction be expanded to provide a different implementation for every combination of operands. Although the idea of expanding instruction implementations is forced on us by our goal of mapping registers, there is a case to be made for expanding these implementations in the absence of register mapping---as discussed in the previous chapter, duplicating code may improve the performance in two key ways. Firstly, it removes the need to perform an operand fetch and store for every instruction. Secondly, it will improve the ability of the physical processor to perform branch target prediction on the virtual machine dispatch, because there are are an increased number of places where indirect branches occur.
