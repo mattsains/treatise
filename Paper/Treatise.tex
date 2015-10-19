@@ -23,7 +23,7 @@
 
 \nakedchapter{Abstract}
 	\todo{align this with project proposal}
-	Conventional JIT-less high-level register virtual machines simulate virtual registers in random access memory (RAM) and load virtual registers from RAM whenever they are accessed \citep{caseregistervm}. This treatise investigates an alternative approach where virtual registers are mapped to physical registers, and instructions are dispatched not only on the opcode, but also on the operands of the instruction. To emulate a virtual instruction, the interpreter jumps to the appropriate code segment in a table of implementation code based on the instruction word to be executed. This table grows in a polynomial fashion with increased virtual registers, and therefore the performance balance between table size and register pressure is investigated.
+	Conventional JIT-less high-level register virtual machines simulate virtual registers in random access memory (RAM) and load virtual registers from RAM whenever they are accessed \citep{caseregistervm}. This treatise investigates an alternative approach where virtual registers are mapped to physical registers, and instructions are dispatched not only on the opcode, but also on the operands of the instruction. To emulate a virtual instruction, the interpreter jumps to the appropriate code segment in a table of implementation code based on the instruction word to be executed. This table grows in a polynomial fashion with increased virtual registers, and therefore the performance balance of this approach is investigated.
 
 \nakedchapter{Declaration of Own Work}
 	I declare that the entirety of the work contained in this treatise is my own, original work, that I am the sole author thereof (save to the extent explicitly otherwise stated), that reproduction	and publication thereof by Nelson Mandela Metropolitan University will not infringe any third	party rights that I have not previously in its entirety or in part submitted it for obtaining any qualification.
@@ -35,13 +35,6 @@
 	Date: \today
 
 \tableofcontents
-
-\nakedchapter{Glossary}
-\begin{description}
-	\item[Bytecode] Program code executed by a virtual machine.
-	\item[Virtual Machine] A class of programs which translate code written for one architecture to another.
-\end{description}
-
 
 % Main document body
 \chapter{Introduction}
@@ -285,6 +278,8 @@ print regA
 	\section{Literature Review}
 		\cite{structureinterpreters} reflect on why spending research and engineering effort on optimising interpreters is a worthwhile endeavour. Creating a machine abstraction layer between original source code and host machine architecture greatly simplifies the writing of compilers that target many platforms. Without such an abstraction layer for each host machine, a separate version of the compiler targeting that platform must be developed. Interpreters allow compilers to be more versatile with little effort. In a high-level language interpreter utilising a virtual machine, only the interpreter portion needs to be rewritten for different platforms, (or perhaps not even the interpreter if a high-level language is used to implement the interpreter) and the compiler remains the same. Interpreters tend to be simple compared to compilers targeting machine code, so this advantage is quite significant. Compared to native execution, interpreters also offer opportunity for more powerful usability features like debuggers, and have faster compilers, improving the write-compile-test cycle of modern software development methods.
 		
+		However, this comes at a cost---a program running on virtual machine is in the order of seven times slower than the same program running natively.
+		
 		A good design of a high-level virtual machine is one that is both easy to compile code for (sophisticated) and allows for fast interpretation (low overhead).
 		
 		The feature that is present in all virtual machine interpreters is a dispatch process. Dispatch refers to the process of fetching, decoding, and starting the execution of a virtual machine instruction. Dispatch technique can have the biggest effect on the performance of a virtual machine.
@@ -352,10 +347,15 @@ print:
 				
 		Conventional interpreter designs that were optimal on older architectures perform poorly on modern pipelined architectures because branch prediction accuracy is a big factor on performance on these architectures. These interpreter designs hide the logic governing branching patterns from the branch predictor. All the host processor sees is branches that depend on data, and is not aware that this data stream represents a program. The machine abstraction layer causes the virtual machine to inherit the weaknesses of deep pipelining from the modern host processor, while abstracting away opportunities of dynamic optimisation in the modern host.
 		
-		\cite{yeti} explains this by saying ``the control transfer from one body to the next is data dependent on the sequence of instructions making up the virtual program.'' This is an atypical scenario for modern processors, and they are not designed optimally for this task.
+		Consider the virtual machine dispatch process on a modern processor with a branch target buffer (BTB). BTB predicts that an indirect branch will branch to the same location it branched the last time it was executed. In a virtual machine dispatch, a branch target predictor essentially predicts the next virtual machine instruction to be executed.
 		
-		\todo{this whole section needs work, it trips over itself}
-		Consider the virtual machine dispatch process on a modern processor with a branch target buffer (BTB). When a dispatch's indirect branch is encountered for the second time, BTB predicts the target will remain the same. However, this is not the case for the dispatch's branch, because the indirect branch is based on the current virtual machine opcode, which could be any of the instructions in the virtual machine instruction set. For each of these opcodes, the interpreter will branch to a particular section of code to emulate the virtual machine instruction. In other words, \emph{the BTB prediction will be accurate only if the opcode being dispatched is the same as the previous dispatch}. Because it is not very likely that the virtual machine will see many of the same opcode over and over, the BTB fails to predict the branch target most of the time. Opcodes ``fight'' for the single target record in the BTB that corresponds with the indirect branch in the dispatch code. It is for this reason that a conventional interpreter in \reffig{directthreading} duplicates the indirect branch per instruction in attempt to increase the number of distinct indirect branch instructions, in an attempt to increase . \reffig{interpreterbtb} shows how the indirect branch in the \texttt{add} instruction could go to a variety of different locations in the code.
+		If all VM instruction implementations shared a common dispatch routine (naturally containing an indirect branch), a BTB will predict that the same VM instruction is being executed over and over, because there is only one entry in the BTB table for the dispatch branch. This almost certainly results in a misprediction, because endlessly repeated instructions are very rare. Because a virtual machine typically encounters many different instructions, each dispatch will change the next predicted target to the current instruction. A pattern develops where instructions ``fight'' for the single spot in the BTB.
+		
+		An important improvement can be discovered when one realises that a BTB entry exists for each instance of an indirect branch. This fact can be leveraged by duplicating the dispatch code at the end of every instruction implementation. Now, a BTB entry exists for each instruction, and it predicts the next branch target independently for each instruction, ie., it predicts the next instruction given the previous one.
+		
+		The next instruction actually depends on the code being executed by the virtual machine. \cite{yeti} explains this by saying ``the control transfer from one body to the next is \emph{data dependent} on the sequence of instructions making up the virtual program.'' This is an atypical scenario for modern processors, and they are not designed optimally for this task.
+		
+		Duplicating the dispatch code still results in a large misprediction rate, because the prediction is essentially that a particular instruction is always followed by some other instruction. This is not very likely in reality, because the instruction could be followed by any VM instruction, a problem depicted in \reffig{interpreterbtb}. However, the prediction made by a BTB in this design is not as ridiculous as in the naïve design.
 		
 		\begin{myfigure}
 			\begin{tabular}{c c}
@@ -406,12 +406,9 @@ print:
 			\end{tabular}
 			\caption{Illustration of Indirect Branch Problems in Interpreters}
 			\label{fig:interpreterbtb}
-			\todo{Can't figure out drawing arrows on code}
 		\end{myfigure}
 		
-		\cite{structureinterpreters} found that the branch misprediction penalty consumes up to half of the execution time on some interpreters. This high proportion is a result of the fact that most of an interpreter's time is spent in the instruction dispatch process.
-		
-		One way to get around this problem is by duplicating the indirect branch instruction, resulting in a separate BTB entry for each branch instruction \citep{fastjava}. This can be done by duplicating the dispatch code at the end of each virtual instruction implementation, instead of jumping back to a common dispatch code. In contrast, the traditional focus in branch optimisation was to make the code path as short as possible.
+		\cite{structureinterpreters} found that the branch misprediction penalty consumes up to half of the execution time on some interpreters. This high proportion is a result of the fact that a dispatch happens extremely often in a virtual machine---once for every VM instruction executed.
 		
 % 10-12 pages
 \chapter{Solution Design}
@@ -984,6 +981,47 @@ ret
 		It is interesting to compare the difference between execution times on the duplicated code VM and the register mapped VM. In some benchmarks, such as prime sieve, there is very little difference. This could be because the traversal through the linked list results in a large number memory loads (to access the `next' pointer in each node), and seldom uses a register for more than very short-term storage (less than ten instructions before a register value is replaced with a value from memory). Register mapping does not contribute much performance gain in this case.
 		
 		Another interesting comparison to make is the difference in execution time of the C programs from the corresponding benchmark in each VM. This indicates how well suited to each task the virtual machines are. For instance, on the prime sieve benchmark, the virtual machines perform nearly as well as the C program. This suggests that the virtual machine design excels in operations involving pointer operations on the heap.
+		
+		\reffig{normaltimes} shows the average execution time for each virtual machine. To generate this graph, each benchmark time on each virtual machine was normalised by dividing it by the execution time of the C benchmark. The graph shows an average of this metric per virtual machine. The Ackermann benchmark is excluded from this graph because the C benchmark never finished. 
+		
+		\begin{myfigure}
+			\begin{tikzpicture}
+			\begin{axis}[
+			title = {Mandelbrot Benchmark},
+			width={0.42\linewidth},
+			ytick={1,...,4},
+			yticklabels={%
+				Register Mapped VM,
+				Duplicated Code VM,
+				Conventional VM,
+				C
+			},
+			grid=major,
+			xbar,
+			xlabel=Average Execution Time (multiples of C benchmark),
+			xmin=0,
+			y tick label style={text width=2cm,align=center}
+			]
+			
+			\addplot[
+			fill=blue!25,
+			draw=black,
+			every node near coord/.style={inner ysep=5pt},
+			]  
+			table{
+				x   	y
+				1	4
+				3.847835	3
+				3.3		2
+				2.86111	1
+			};
+			\end{axis}
+			\end{tikzpicture}
+			\caption{Normalised Average Execution Times for Each Benchmark}
+			\label{fig:normaltimes}
+		\end{myfigure}
+		
+		The graph shows that both the register-mapped VM and the duplicated code VM were faster than the conventional VM on average. The register-mapped VM was faster than the duplicated code VM on average. All virtual machines were more than twice as slow as the C programs, on average.
 	
 	\section{Cache Behaviour}
 		An important evaluation goal in this research is to determine whether the increased code size has an adverse effect on VM performance on modern processors. To that end, the virtual machines were executed on Cachegrind, part of the Valgrind instrumentation framework. Cachegrind is a profiling simulator that provides dynamic analysis of cache usage and branch prediction in a guest program. Valgrind was also used during development to track down difficult-to-reproduce bugs with its excellent memory access auditing system, Memcheck.
@@ -1303,7 +1341,7 @@ ret
 				75257786444		3
 				128183216939		2
 			};
-			\addlegendentry{ Indirect Branches Predicted}
+			\addlegendentry{Indirect Branches Predicted}
 			\addplot[
 			fill=red!25,
 			draw=black,
@@ -1315,7 +1353,7 @@ ret
 				107030190090	3
 				54104759595	2
 			};
-			\addlegendentry{ Indirect Branches Mispredicted}
+			\addlegendentry{Indirect Branches Mispredicted}
 			\end{axis}
 			\end{tikzpicture}
 			\thisfloatpagestyle{empty}
@@ -1324,13 +1362,31 @@ ret
 		\end{myfigure}
 		
 		The virtual machines all performed a similar number of indirect branches for each benchmark. However, the 50\% of the conventional VM's indirect branches were mispredicted on average, whereas the register-mapped VM and the duplicated code VM's indirect branches were mispredicted 18.4\% and 18.6\% respectively. This is a dramatic difference. The processor was far more successful in predicting the behaviour of the duplicated code and the register-mapped machine than it was with the conventional VM.
+		
 % Last chapter
 \chapter{Conclusion}
+	All virtual machines were around three times as slow as the C programs, on average. This is actually a surprisingly good result, since virtual machines tend to be around seven times slower than a native program. We believe that implementing the virtual machines in assembly caused all the virtual machines to be very efficient, because assembly programs tend to be very lightweight compared to those written in a high-level language.
+	
+	The results show that conventional register virtual machines can be improved by modifying their design to leverage new design features of modern processors---for instance---large amounts of instruction cache. Duplicating implementation code was very effective at reducing the proportion of mispredicted indirect branches, without having a meaningful impact on the ability of the processor to cache the virtual machine's implementation code. The virtual machines with duplicated code were, on average, 60\% more predictable than the conventional virtual machine.
+	
+	Duplicating implementation code makes indirect branches in the dispatch process of the virtual machine easier to predict. Increasing the number of implementations increases the likelihood that a particular dispatch instance will branch to a unique implementation, simply because the virtual machine consists of implementations which are more specific---it is not often that the exact same instruction/operand combination occurs in many places in the program bytecode. This results in overall increased indirect branch prediction accuracy. We are able to do this without sacrificing cache performance because of the large amount of instruction cache available on modern processors.
+	
+	A second source of performance improvement is achieved by the elimination of the instruction decode step, and---in the register-mapped VM---operand fetch and store. In addition to the execution time saved by skipping these steps, their elimination also reduces the amount of data dependence on the behaviour of the virtual machine, making it easier for the processor to perform speculative optimisation. For instance, the processor can load the value of operands before they are needed by the instruction's implementation. If a virtual machine needs to decode instructions, the processor is only able to load these values after the bytecode instruction has been decoded and the involved operands determined.
+	
+	Register mapping also improves the performance of virtual machines, although not to the extend we expected. Keeping the often-accesed virtual machine in high-speed hardware registers caused this improvement. 
+	
+	In a conventional virtual machine, VM registers are implemented in memory. One would expect that these memory locations would be cached by the processor in short order, perhaps explaining why the improvement is not as dramatic as we expected. However, it is still a solid improvement which constitutes a positive result.
 	
 	\section{Opportunities for Future Development}
+	These results demonstrate that there are still useful techniques to be discovered in the field of non-JIT interpreters. It is important to mention that ``non-JIT techniques'' are not irrelevant in a landscape dominated by JIT interpreters. Rather, these techniques complement JIT techniques, and should be pursued in the interests of producing performant interpreters on modern architectures.
+	
+	Assembly programming has lost favour amongst developers because of its difficulty and declining benefit caused by the improved optimisation ability of modern compilers. It is thus likely that interpreter developers may be unwilling to implement their virtual machines in assembly. However, some of the ideas investigated in this research---especially the code duplication aspect---is still applicable in high-level languages like C. For this reason, it would be beneficial to investigate the introduction of these ideas into existing virtual machines.
 	
 	\section{Reflection}
-
+	If one thing was determined by this study, it is that the old wisdom of interpreter design needs to be revisited in light of the emergence of modern processor design. Ideas that were though infeasible twenty years ago may be surprisingly effective today.
+	
+	However, the advent of ever-increasing complexity of modern processors comes at a cost---discovering the exact mechanism by which modern processors achieve their performance is proprietary knowledge of their manufacturers. Producing designs which fully leverage these ``secret optimisation features'' is a frustrating task, because so little is known about their implementation.
+	
 % Bibliography
 \bibliographysection
 
