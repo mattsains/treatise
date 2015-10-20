@@ -257,9 +257,9 @@ print regA
 			Assuming any virtual machine register can be used as an operand for any instruction, the size of the virtual machine implementation proportional to:
 			
 			\[
-				\sum_{o~\in~opcodes} r^n : 
+				\sum_{p~\in~opcodes} r^{n(p)} : 
 					\begin{array}{l}
-						n \coloneqq \text{number of operands for $o$} \\
+						n(p) \coloneqq \text{number of operands for $p$} \\
 						r \coloneqq \text{number of virtual machine registers}
 					\end{array}
 			\] 
@@ -276,6 +276,7 @@ print regA
 % 10-12 pages
 \chapter{Problem Exposition}
 	\section{Literature Review}
+	\todo{Kevin: this is five pages and we expected 10}
 		\cite{structureinterpreters} reflect on why spending research and engineering effort on optimising interpreters is a worthwhile endeavour. Creating a machine abstraction layer between original source code and host machine architecture greatly simplifies the writing of compilers that target many platforms. Without such an abstraction layer for each host machine, a separate version of the compiler targeting that platform must be developed. Interpreters allow compilers to be more versatile with little effort. In a high-level language interpreter utilising a virtual machine, only the interpreter portion needs to be rewritten for different platforms, (or perhaps not even the interpreter if a high-level language is used to implement the interpreter) and the compiler remains the same. Interpreters tend to be simple compared to compilers targeting machine code, so this advantage is quite significant. Compared to native execution, interpreters also offer opportunity for more powerful usability features like debuggers, and have faster compilers, improving the write-compile-test cycle of modern software development methods.
 		
 		However, this comes at a cost---a program running on virtual machine is in the order of seven times slower than the same program running natively.
@@ -467,11 +468,11 @@ add_1_1:
 	This method raises the problem that the virtual machine implementation code might become extremely large. If this happens, it is less likely that a particular part of the code will be found in the processor's cache, and it will perform badly. We repeat the equation presented in the limitations discussion which characterizes the size of the implementation:
 	
 	\[
-	\sum_{o~\in~opcodes} r^n : 
-	\begin{array}{l}
-	n \coloneqq \text{number of operands for o} \\
-	r \coloneqq \text{number of virtual machine registers}
-	\end{array}
+		\sum_{p~\in~opcodes} r^{n(p)} : 
+		\begin{array}{l}
+			n(p) \coloneqq \text{number of operands for $p$} \\
+			r \coloneqq \text{number of virtual machine registers}
+		\end{array}
 	\] 
 	
 	There are several things we can do to attempt to reduce the inevitably large size of the implementation. The most obvious thing we can do is reduce the number of instructions supported by the VM architecture. This is more possible in high-level virtual machines than real machines, because the instructions tend to be more sophisticated. The second thing we can do is to reduce the number of registers exposed through the VM architecture. Because the size of the implementation has a polynomial relation to the number of exposed registers, this will probably have the largest effect. Our last attempt to reduce the size of the implementation will be to prohibit certain trivial combinations of operands for certain instructions. For instance, the instruction `\texttt{sub regA, regA}' is useless because the result will always be the same as `\texttt{mov regA, 0}'. Similar arguments lead us to remove combinations like `\texttt{xor regA, regA}', `\texttt{and regA, regA}' and so on. Removing these instructions from our specification means we can remove their implementations, because every combination of operands has its own implementation in our virtual machine.
@@ -662,14 +663,16 @@ add {r[i]}, {r[j]}
 	
 	Naturally, we want to test whether this new virtual machine design is faster than a conventional virtual machine. However, we also want to test whether register mapping is actually necessary. It is possible that a virtual machine which duplicates implementation code, but does \emph{not} do register mapping will still perform better than a conventional virtual machine. If it is the case that it is possible to improve conventional virtual machine performance without register mapping, then the code duplication may be able to be used in the design of a virtual machine for a high level language which does not support direct register access. This is a lucrative possibility because writing a virtual machine in low-level assembly is very difficult compared to using a high-level language like C.
 	
-	To test these two possibilities, three different virtual machines have been implemented, all sharing the common instruction set architecture described in the previous chapter.
+	\section{Virtual Machines}
+	To test the hypotheses discussed, three different virtual machines have been implemented, all sharing the common instruction set architecture described in the previous chapter, but differing in important design characteristics which we want to test. They are described below.
 	
 	\begin{description}
-		\item[Conventional Virtual Machine:] This virtual machine will be used in both experiments as a control for comparison. Its implementation matches that of virtual machines which already exist. There is no code duplication or register mapping, and it resembles \reffig{fig:operandfetch} in structure. It also expects a conventional instruction representation using bitfields, unlike the other two virtual machines.
+		\item[Conventional Virtual Machine:] This virtual machine will be used in both experiments as a control for comparison. Its implementation matches that of virtual machines which already exist. There is no code duplication or register mapping, and it resembles \reffig{operandfetch} in structure. It also expects a conventional instruction representation using bitfields, unlike the other two virtual machines.
 		\item[Duplicated Code Machine:] This virtual will have duplicated implementation code, but no register mapping. It will be used to test the hypothesis that improved performance is possible without register mapping. To determine whether the hypothesis is true, the performance of this virtual machine will be compared to the conventional virtual machine and the register mapped machine.
 		\item[Register Mapped Machine:] This virtual machine will implement both register mapping and, by necessity, implementation code duplication. If this virtual machine is significantly faster than both the conventional machine and the duplicated code machine, then register mapping will be confirmed as a strategy for performance improvement.
 	\end{description}
 	
+	\section{Benchmark Programs}
 	To test the performance of each of these benchmarks, a number of benchmark programs were written for these virtual machine's instruction set. Each benchmark is designed to test specific performance aspects of the virtual machine. The benchmarks were also translated to C to compare the interpreted benchmark programs to natively compiled programs.
 	
 	\begin{description}
@@ -728,8 +731,8 @@ ret
 		\begin{myfigure}
 		\begin{tikzpicture}
 		\begin{axis}[
-		title = {Ackermann Benchmark},
-		width={0.42\linewidth},
+		title = {(a) Ackermann Benchmark},
+		width={0.41\linewidth},
 		ytick={1,...,3},
 		yticklabels={
 			Register Mapped VM,
@@ -744,7 +747,7 @@ ret
 		]
 		
 		\addplot[
-		fill=blue!25,
+		fill=blue!50!gray,
 		draw=black,
 		every node near coord/.style={inner ysep=5pt},
 		error bars/.cd,
@@ -761,8 +764,8 @@ ret
 		\end{tikzpicture}
 		\begin{tikzpicture}
 		\begin{axis}[
-		title = {Fasta Benchmark},
-		width={0.42\linewidth},
+		title = {(b) Fasta Benchmark},
+		width={0.41\linewidth},
 		ytick={1,...,4},
 		yticklabels={%
 			Register Mapped VM,
@@ -778,7 +781,7 @@ ret
 		]
 		
 		\addplot[
-		fill=blue!25,
+		fill=blue!50!gray,
 		draw=black,
 		every node near coord/.style={inner ysep=5pt},
 		error bars/.cd,
@@ -796,8 +799,8 @@ ret
 		\end{tikzpicture}
 		\begin{tikzpicture}
 		\begin{axis}[
-		title = {Reverse Complement Benchmark},
-		width={0.42\linewidth},
+		title = {(c) Reverse Complement Benchmark},
+		width={0.41\linewidth},
 		ytick={1,...,4},
 		yticklabels={%
 			Register Mapped VM,
@@ -813,7 +816,7 @@ ret
 		]
 		
 		\addplot[
-		fill=blue!25,
+		fill=blue!50!gray,
 		draw=black,
 		every node near coord/.style={inner ysep=5pt},
 		error bars/.cd,
@@ -831,8 +834,8 @@ ret
 		\end{tikzpicture}
 		\begin{tikzpicture}
 		\begin{axis}[
-		title = {Mersenne Benchmark},
-		width={0.42\linewidth},
+		title = {(d) Mersenne Benchmark},
+		width={0.41\linewidth},
 		ytick={1,...,4},
 		yticklabels={%
 			Register Mapped VM,
@@ -848,7 +851,7 @@ ret
 		]
 		
 		\addplot[
-		fill=blue!25,
+		fill=blue!50!gray,
 		draw=black,
 		every node near coord/.style={inner ysep=5pt},
 		error bars/.cd,
@@ -868,8 +871,8 @@ ret
 		
 		\begin{tikzpicture}
 		\begin{axis}[
-		title = {Fannkuch Benchmark},
-		width={0.42\linewidth},
+		title = {(e) Fannkuch Benchmark},
+		width={0.41\linewidth},
 		ytick={1,...,4},
 		yticklabels={%
 			Register Mapped VM,
@@ -885,7 +888,7 @@ ret
 		]
 		
 		\addplot[
-		fill=blue!25,
+		fill=blue!50!gray,
 		draw=black,
 		every node near coord/.style={inner ysep=5pt},
 		error bars/.cd,
@@ -903,8 +906,8 @@ ret
 		\end{tikzpicture}
 		\begin{tikzpicture}
 		\begin{axis}[
-		title = {Prime Sieve Benchmark},
-		width={0.42\linewidth},
+		title = {(f) Prime Sieve Benchmark},
+		width={0.41\linewidth},
 		ytick={1,...,4},
 		yticklabels={%
 			Register Mapped VM,
@@ -920,7 +923,7 @@ ret
 		]
 		
 		\addplot[
-		fill=blue!25,
+		fill=blue!50!gray,
 		draw=black,
 		every node near coord/.style={inner ysep=5pt},
 		error bars/.cd,
@@ -939,8 +942,8 @@ ret
 		
 		\begin{tikzpicture}
 		\begin{axis}[
-		title = {Mandelbrot Benchmark},
-		width={0.42\linewidth},
+		title = {(g) Mandelbrot Benchmark},
+		width={0.41\linewidth},
 		ytick={1,...,4},
 		yticklabels={%
 			Register Mapped VM,
@@ -956,7 +959,7 @@ ret
 		]
 		
 		\addplot[
-		fill=blue!25,
+		fill=blue!50!gray,
 		draw=black,
 		every node near coord/.style={inner ysep=5pt},
 		error bars/.cd,
@@ -990,7 +993,6 @@ ret
 		\begin{myfigure}
 			\begin{tikzpicture}
 			\begin{axis}[
-			title = {Mandelbrot Benchmark},
 			width={0.42\linewidth},
 			ytick={1,...,4},
 			yticklabels={%
@@ -1001,13 +1003,13 @@ ret
 			},
 			grid=major,
 			xbar,
-			xlabel=Average Execution Time (multiples of C benchmark),
+			xlabel=Average Execution Time Relative to C,
 			xmin=0,
 			y tick label style={text width=2cm,align=center}
 			]
 			
 			\addplot[
-			fill=blue!25,
+			fill=blue!50!gray,
 			draw=black,
 			every node near coord/.style={inner ysep=5pt},
 			]  
@@ -1058,8 +1060,8 @@ ret
 			\pgfplotsset{scaled x ticks=false}
 			\begin{tikzpicture}
 			\begin{axis}[
-			title = {Ackermann Benchmark},
-			width={0.42\linewidth},
+			title = {(a) Ackermann Benchmark},
+			width={0.41\linewidth},
 			ytick={1,...,3},
 			yticklabels={
 				Register Mapped VM,
@@ -1074,8 +1076,8 @@ ret
 			]
 			
 			\addplot[
-			fill=green!25,
-			draw=black,
+			fill=green!70!black,
+			draw=green!50!black,
 			every node near coord/.style={inner ysep=5pt},
 			] 
 			table {
@@ -1085,8 +1087,12 @@ ret
 				28629447240		2
 			};
 			\addplot[
-			fill=red!25,
-			draw=black,
+			fill=red!70,
+			draw=red!80!black,
+			postaction={
+				pattern=crosshatch dots,
+				pattern color=red!80!black
+			},
 			every node near coord/.style={inner ysep=5pt},
 			] 
 			table {
@@ -1101,8 +1107,8 @@ ret
 			\end{tikzpicture}
 			\begin{tikzpicture}
 			\begin{axis}[
-			title = {Fasta Benchmark},
-			width={0.42\linewidth},
+			title = {(b) Fasta Benchmark},
+			width={0.41\linewidth},
 			ytick={1,...,4},
 			yticklabels={%
 				Register Mapped VM,
@@ -1117,10 +1123,10 @@ ret
 			]
 			
 			\addplot[
-			fill=green!25,
-			draw=black,
+			fill=green!70!black,
+			draw=green!50!black,
 			every node near coord/.style={inner ysep=5pt},
-			] 
+			]
 			table{
 				x	y
 				7279455249		1
@@ -1128,8 +1134,12 @@ ret
 				6682704349		2				
 			};
 			\addplot[
-			fill=red!25,
-			draw=black,
+			fill=red!70,
+			draw=red!80!black,
+			postaction={
+				pattern=crosshatch dots,
+				pattern color=red!80!black
+			},
 			every node near coord/.style={inner ysep=5pt},
 			] 
 			table {
@@ -1142,8 +1152,8 @@ ret
 			\end{tikzpicture}
 			\begin{tikzpicture}
 			\begin{axis}[
-			title = {Reverse Complement Benchmark},
-			width={0.42\linewidth},
+			title = {(c) Reverse Complement Benchmark},
+			width={0.41\linewidth},
 			ytick={1,...,4},
 			yticklabels={%
 				Register Mapped VM,
@@ -1154,12 +1164,13 @@ ret
 			xbar stacked,
 			xlabel=Indirect Branch Instances,
 			xmin=0,
-			y tick label style={text width=2cm,align=center}
+			y tick label style={text width=2cm,align=center},
+			title style={text width=0.35\linewidth,align=center}
 			]
 			
 			\addplot[
-			fill=green!25,
-			draw=black,
+			fill=green!70!black,
+			draw=green!50!black,
 			every node near coord/.style={inner ysep=5pt},
 			] 
 			table{
@@ -1171,8 +1182,12 @@ ret
 				
 			};
 			\addplot[
-			fill=red!25,
-			draw=black,
+			fill=red!70,
+			draw=red!80!black,
+			postaction={
+				pattern=crosshatch dots,
+				pattern color=red!80!black
+			},
 			every node near coord/.style={inner ysep=5pt},
 			] 
 			table {
@@ -1186,8 +1201,8 @@ ret
 			\end{tikzpicture}
 			\begin{tikzpicture}
 			\begin{axis}[
-			title = {Mersenne Benchmark},
-			width={0.42\linewidth},
+			title = {(d) Mersenne Benchmark},
+			width={0.41\linewidth},
 			ytick={1,...,4},
 			yticklabels={%
 				Register Mapped VM,
@@ -1202,8 +1217,8 @@ ret
 			]
 			
 			\addplot[
-			fill=green!25,
-			draw=black,
+			fill=green!70!black,
+			draw=green!50!black,
 			every node near coord/.style={inner ysep=5pt},
 			] 
 			table {
@@ -1213,8 +1228,12 @@ ret
 				4899360247		2
 			};
 			\addplot[
-			fill=red!25,
-			draw=black,
+			fill=red!70,
+			draw=red!80!black,
+			postaction={
+				pattern=crosshatch dots,
+				pattern color=red!80!black
+			},
 			every node near coord/.style={inner ysep=5pt},
 			] 
 			table {
@@ -1229,8 +1248,8 @@ ret
 			
 			\begin{tikzpicture}
 			\begin{axis}[
-			title = {Fannkuch Benchmark},
-			width={0.42\linewidth},
+			title = {(e) Fannkuch Benchmark},
+			width={0.41\linewidth},
 			ytick={1,...,4},
 			yticklabels={%
 				Register Mapped VM,
@@ -1245,8 +1264,8 @@ ret
 			]
 			
 			\addplot[
-			fill=green!25,
-			draw=black,
+			fill=green!70!black,
+			draw=green!50!black,
 			every node near coord/.style={inner ysep=5pt},
 			] 
 			table {
@@ -1256,8 +1275,12 @@ ret
 				9244315131		2
 			};
 			\addplot[
-			fill=red!25,
-			draw=black,
+			fill=red!70,
+			draw=red!80!black,
+			postaction={
+				pattern=crosshatch dots,
+				pattern color=red!80!black
+			},
 			every node near coord/.style={inner ysep=5pt},
 			] 
 			table {
@@ -1270,8 +1293,8 @@ ret
 			\end{tikzpicture}
 			\begin{tikzpicture}
 			\begin{axis}[
-			title = {Prime Sieve Benchmark},
-			width={0.42\linewidth},
+			title = {(f) Prime Sieve Benchmark},
+			width={0.41\linewidth},
 			ytick={1,...,4},
 			yticklabels={%
 				Register Mapped VM,
@@ -1286,8 +1309,8 @@ ret
 			]
 			
 			\addplot[
-			fill=green!25,
-			draw=black,
+			fill=green!70!black,
+			draw=green!50!black,
 			every node near coord/.style={inner ysep=5pt},
 			] 
 			table {
@@ -1297,8 +1320,12 @@ ret
 				24687099667		2
 			};
 			\addplot[
-			fill=red!25,
-			draw=black,
+			fill=red!70,
+			draw=red!80!black,
+			postaction={
+				pattern=crosshatch dots,
+				pattern color=red!80!black
+			},
 			every node near coord/.style={inner ysep=5pt},
 			] 
 			table {
@@ -1312,8 +1339,8 @@ ret
 			
 			\begin{tikzpicture}
 			\begin{axis}[
-			title = {Mandelbrot Benchmark},
-			width={0.42\linewidth},
+			title = {(g) Mandelbrot Benchmark},
+			width={0.41\linewidth},
 			ytick={1,...,4},
 			yticklabels={%
 				Register Mapped VM,
@@ -1334,8 +1361,8 @@ ret
 			]
 			
 			\addplot[
-			fill=green!25,
-			draw=black,
+			fill=green!70!black,
+			draw=green!50!black,
 			every node near coord/.style={inner ysep=5pt},
 			]
 			table {
@@ -1346,8 +1373,12 @@ ret
 			};
 			\addlegendentry{Indirect Branches Predicted}
 			\addplot[
-			fill=red!25,
-			draw=black,
+			fill=red!70,
+			draw=red!80!black,
+			postaction={
+				pattern=crosshatch dots,
+				pattern color=red!80!black
+			},
 			every node near coord/.style={inner ysep=5pt},
 			] 
 			table {
