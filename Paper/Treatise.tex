@@ -632,7 +632,13 @@ add {r[i]}, {r[j]}
 		
 		The Ruby script defines the \texttt{i}, \texttt{j} and \texttt{k} variables for each template expansion to represent the operands to the instruction, and also appends a dispatch template to the end of each implementation.
 		
-		\clearpage
+		\subsection{Virtual Machine Interface}
+		A virtual machine interacts with both the interpreter system and the operating system. The scope of this project only includes virtual machine concepts, so the interpreter is replaced by an assembly program which sets up an environment in which the virtual machine can operate, and transfers control to virtual machine code. 
+		
+		This wrapper component is implemented as a command line program which takes a file name as input, and loads the file as virtual machine bytecode into memory. The wrapper also sets up the initial stack frame by simulating a call to the first function in the file (ie., the ``\texttt{main()}'' function).
+		
+		There are parts of the virtual machine's implementation that interact with the operating system. For instance, when a new object is instantiated, memory must be allocated for the new object instance. To make interfacing with the operating system easier, the virtual machine calls functions written in C that in turn call C standard library functions like \texttt{malloc} and \texttt{printf}.\todo{mark}
+		
 		\subsection{Internal Representations of Object Instances}
 		In our implementation, every data structure begins with a 64-bit header field with an organisation described in \reffig{objheader}. This header is invisible to the bytecode program, and is only useful to the implementation code of the virtual machine.
 		
