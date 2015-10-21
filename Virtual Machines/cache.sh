@@ -10,7 +10,7 @@ for bench in "${benchmarks[@]}"; do
 
     cd ../../benchmarks/benchmarks/
     echo " C"
-    gcc -g -std=c99 $bench.c
+    gcc -g -O3 -std=c99 $bench.c
 
     for i in `seq 1 $n`; do
         echo -n "  "
