@@ -713,7 +713,7 @@ add {r[i]}, {r[j]}
 	
 	\begin{description}
 		\item[Conventional Virtual Machine:] This virtual machine will be used in both experiments as a control for comparison. Its implementation matches that of virtual machines which already exist. There is no code duplication or register mapping, and it resembles \reffig{operandfetch} in structure. It also expects a conventional instruction representation using bitfields, unlike the other two virtual machines.
-		\item[Duplicated Code Machine:] This virtual will have duplicated implementation code, but no register mapping. It will be used to test the hypothesis that improved performance is possible without register mapping. To determine whether the hypothesis is true, the performance of this virtual machine will be compared to the conventional virtual machine and the register mapped machine.
+		\item[Duplicated Code Machine:] This virtual will have duplicated implementation code, but no register mapping. It will be used to test the hypothesis that improved performance is possible without register mapping. To determine whether the hypothesis is true, the performance of this virtual machine will be compared to the conventional virtual machine and the register-mapped machine.
 		\item[Register-Mapped Machine:] This virtual machine will implement both register mapping and, by necessity,  code duplication. If this virtual machine is significantly faster than both the conventional machine and the duplicated code machine, then register mapping will be confirmed as a strategy for performance improvement.
 	\end{description}
 	
@@ -780,7 +780,7 @@ ret
 		width={0.41\linewidth},
 		ytick={1,...,3},
 		yticklabels={
-			Register Mapped VM,
+			Register-Mapped VM,
 			Duplicated Code VM,
 			Conventional VM		
 			},
@@ -813,7 +813,7 @@ ret
 		width={0.41\linewidth},
 		ytick={1,...,4},
 		yticklabels={%
-			Register Mapped VM,
+			Register-Mapped VM,
 			Duplicated Code VM,
 			Conventional VM,
 			C
@@ -848,7 +848,7 @@ ret
 		width={0.41\linewidth},
 		ytick={1,...,4},
 		yticklabels={%
-			Register Mapped VM,
+			Register-Mapped VM,
 			Duplicated Code VM,
 			Conventional VM,
 			C
@@ -883,7 +883,7 @@ ret
 		width={0.41\linewidth},
 		ytick={1,...,4},
 		yticklabels={%
-			Register Mapped VM,
+			Register-Mapped VM,
 			Duplicated Code VM,
 			Conventional VM,
 			C
@@ -920,7 +920,7 @@ ret
 		width={0.41\linewidth},
 		ytick={1,...,4},
 		yticklabels={%
-			Register Mapped VM,
+			Register-Mapped VM,
 			Duplicated Code VM,
 			Conventional VM,
 			C
@@ -955,7 +955,7 @@ ret
 		width={0.41\linewidth},
 		ytick={1,...,4},
 		yticklabels={%
-			Register Mapped VM,
+			Register-Mapped VM,
 			Duplicated Code VM,
 			Conventional VM,
 			C
@@ -991,7 +991,7 @@ ret
 		width={0.41\linewidth},
 		ytick={1,...,4},
 		yticklabels={%
-			Register Mapped VM,
+			Register-Mapped VM,
 			Duplicated Code VM,
 			Conventional VM,
 			C
@@ -1025,11 +1025,11 @@ ret
 		\label{fig:execgraphs}
 		\end{myfigure}
 	
-		Both the duplicated code VM and the register mapped VM were faster than the conventional VM with all benchmarks. Interestingly, the duplicated code VM and the register mapped VM offered almost no improvement over the conventional VM on the Ackermann benchmark. This may be due to the fact that the Ackermann benchmark performs many \texttt{call} and \texttt{ret} instructions. These instructions have the heftiest implementations, and so the dispatch mechanism takes up a smaller fraction of the total execution time. 
+		Both the duplicated code VM and the register-mapped VM were faster than the conventional VM with all benchmarks. Interestingly, the duplicated code VM and the register-mapped VM offered almost no improvement over the conventional VM on the Ackermann benchmark. This may be due to the fact that the Ackermann benchmark performs many \texttt{call} and \texttt{ret} instructions. These instructions have the heftiest implementations, and so the dispatch mechanism takes up a smaller fraction of the total execution time. 
 		
-		In all the benchmarks except Ackermann and Mersenne, the register-mapped virtual machine was faster than the duplicated code VM. A potential reason for the register mapped VM being as fast the duplicated code VM in the ackermann benchmark is that during a function call and return, the register mapping is broken for the new stack frame. That is, during a function call, the registers are stored in the stack frame (in memory), and the callee takes over control of these registers. Likewise, during function return, registers $g_1$ through $g_4$ are cleared and replaced with the previous values saved in the stack frame. We were unable to think of a more elegant way to implement the \texttt{call} and \texttt{ret} instructions for the register-mapped VM that would make use of the register mapping, and so they are quite slow. This might be an unavoidable disadvantage of the register-mapped design.
+		In all the benchmarks except Ackermann and Mersenne, the register-mapped virtual machine was faster than the duplicated code VM. A potential reason for the register-mapped VM being as fast the duplicated code VM in the ackermann benchmark is that during a function call and return, the register mapping is broken for the new stack frame. That is, during a function call, the registers are stored in the stack frame (in memory), and the callee takes over control of these registers. Likewise, during function return, registers $g_1$ through $g_4$ are cleared and replaced with the previous values saved in the stack frame. We were unable to think of a more elegant way to implement the \texttt{call} and \texttt{ret} instructions for the register-mapped VM that would make use of the register mapping, and so they are quite slow. This might be an unavoidable disadvantage of the register-mapped design.
 		
-		It is interesting to compare the difference between execution times on the duplicated code VM and the register mapped VM. In some benchmarks, such as prime sieve, there is very little difference. This could be because the traversal through the linked list results in a large number of memory loads (to access the `next' pointer in each node), and seldom uses a register for more than very short-term storage (less than ten instructions before a register value is replaced with a value from memory). Register mapping does not contribute much performance gain in this case.
+		It is interesting to compare the difference between execution times on the duplicated code VM and the register-mapped VM. In some benchmarks, such as prime sieve, there is very little difference. This could be because the traversal through the linked list results in a large number of memory loads (to access the `next' pointer in each node), and seldom uses a register for more than very short-term storage (less than ten instructions before a register value is replaced with a value from memory). Register mapping does not contribute much performance gain in this case.
 		
 		Another interesting comparison to make is the difference in execution time of the C programs from the corresponding benchmark in each VM. This indicates how well suited to each task the virtual machines are. For instance, on the prime sieve benchmark, the virtual machines perform nearly as well as the C program. This suggests that the virtual machine design excels in operations involving pointer operations on the heap.
 		
@@ -1041,7 +1041,7 @@ ret
 			width={0.42\linewidth},
 			ytick={1,...,4},
 			yticklabels={%
-				Register Mapped VM,
+				Register-Mapped VM,
 				Duplicated Code VM,
 				Conventional VM,
 				C
@@ -1109,7 +1109,7 @@ ret
 			width={0.41\linewidth},
 			ytick={1,...,3},
 			yticklabels={
-				Register Mapped VM,
+				Register-Mapped VM,
 				Duplicated Code VM,
 				Conventional VM
 			},
@@ -1156,7 +1156,7 @@ ret
 			width={0.41\linewidth},
 			ytick={1,...,4},
 			yticklabels={%
-				Register Mapped VM,
+				Register-Mapped VM,
 				Duplicated Code VM,
 				Conventional VM
 			},
@@ -1201,7 +1201,7 @@ ret
 			width={0.41\linewidth},
 			ytick={1,...,4},
 			yticklabels={%
-				Register Mapped VM,
+				Register-Mapped VM,
 				Duplicated Code VM,
 				Conventional VM
 			},
@@ -1250,7 +1250,7 @@ ret
 			width={0.41\linewidth},
 			ytick={1,...,4},
 			yticklabels={%
-				Register Mapped VM,
+				Register-Mapped VM,
 				Duplicated Code VM,
 				Conventional VM
 			},
@@ -1297,7 +1297,7 @@ ret
 			width={0.41\linewidth},
 			ytick={1,...,4},
 			yticklabels={%
-				Register Mapped VM,
+				Register-Mapped VM,
 				Duplicated Code VM,
 				Conventional VM
 			},
@@ -1342,7 +1342,7 @@ ret
 			width={0.41\linewidth},
 			ytick={1,...,4},
 			yticklabels={%
-				Register Mapped VM,
+				Register-Mapped VM,
 				Duplicated Code VM,
 				Conventional VM
 			},
@@ -1388,7 +1388,7 @@ ret
 			width={0.41\linewidth},
 			ytick={1,...,4},
 			yticklabels={%
-				Register Mapped VM,
+				Register-Mapped VM,
 				Duplicated Code VM,
 				Conventional VM
 			},
@@ -1442,7 +1442,7 @@ ret
 		
 		The virtual machines all performed a similar number of indirect branches for each benchmark. However, 50\% of the conventional VM's indirect branches were mispredicted on average, whereas the register-mapped VM and the duplicated code VM's indirect branches were mispredicted 18.4\% and 18.6\% respectively. This is a dramatic difference. The processor was far more successful in predicting the behaviour of the duplicated code and the register-mapped machine than it was with the conventional VM.
 		
-		In the prime sieve benchmark, the graphs may mislead one into thinking that the duplicated code VM and the register mapped VM did not mispredict any indirect branches. In fact, they mispredicted a tiny fraction of indirect branches: around 0.01\% in both cases.
+		In the prime sieve benchmark, the graphs may mislead one into thinking that the duplicated code VM and the register-mapped VM did not mispredict any indirect branches. In fact, they mispredicted a tiny fraction of indirect branches: around 0.01\% in both cases.
 		
 		The branch prediction performance gain experienced by the duplicated code and register-mapped VM compared to the conventional VM varies with benchmark. It is possible that this could be attributed to differing levels of predictability in the loops of each benchmark. For instance, some benchmarks may contain loops with the exact same instruction twice. This problem was discussed earlier, and such a situation does exist in some of the benchmarks programs.
 		
