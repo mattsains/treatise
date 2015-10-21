@@ -24,8 +24,7 @@
 	The financial assistance of the National Research Foundation (NRF) towards this research is hereby acknowledged. Opinions expressed and conclusions arrived at, are those of the author and are not necessarily to be attributed to the NRF.
 
 \nakedchapter{Abstract}
-	\todo{align this with project proposal}
-	Conventional JIT-less high-level register virtual machines simulate virtual registers in random access memory (RAM) and load virtual registers from RAM whenever they are accessed \citep{caseregistervm}. This treatise investigates an alternative approach where virtual registers are mapped to physical registers, and instructions are dispatched not only on the opcode, but also on the operands of the instruction. To emulate a virtual instruction, the interpreter jumps to the appropriate code segment in a table of implementation code based on the instruction word to be executed. This table grows in a polynomial fashion with increased virtual registers, and therefore the performance balance of this approach is investigated.
+	Conventional JIT-less high-level register virtual machines simulate virtual registers in random access memory (RAM) and load virtual registers from RAM whenever they are accessed \citep{caseregistervm}. This treatise investigates an alternative approach where virtual registers are mapped to physical registers, and instructions are dispatched not only on the opcode, but also on the register operands of the instruction. To emulate a virtual instruction, the interpreter jumps to the appropriate code segment in a table of implementation code based on the instruction word to be executed. This table is very large, and therefore the performance implications of this approach is investigated.
 
 \nakedchapter{Declaration of Own Work}
 	I declare that the entirety of the work contained in this treatise is my own, original work, that I am the sole author thereof (save to the extent explicitly otherwise stated), that reproduction	and publication thereof by Nelson Mandela Metropolitan University will not infringe any third	party rights that I have not previously in its entirety or in part submitted it for obtaining any qualification.
@@ -43,34 +42,34 @@
 % Main document body
 \chapter{Introduction}
 	\startrealnumbers
-	Interpreters are a popular way to implement programming languages because they allow programs to be portable, and, compared to natively compiled programs, more readily support advanced features like debuggers. 
+	Interpreters are a popular way to implement programming languages. They allow programs to be portable, and, compared to natively compiled programs, more readily support advanced features like debuggers. 
 	
-	Virtual machines are commonly used in the implementation of interpreters. Virtual machines provide an abstraction layer between the interpreted program and the host machine. Being able to abstract away the details of each specific host machine affords interpreted languages their portability, as well as easing implementation by providing a ``stepping stone'' between the high-level ideas of a programming language and the low-level details of the processor.
+	Virtual machines are commonly used in the implementation of interpreters. Virtual machines provide an abstraction layer between the interpreted program and the host machine. This abstraction hides each specific host machine's details, and affords interpreted languages their portability. The abstraction also eases implementation by providing a ``stepping stone'' between the high-level ideas of a programming language and the low-level details of the processor.
 	
-	However, virtual machines add significant overhead to the execution of interpreted programs. Research effort has been expended to optimise virtual machines for interpreters, but much of this research was done on old processors which no longer reflect the structure of modern processors. For instance, modern processors have far larger cache sizes than the processors of previous generations.
+	Compared to native execution, interpretation does add significant overhead to the execution of programs. Research effort has been expended to optimise virtual machines for interpreters, but much of this research was done on older processors which no longer reflect the structure of modern designs. For instance, modern processors have far larger cache sizes than the processors of previous generations.
 	
-	This treatise investigates a new implementation technique for virtual machine interpreters running on modern processors. Two ideas are presented: register mapping between virtual machine registers and real registers, and a new dispatch method which operates on full instruction words. The goal of this research is that these two ideas will allow a modern processor to handle the behaviour of a virtual machine.
+	This treatise investigates a new implementation technique for virtual machine interpreters that run on modern processors. Two ideas are presented: register mapping between virtual machine registers and real registers, and a new dispatch method which operates on full instruction words. 
 	
-	This section aims to establish the landscape of modern processor design and the problems which arise in virtual machine implementations, as well as describe the scope of this project.
+	The goal of this research is to determine whether these two ideas can contribute to a new virtual machine design that is better designed for modern processors than conventional VMs. This chapter aims to establish the landscape of modern processor design and the problems which arise in virtual machine implementations, as well as describe the scope of this project.
 	
 	\section{Background}
-		A virtual machine is a program that executes programs by emulating the instruction-level behaviour of a chosen machine. In some cases, virtual machines allow programmers to execute programs written for one kind of computer on a machine that has an unrelated architecture. In other cases, virtual machines run programs designed for theoretical machines that do not have a physical device to run them.
+		A virtual machine is a program that executes other programs by emulating the instruction-level behaviour of a chosen machine. In some cases, virtual machines allow programmers to execute programs written for one kind of computer on a machine that has an unrelated architecture. In other cases, virtual machines run programs designed for theoretical machines for which no physical devices exist to execute them.
 		
-		This second kind of virtual machine may sound worthless to someone who has only been exposed to the more immediately visible applications of virtual machines, like playing games designed for obsolete game consoles, but virtual machines like these serve as convenient and powerful design patterns in high-level programming language interpreters. These virtual machines are known as high-level virtual machines.
+		Virtual machines designed to emulate theoretical machine are known as high-level virtual machines. These kinds of virtual machine may sound worthless to someone who has only been exposed to the more immediately visible applications of virtual machines, like playing games designed for obsolete game consoles, but high-level virtual machines serve as convenient and powerful design patterns in high-level programming language interpreters.
 		
-		A high-level virtual machine runs programs for a machine which is imagined by its designer. Because it is not bound by the practical limitations of machines with real implementations, it may have more sophisticated features and other desirable properties which would be difficult to build into a real machine. An high-level virtual machine can be considered to be an abstraction layer that hides the intricacies of any particular real machine. Virtual machines can be implemented on any physical architecture, resulting in the extremely useful property that code written for a virtual machine is very portable. The portable ``machine code'' that high-level virtual machines execute is usually called its \emph{bytecode}. 
+		A high-level virtual machine runs programs for a machine which is imagined by its designer. Because it is not bound by the practical limitations of machines with real implementations, it may have more sophisticated features and other desirable properties which would be difficult to build into a real machine. An high-level virtual machine can be considered to be an abstraction layer that hides the intricacies of any particular real machine. A further advantage is that virtual machines can be implemented on any physical architecture, resulting in the extremely useful property that code written for a virtual machine is very portable. The portable ``machine code'' that high-level virtual machines execute is usually called its \emph{bytecode}. 
 		
-		The primary use for high-level virtual machines is in high-level interpreted languages, such as C$^\sharp$, Java and Python. High-level language interpreters are typically implemented with a compiler that compiles the input source code into an intermediary bytecode, which is then interpreted on a high-level virtual machine. This kind of interpreter executes programs much faster than interpreting the source code line-by-line.
+		The primary use for high-level virtual machines is in high-level interpreted languages, such as Java and Python. High-level language interpreters are typically implemented with a compiler that compiles the input source code into an intermediary bytecode, which is then interpreted on a high-level virtual machine. This kind of interpreter executes programs much faster than interpreting the source code line-by-line.
 		
-		Virtual machine also offer software engineering benefits to implementing interpreters. Writing a compiler flexible enough to target many machines with vastly different designs is difficult, and especially difficult for modern, complex high level languages. A high-level virtual machine allows a compiler that targets a single, albeit virtual platform, while still retaining the portability of the system. It is easier to re-target a virtual machine for a new architecture than an entire compiler. Ease of compiler implementation is also increased by the high-level nature of the virtual machine, which can support instructions for complex tasks that would be difficult to compile down to machine code. From an architectural design point of view, virtual machines help keep interpreters organised internally, seperating the language and context analysis functions (in the compiler) from the host-specific implementation details (in the virtual machine) \citep{structureinterpreters}.
+		Virtual machines also offer software engineering benefits for implementing interpreters. Writing a compiler flexible enough to target many machines with vastly different designs is difficult, and especially difficult for modern, complex high level languages. A high-level virtual machine allows a compiler that targets a single, albeit virtual, platform while still retaining the portability of the system. It is easier to re-target a virtual machine for a new architecture than an entire compiler. Ease of compiler implementation is increased by the high-level nature of the virtual machine, which can support instructions for complex tasks that would be difficult to compile down to native machine code. From an architectural design point of view, virtual machines help keep interpreters internally organised. Interpreter developers can seperate the language and context analysis functions---which remain in the compiler---from the host-specific implementation details which are compartmentalised into the virtual machine \citep{structureinterpreters}.
 		
-		Interpreters implemented with virtual machines are among the fastest kinds of interpreters \citep{modernarchvm}. However, they remain significantly slower than executing native code \citep{optimizingindirectbranch}. An important and widely used optimisation technique for virtual machine interpreters is Just-in-time (JIT) compilation. JIT is not explored in this research, but is a relevant and complementary technique. JIT tries to bring ``the best of both worlds'' together. Modern JIT interpreters execute an instrumented interpreter which gathers profiling data to determine which parts of the bytecode would most benefit from native execution. Once it has identified these sections of bytecode, it compiles them into the host machine's instruction set and executes them natively instead of interpreting them \citep{historyjit}. Most popular virtual machines utilise JIT compilation, such as Java's JVM, and C$^\sharp$'s Common Language Runtime (CLR).
+		Interpreters implemented with virtual machines are among the fastest kinds of interpreters \citep{modernarchvm}. However, they remain significantly slower than executing native code \citep{optimizingindirectbranch}. An important and widely used optimisation technique for virtual machine interpreters is Just-in-time (JIT) compilation. JIT is not explored in this research, but is a relevant and complementary technique. JIT tries to bring ``the best of both worlds'' together. Modern JIT interpreters execute an instrumented interpreter which gathers profiling data to determine which parts of the bytecode would most benefit from native execution. Once it has identified these sections of bytecode, it compiles them into the host machine's instruction set and executes them natively instead of interpreting them \citep{historyjit}. Most popular virtual machines utilise JIT compilation, such as Java's JVM.
 		
-		Although JIT compilation is a good strategy to improve the performance of virtual machines, it has disadvantages in certain use cases. An example is found in multi-instance programs, where a program is started many times, concurrently, so that multiple instances run as separate processes at the same time. A real-world example of such a program is a PHP web server, which spawns several identical program instances to serve web clients asynchronously.
+		JIT compilation is a good strategy to improve the performance of virtual machines, but it has disadvantages in certain use cases. An example is found in multi-instance programs, where a program is started many times, concurrently, so that multiple instances run as separate processes at the same time. In such cases, JIT compilation results in repeated work, and reduced memory sharing. A practical example of such a program is in a PHP web server, which spawns several identical program instances to serve web clients asynchronously.
 		
-		Operating systems allow distinct processes to share memory under certain conditions. If two processes load the same resource into read-only memory blocks, the resource can be loaded into one memory location which is shared by both processes. This mechanism is automatic and transparent to the process, so long as the memory blocks concerned are read-only, and cannot be altered by the other process. An example of this in action is shown in \reffig{nativeprogram}, where two instances of the same program share a read-only code space in memory \citep{sharedcodepatent}. 
+		Operating systems allow distinct processes to share memory under certain conditions. If two processes load the same resource into read-only memory blocks, the resource can be loaded into one memory location which is shared by both processes. This mechanism is automatic and transparent to the process as long as the memory blocks concerned are read-only and cannot be altered by the other process. An example of this in action is shown in \reffig{nativeprogram}, where two instances of the same program share a read-only code space in memory \citep{sharedcodepatent}. 
 		
-		When two instances of a JIT interpreter are started, they both load the interpreted program into memory. However, since JIT is a rewriting process, the two processes cannot share JIT data, because the operating system cannot negotiate transparent sharing of writeable memory blocks. Each interpreted process utilising JIT must do its own tracing and JIT compilation of the bytecode. In multi-instance programs, this results in the same code being compiled over and over again (\reffig{interpretedprogram}). JIT compilation is a hefty procedure, so multiple compilations of the same identical code is undesirable. 
+		The sharing of memory in the context of JIT-enabled interpreters is complex. When two instances of a JIT interpreter are started, they both load the interpreted program into memory. However, since JIT is a rewriting process, the two processes cannot share JIT data, because the operating system cannot negotiate transparent sharing of writeable memory blocks. Each interpreted process utilising JIT must do its own tracing and JIT compilation of the bytecode. In multi-instance programs, this results in the same code being compiled over and over again (\reffig{interpretedprogram}) and the produced code is not shared. JIT compilation is a hefty procedure, so multiple compilations of identical code is undesirable. 
 		
 		\begin{doublefig}
 			\begin{halffig}
@@ -91,8 +90,7 @@
 				\draw (0,0) [fill=white] rectangle (6.15,-1) node[midway] {Shared Interpreter Code Space};
 				\draw (0,-1) rectangle (2.8, -4.05) node[below] at (1.4,-1) {Data Space}; 
 				\draw (3.35, -1) rectangle (6.15, -4.05) node[below] at (4.7,-1) {Data Space};
-				\draw (0.15, -1.5) rectangle (2.65, -2.2) node[midway] {Bytecode Space};
-				\draw (3.5, -1.5) rectangle (6, -2.2) node[midway] {Bytecode Space};
+				\draw (0.15, -1.5) [fill=white] rectangle (6, -2.2) node[midway] {Shared Bytecode Space};
 				\draw (0.15, -2.35) rectangle (2.65, -3.05) node[midway] {JIT Data};
 				\draw (3.5, -2.35) rectangle (6, -3.05) node[midway] {JIT Data};
 				\draw (0.15, -3.2) rectangle (2.65, -3.9) node[midway] {VM Data Space};
@@ -103,15 +101,18 @@
 			\end{halffig}
 		\end{doublefig}
 		
-		Unfortunately, multi-instance applications have become much more common, as CPUs increase in core count and stagnate in clock frequency. Since the popular approach of JIT compilation is unsatisfactory in this use case, it is worthwhile to explore efficient virtual machine designs which do not utilise JIT compilation. This research falls into this area of interest. To facilitate dialogue in the space of non-JIT virtual machines, we present a background in the implementation of conventional virtual machines on modern architectures.
+		Multi-instance applications have become more common, as CPUs increase in core count. Since the popular approach of JIT compilation is unsatisfactory in this use case, it is worthwhile to explore efficient virtual machine designs which do not require JIT compilation, which is the subject of the present research. This research falls into this area of interest. To facilitate dialogue in the space of non-JIT virtual machines, an exposition of conventional virtual machine implementation techniques for modern architectures is now presented.
 		
 		\subsection{Conventional Virtual Machines}
-			There are two common types of high-level virtual machine architectures: stack machines and register machines. Stack machines store temporary values in a stack data structure, while register machines store temporary values in storage ``boxes'' called registers. A stack machine's stack is used not just for temporary data, but serves a double purpose as the call stack. This is contrasted with a register machine, which maintains a dedicated call stack alongside the registers.
+			There are two common types of high-level virtual machine architectures: stack machines and register machines. Stack machines store temporary values in a stack data structure, while register machines store temporary values in storage ``boxes'' called registers. Both machine classes utilise a call stack to provide function call handling and return. In a stack machine, the call stack and temporary variable store are unified. In a register machine, the call stack is a secondary  structure.
 			
-			Real register machines implement registers in high-speed memory hardware as part of their design. However, virtual machines have difficulty emulating high-speed registers because virtual machine registers are typically stored in the host's (slower) main memory.
+			\subsubsection{Stack Machines}
+			Most of a stack machine's instruction set consists of operations on the stack. \reffig{stackprogram} shows an example of code written for a stack machine. Notice that the operands of the instructions (such as \texttt{add} and \texttt{divide}) are implicit, and so instructions for stack machines tend to be shorter. The complexity of individual instructions is a major difference between stack machines and register machines. 
 			
-			Most of a stack machine's instruction set consists of operations on the stack. \reffig{stackprogram} shows an example of code written for a stack machine. Notice that the operands of the instructions (such as \texttt{add} and \texttt{divide}) are implicit, and so instructions for stack machines tend to be shorter. The complexity of individual instructions is major difference between stack machines and register machines. 
-		
+			Each instruction in a program is encoded as a series of bytes called an \emph{instruction word}. The component of the instruction word which specifies the operation to be performed (eg., \texttt{add}) is called the \emph{opcode}. 
+			
+			In a stack machine, the instruction encoding is simple. Each opcode is assigned a unique instruction code. For instance, the program listed in \reffig{stackprogram} might be represented as in \reffig{stackencoding}. Notice how constant operands are appended to the end of the instruction. This extra data is known as an immediate.
+			
 			\begin{doublefig}
 				\begin{halffig}
 					\begin{lstlisting}
@@ -122,9 +123,34 @@ push 7
 divide
 print
 					\end{lstlisting}
-					\caption{Stack machine program}
+					\caption{Stack machine program to calculate $(14+8)\div7$}
 					\label{fig:stackprogram}
 				\end{halffig}
+				\begin{halffig}
+					
+					\texttt{
+						\begin{tabular} {| l | l |}
+							\hline
+							Encoding & Instruction \\
+							\hline
+							0x01 0x0E & push 14\\
+							0x01 0x08 & push 8\\
+							0x00 & add \\
+							0x01 0x07 & push 7\\
+							0x02 & divide \\
+							0x03 & print \\
+							\hline
+						\end{tabular}
+					}
+					\caption{Stack Instruction Encoding}
+					\label{fig:stackencoding}
+				\end{halffig}
+			\end{doublefig}
+			
+			\subsubsection{Register Machines}
+			The instructions of a register machine stand in contrast to that of a stack architecture in that the operands are always explicitly specified. \reffig{registerprogram} shows the same program for a register machine. Here, the \texttt{add} instruction is annotated to specify that the value of \texttt{regA} is added to \texttt{regB}, and the result is stored in \texttt{regA}.
+			
+			\begin{doublefig}
 				\begin{halffig}
 					\begin{lstlisting}
 mov regA, 14
@@ -134,61 +160,36 @@ mov regB, 7
 divide regA, regB
 print regA
 					\end{lstlisting}
-					\caption{Register machine program}
+					\caption{Register machine program to calculate $(14+8)\div7$}
 					\label{fig:registerprogram}
 				\end{halffig}
+				\begin{halffig}
+					\texttt{
+						\begin{tabular}{ | l | r | r |r | }
+							\hline
+							Meaning & opcode & dest & src \\ 
+							\hline
+							add regA, regB  & 0001 & 0000 & 0001 \\
+							\hline
+							add regD, regC & 0001 & 0011 & 0010 \\
+							\hline
+							divide regB, regA & 0010 & 0001 & 0000 \\
+							\hline
+							print regA & 0011 & 0000 & 0000 \\
+							\hline
+						\end{tabular}
+					}
+					\caption{Register Instructions as Bitfields}
+					\label{fig:bitfields}
+				\end{halffig}
 			\end{doublefig}
-			
-			Unlike stack machine instructions, a register machine's instructions additionally specify the registers involved in the instruction. \reffig{registerprogram} shows the same program for a register machine. In the \texttt{add} instruction, the value of \texttt{regA} is added to \texttt{regB}, and the result is stored in \texttt{regA}.
-		
-			Each instruction in a program is encoded as a series of bytes called an \emph{instruction word}. The component of the instruction word which specifies the operation to be performed (eg., \texttt{add}) is called the \emph{opcode}. 
-			
-			In a stack machine, the instruction encoding is simple. Each opcode is assigned a unique instruction code. For instance, the program listed in \reffig{stackprogram} might be represented as in \reffig{stackencoding}.
 			
 			A register machine's instruction encoding is more complicated because the operands of the instruction need to be part of the instruction encoding. The conventional implementation uses bitfields. The first few bits are reserved for encoding the opcode, which follows the same format as with a stack machine. The rest of the bits are divided into segments, into which each operand is encoded. For example, consider a twelve-bit instruction word. The first four bits can be reserved for the opcode encoding, resulting in a maximum of 16 unique opcodes. The next four bits of the instruction word can encode the first operand as an enumeration, and the same for the last four bits which can encode the second operand. If an instruction only has one operand, the last four bits are undefined. This is illustrated in \reffig{bitfields}.
 			
-			\begin{doublefig}
-				\begin{halffig}
-					
-				\texttt{
-					\begin{tabular} {| l | l |}
-						\hline
-						Encoding & Instruction \\
-						\hline
-						0x01 & push \\
-						0x01 & push \\
-						0x00 & add \\
-						0x01 & push \\
-						0x02 & divide \\
-						0x03 & print \\
-						\hline
-					\end{tabular}
-				}
-				\caption{Stack Instruction Encoding}
-				\label{fig:stackencoding}
-				\end{halffig}
-				\begin{halffig}
-				\texttt{
-					\begin{tabular}{ | l | r | r |r | }
-						\hline
-						Meaning & opcode & dest & src \\ 
-						\hline
-						add regA, regB  & 0001 & 0000 & 0001 \\
-						\hline
-						add regD, regC & 0001 & 0011 & 0010 \\
-						\hline
-						divide regB, regA & 0010 & 0001 & 0000 \\
-						\hline
-						print regA & 0011 & 0000 & 0000 \\
-						\hline
-					\end{tabular}
-				}
-				\caption{Register Instructions as Bitfields}
-				\label{fig:bitfields}
-				\end{halffig}
-			\end{doublefig}
+			Real register machines implement registers in high-speed memory hardware as part of their design. However, virtual machines have difficulty emulating high-speed registers because virtual machine registers are typically stored in the host's (slower) main memory.
 			
-		\subsection{The Nature of Modern Processors}
+			
+		\subsection{Modern Processors}
 			The landscape of processor design has changed significantly in the last thirty years. Rather than producing performance gains by arbitrarily increasing processor clock speeds, modern processor designers rely on trying to increase the per-cycle efficiency of their processors, using techniques such as instruction pipelining, larger and more complex cache systems, and speculative optimisation. These new design ideas caught the interest of academics and engineers in the 1980's \citep{modernprocessordesign}. Some of these new processor features significantly alter the performance characteristics of virtual machine interpreters, and are briefly discussed in this section.
 			
 			\subsubsection{Cache Arrangement}
