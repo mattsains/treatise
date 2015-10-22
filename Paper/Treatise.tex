@@ -21,6 +21,8 @@
 	
 	I acknowledge Kevin Naudé for his role as my honours supervisor.
 	
+	The practical components of this project made extensive use of GNU software provided by the Free Software Foundation.
+	
 	The financial assistance of the National Research Foundation (NRF) towards this research is hereby acknowledged. Opinions expressed and conclusions arrived at, are those of the author and are not necessarily to be attributed to the NRF.
 
 \nakedchapter{Abstract}
@@ -120,7 +122,7 @@ push 14
 push 8
 add
 push 7
-divide
+div
 print
 					\end{lstlisting}
 					\caption{Stack machine program to calculate $(14+8)\div7$}
@@ -137,7 +139,7 @@ print
 							0x01 0x08 & push 8\\
 							0x00 & add \\
 							0x01 0x07 & push 7\\
-							0x02 & divide \\
+							0x02 & div \\
 							0x03 & print \\
 							\hline
 						\end{tabular}
@@ -154,10 +156,10 @@ print
 				\begin{halffig}
 					\begin{lstlisting}
 mov regA, 14
-mov reg1, 8
+mov regB, 8
 add regA, regB
 mov regB, 7
-divide regA, regB
+div regA, regB
 print regA
 					\end{lstlisting}
 					\caption{Register machine program to calculate $(14+8)\div7$}
@@ -165,17 +167,27 @@ print regA
 				\end{halffig}
 				\begin{halffig}
 					\texttt{
-						\begin{tabular}{ | l | r | r |r | }
+						\begin{tabular}{ | l | r | r |r |}
 							\hline
-							Meaning & opcode & dest & src \\ 
+							Meaning & opcode & dest & src  \\ 
 							\hline
-							add regA, regB  & 0001 & 0000 & 0001 \\
+							movc regA & 0000 & 0000 & 0000  \\
 							\hline
-							add regD, regC & 0001 & 0011 & 0010 \\
+							(extra: 14) & 1110 \\
 							\hline
-							divide regB, regA & 0010 & 0001 & 0000 \\
+							movc regB & 0000 & 0001 & 0000  \\
 							\hline
-							print regA & 0011 & 0000 & 0000 \\
+							(extra: 8) & 1000 \\
+							\hline
+							add regA, regB & 0001 & 0000 & 0001   \\
+							\hline
+							movc regB & 0000 & 0001 & 0000  \\
+							\hline
+							(extra: 7) & 0111 \\
+							\hline
+							div regA, regB & 0002 & 0000 & 0001  \\
+							\hline
+							print regA & 0003 & 0000 & 0000  \\
 							\hline
 						\end{tabular}
 					}
@@ -184,18 +196,18 @@ print regA
 				\end{halffig}
 			\end{doublefig}
 			
-			A register machine's instruction encoding is more complicated because the operands of the instruction need to be part of the instruction encoding. The conventional implementation uses bitfields. The first few bits are reserved for encoding the opcode, which follows the same format as with a stack machine. The rest of the bits are divided into segments, into which each operand is encoded. For example, consider a twelve-bit instruction word. The first four bits can be reserved for the opcode encoding, resulting in a maximum of 16 unique opcodes. The next four bits of the instruction word can encode the first operand as an enumeration, and the same for the last four bits which can encode the second operand. If an instruction only has one operand, the last four bits are undefined. This is illustrated in \reffig{bitfields}.
+			A register machine's instruction encoding is more complicated because the operands of the instruction need to be part of the instruction encoding. The conventional implementation uses bitfields. The first few bits are reserved for encoding the opcode, which follows the same format as with a stack machine. The rest of the bits are divided into segments, into which each register operand is encoded. For example, consider a twelve-bit instruction word. The first four bits can be reserved for the opcode, allowing for up to 16 unique opcodes. The next four bits of the instruction word can encode the first operand register number as an enumeration, and the last four bits can encode the second operand register number. If an instruction only has one operand, the last four bits are undefined. Immediate values may either form part of the instruction word, or follow it as a disitinct value. An encoding solution for \reffig{registerprogram} appears in \reffig{bitfields}. Notice how `\texttt{mov regA, 14}' has been transformed into `\texttt{movc regA}' followed by an immediate value. Whether an instruction is interpreted as having an immediate value depends on the interpretation of the instruction, so it is necessary for the instruction implementation to expect to find an immediate adjacent to it, otherwise the immediate would be treated as an instruction. This is why the \texttt{movc} (move constant) instruction was invented for this example.
 			
 			Real register machines implement registers in high-speed memory hardware as part of their design. However, virtual machines have difficulty emulating high-speed registers because virtual machine registers are typically stored in the host's (slower) main memory.
 			
 			
 		\subsection{Modern Processors}
-			The landscape of processor design has changed significantly in the last thirty years. Rather than producing performance gains by arbitrarily increasing processor clock speeds, modern processor designers rely on trying to increase the per-cycle efficiency of their processors, using techniques such as instruction pipelining, larger and more complex cache systems, and speculative optimisation. These new design ideas caught the interest of academics and engineers in the 1980's \citep{modernprocessordesign}. Some of these new processor features significantly alter the performance characteristics of virtual machine interpreters, and are briefly discussed in this section.
+			The landscape of processor design has changed significantly in the last thirty years. Rather than producing performance gains by increasing processor clock speeds, modern processor designers rely on increasing the instruction-per-cycle efficiency of their processors. The enabling techniques include instruction pipelining, larger and more complex cache systems, multiple issue and speculative execution. These new design ideas caught the interest of academics and engineers in the 1980's \citep{modernprocessordesign}. Some of these new processor features significantly alter the performance characteristics of virtual machine interpreters, and are briefly discussed in this section.
 			
 			\subsubsection{Cache Arrangement}
-			Modern processors contain portions of high-speed memory which act as a cache to the main memory of the machine. The behaviour of this cache is an important factor for processor performance, because main memory is quite slow compared to the speed of a CPU. Modern caches are orders of magnitude larger than processors twenty years ago. 
+			Modern processors contain portions of high-speed memory which act as a cache to the main memory of the machine. The behaviour of this cache is an important factor for processor performance, because main memory is quite slow compared to the speed of a CPU. Modern caches are orders of magnitude larger than those available in processors twenty years ago. 
 			
-			Most modern processors contain a series of specialised caches. For instance, a fourth-generation Intel Core processor has at least three grades or \emph{levels} of cache, and make a distinction between cache for instructions and cache for program data. \reffig{cachenumbers} shows the arrangement of cache on such a processor. As can be seen, L1 cache is much faster, but much smaller than L2 cache. The latency in L1 instruction cache is not shown because instruction fetch is transparent to programs, but it does influence the speed of execution through the process of instruction pipelining (see~later). It is advantageous for a program if most of its application data can fit in L1 data cache, and most of its code can fit in L1 instruction cache. However, conventional virtual machines have not been designed to take advantage of the large amount of cache available on modern processors.
+			Most modern processors contain a series of specialised caches. For instance, a fourth-generation Intel Core processor has at least three grades or \emph{levels} of cache, and make a distinction between cache for instructions and cache for program data. \reffig{cachenumbers} shows the arrangement of cache on such a processor. As can be seen, L1 cache is much faster, but much smaller than L2 cache. The latency in L1 instruction cache is not reported because instruction fetch is transparent to programs, but it does influence the speed of execution through the process of instruction pipelining (see~later). It is advantageous for a program if most of its application data can fit in L1 data cache, and most of its active code can fit in L1 instruction cache. However, conventional virtual machines have not been designed to take advantage of the large amount of cache available on modern processors.
 			
 			\begin{myfigure}
 				\begin{tabular}{ | l | l | l | l | }
@@ -215,82 +227,71 @@ print regA
 			\end{myfigure}
 			
 			\subsubsection{Instruction Pipelining}
-			Early processors executed machine instructions one at a time. Every clock cycle, an instruction would be fetched, decoded, and executed. The result of this method is that activity on a processor would move through the architecture component-wise. Only one part of this process would be ``working'' at any time---for instance, when an instruction was being decoded, the entire execution component of the processor was unused.
+			Early processors executed machine instructions one at a time. Each instruction would occupy the CPU for some number of cycles, as it was fetched, decoded and executed. The result of this method is that each instruction would move through a sequence of activity stages, but only one stage of the process would be ``working'' at any time. For instance, when an instruction was being decoded, the entire execution component of the processor was unused.
 			
-			On a processor with pipelining, these functions can operate independently in parallel. An instruction can be fetched while another instruction is being decoded, and yet another instruction's operands are being fetched. A processor that can operate this way is said to have an \emph{instruction pipeline.} This results in far better utilisation of processor hardware, but introduces complexity in the processor. For instance, if one instruction writes to a memory address, and later instruction reads from the same address, the second instruction cannot complete the operand fetch stage until the first instruction has been executed. A situation where an instruction has to wait for another to complete is known as a \emph{pipeline stall,} and is a subject of much academic writing and engineering effort. Modern processors try to avoid stalls by predicting in advance what data is likely to be needed. This is an important consideration in the design of virtual machines, especially with predicting the behaviour of branches.
+			On a processor with pipelining, these independent operations are overlapped in time. An instruction can be fetched while another instruction is being decoded, and yet another instruction's operands are being fetched. A processor that can operate this way is said to have an \emph{instruction pipeline.} This results in far better utilisation of processor hardware. It also introduces complexity in the processor design. For instance, if one instruction writes to a memory address, and later instruction reads from the same address, the second instruction cannot complete the operand fetch stage until the first instruction has been executed. A situation where an instruction has to wait for another to complete is known as a \emph{pipeline stall,} and is a subject of much academic writing and engineering effort. Modern processors try to avoid stalls by predicting in advance what data is likely to be needed, or forwarding results backwards in the pipeline to fetch stages. Pipelining is an important consideration in the design of virtual machines, especially with predicting the behaviour of branches.
 			
 			\subsubsection{Branch Prediction \& Branch Target Prediction}
 			Branch prediction in a process refers to the processor's ability to continue the pipelining process during a branch instruction. Ordinarily, the location of the next instruction is known to the processor---it is simply the instruction adjacent to the previous one. If the previous instruction was an instruction to branch (go somewhere else in the program), the picture becomes more~complex. There are three types of branches worth mentioning:
 			\par\nobreak\makeatletter\@afterheading\makeatother
 			\begin{description}
 				\item[Unconditional Branch:] This instruction always causes the processor to jump to the same location. The target of the branch is known as soon as the instruction is decoded.
-				\item[Conditional Branch:] This branch type branches to a constant location if a condition is true. For instance, if a register is zero (``branch if zero''). The location of the next instruction is only known once the branch instruction is executed, but some processors can make speculative guesses about whether or not the branch will happen.
-				\item[Indirect Branch:] A branch whose branch location is based on program data, whether in memory or in a register, or both. Indirect branches are very difficult to predict because they are determined by arbitrary data.
+				\item[Conditional Branch:] This branch type branches to one of two locations, depending upon a breaking condition---for instance if a register is zero (``branch if zero''). The location of the next instruction is only known once the branch instruction has evaluated the condition, but some processors try to predict which location will be selected.
+				\item[Indirect Branch:] A branch whose target location is based on program data, whether in memory or in a register, or both. The branch is always taken, but the destination is not known in advance. Indirect branches are very difficult to predict because they are determined by arbitrary data.
 			\end{description}
 			
 			An unconditional branch is the easiest branch to pipeline, since the location of the next instruction is encoded in the branch instruction itself, and the target location does not change. The next instruction can be fetched as soon as the branch instruction is decoded. 
 			
-			A conditional branch is harder to pipeline because it is not known whether the condition is true or false before the instruction is executed, and thus what the next instruction should be. To prevent pipeline stalls on conditional branch instructions, modern processors implement a \emph{branch predictor}. The branch predictor will use some heuristic to predict the conditional, and load the most likely next instruction. A pipeline stall will only occur if the prediction was wrong---this delay is known as the \emph{misprediction penalty}.
+			A conditional branch is harder to pipeline because it is not known whether the condition is true or false before the instruction is executed, and hence the branch target is discovered too late. To prevent pipeline stalls on conditional branch instructions, modern processors implement a \emph{branch predictor}. The branch predictor will use some heuristic to predict the conditional, and load the most likely next instruction. A pipeline stall will only occur if the prediction is wrong---this delay is known as the \emph{misprediction penalty}.
 			
-			An indirect branch is the worst type of branch for a pipelined processor. It is very hard to predict because the branch location could depend on any data anywhere in main memory or in registers. This influence that data has on the behaviour of the program is known as \emph{data dependance} and is to be avoided whenever possible. Modern processors implement a \emph{branch target predictor} in an attempt to reduce the number of pipeline stalls. A branch target predictor is not to be confused with a branch predictor---a branch predictor predicts whether the branch will be taken, whereas a branch target predictor tries to predict where the branch will lead. A conditional branch can only lead two places---the next instruction, or the constant branch location, whereas an indirect branch could lead anywhere.
+			An indirect branch is the worst type of branch for a pipelined processor. It is very hard to predict because the branch location could depend on any data anywhere in main memory or in registers. This influence that data has on the behaviour of the program is known as \emph{data dependance} and is to be avoided whenever possible. Modern processors implement a \emph{branch target predictor} in an attempt to reduce the number of pipeline stalls for indirect branches. A branch target predictor is not to be confused with a branch predictor---a branch predictor predicts whether the branch will be taken, whereas a branch target predictor tries to predict where the branch will lead. A conditional branch can only lead to one of two places---the next instruction, or the constant branch location; whereas an indirect branch could lead anywhere.
 			
 			One common branch target predictor is a \emph{branch target buffer} (BTB). A branch target buffer maintains a table storing the last target location of each indirect branch encountered. A BTB makes the assumption that an indirect branch target is unlikely to change  \citep{yeti}, and uses the table to make a prediction of where a specific indirect branch will go. This strategy works well if an indirect branch always branches to the same location, but is no help if it is always different.
 			
-			Indirect branches are a big issue in virtual machine design, since an indirect branch is unavoidable during the dispatch process of a virtual machine \citep{structureinterpreters}. An indirect branch may be unavoidable, but it may be possible to significantly increase the dispatch performance of a virtual machine by increasing the likelihood that indirect branches are predicted correctly by a branch target predictor.
-			
-			These concepts form the background to this research, and the problems which motivate it.
+			Indirect branches are a big issue in virtual machine design, since an indirect branch is unavoidable during the dispatch process of a virtual machine \citep{structureinterpreters}. Nevertheless, it may be possible to significantly increase the dispatch performance of a virtual machine by increasing the likelihood that indirect branches are predicted correctly by a branch target predictor. These concepts form the background to this research, and the problems which motivate it.
 	
 	\section{Problem Description}
-		Most physical machines are register machines. It is thought that the use of real machine registers to store the values of the virtual machine registers will help to make the operation of virtual machine programs more transparent to the physical CPU by reducing data-dependant fetches from main memory, where virtual machine registers are usually stored. Unfortunately, unlike virtual registers that are implemented in memory, real registers cannot be accessed by ``reference'' \citep{caseregistervm}. This difference complicates the implementation of a register-mapped virtual machine.
-		
-		Despite these difficulties, it is worthwhile to investigate designs of JIT-less register virtual machines that attempt to narrow the divide between the host and guest architecture.
-	
-		\todo{Do I need more?}
+		Most physical computational machines are register machines. It is thought that the use of real machine registers to store the values of the virtual machine registers will help to make the operation of virtual machine programs more transparent to the physical CPU by reducing data-dependant fetches from main memory, where virtual machine registers are usually stored. Unfortunately, unlike virtual registers that are implemented in memory, real registers cannot be accessed by dynamic index \citep{caseregistervm}. This difference complicates the implementation of a register-mapped virtual machine. Nevertheless, there may exist techniques to exploit modern processor features to obtain register-mapping. It is worthwhile to investigate designs of JIT-less register virtual machines that attempt to narrow the divide between the host and guest architecture.
 		
 	\section{Purpose and Scope}
-		The goal of this project is to investigate the feasibility of JIT-less register virtual machines for interpreters running on a modern architecture. To this end, a high-level register virtual machine will be implemented with some unique architecture features that have not been investigated or thought feasible previously.
+		The goal of this project is to investigate the feasibility of JIT-less register virtual machines for interpreters running on a modern architecture. To this end, a high-level register virtual machine will be implemented with some unique architecture features that have not been investigated or thought feasible previously. The virtual machine will be developed for a statically typed language. Consequently, the virtual machine does not have to perform type checking on operands.
 		
 		A novel dispatch process will be investigated that seeks to allow the use of physical machine registers in the implementation of virtual machine registers. To circumvent the problem of referencing real machine registers, the virtual machine will dispatch not only based on the opcode of each instruction, but on the instruction as a whole. In other words, an implementation will exist for every combination of operands in each virtual machine instruction.
 	
-		An instruction set architecture will be designed which will be tailored for such a dispatch method. It is anticipated that having implementations for every combination of operands in each virtual machine instruction will cause the virtual machine implementation to become very large, and so the design of the instruction set architecture will focus on keeping the number of unique instructions low.
+		An instruction set architecture will be designed which will be tailored for such a dispatch method. It is anticipated that having implementations for every combination of operands in each virtual machine instruction will cause the virtual machine implementation to become very large, and so the design of the instruction set architecture will focus on keeping the number of unique instructions low. The number of registers exposed by the VM architecture may have to be restricted to reduce the number of operand combinations in instructions.
 		
-		The virtual machine will target the Intel 64 host machine architecture.
+		The relationship between the number of registers, number of distinct operations, and the size of the VM code can be shown mathematically. Assuming any virtual machine register can be used as an operand for any instruction, the size of the virtual machine implementation is proportional to:
 		
-		\subsection{Limitations}
-			As the virtual machine implementation becomes very large, it will become unsuitable for operation on machines with small L1 and L2 instruction caches, because large portions of the virtual machine implementation will not remain in the instruction cache. The result is a virtual machine that is actually slower than conventional virtual machines. We will consider only modern processors with reasonably large first-level cache, for instance, the fourth-generation Intel Core i7 range of processors containing 32KB of L1 instruction cache.
-			
-			Assuming any virtual machine register can be used as an operand for any instruction, the size of the virtual machine implementation is proportional to:
-			
-			\[
-				\sum_{p~\in~opcodes} r^{n(p)} : 
-					\begin{array}{l}
-						n(p) \coloneqq \text{number of operands for $p$} \\
-						r \coloneqq \text{number of virtual machine registers}
-					\end{array}
-			\] 
-			
-			Every additional virtual machine register increases the size of the virtual machine by a polynomial factor. At some point, any performance gain received by exposing more physical registers will be negated by increasing incidence of cache misses. This is a source of a practical limitation on the number of registers in the virtual machine's architecture.
+		\[
+		\sum_{p~\in~opcodes} r^{n(p)} : 
+		\begin{array}{l}
+		n(p) \coloneqq \text{number of operands for $p$} \\
+		r \coloneqq \text{number of virtual machine registers}
+		\end{array}
+		\] 
+		
+		Consequently, every additional virtual machine register increases the size of the virtual machine by a polynomial factor. At some point, any performance gain received by exposing more physical registers will be negated by increasing incidence of cache misses. For this reason, the number of exposed registers must be limited. The extent to which such constraints are of practical value to the virtual machine performance must be determined.
+		
+		As the virtual machine implementation becomes very large, it may become unsuitable for operation on machines with small L1 and L2 instruction caches. This is the case if the cache is inadequate to host large portions of the active virtual machine implementation. If this is to occur, the virtual machine may actually be slower than conventional virtual machines. Hence, the design will consider only modern processors with reasonably large first-level cache, such as the fourth-generation Intel Core i7 range of processors which contain 32KB of L1 instruction cache.
 				
 	\section{Overview of Treatise Structure}
-		This treatise documents the process of evaluating new ideas in virtual machine design. In Chapter~2, an outline of relevant research in the field of virtual machine and interpreter design is presented. We also mention previous work which is similar or related to this one. This helps to form a framework around which we present our new ideas.
+		This treatise documents the process of evaluating new ideas in virtual machine design. In Chapter~2, an outline of relevant research in the field of virtual machine and interpreter design is presented. A small amount of related work has previously been done, which will be highlighted. This chapter forms a framework around which the new design is presented in Chapter~3.
 		
-		In Chapter~3 we present the main ideas of this research, and launch into a detailed description of the virtual machine design that will embody these ideas. We also touch on some interesting implementation details.
-		
-		In Chapter~4 we describe how these ideas will be evaluated by subjecting the virtual machine to empirical testing, and present the results of these tests. This flows into Chapter~5 where these results are interpreted, conclusions drawn, and recommendations made in terms of future engineering and research possibilities.
+		Chapter~4 describes how those ideas are evaluated in a series of empirical tests and benchmarks. The results of these benchmarks are presented and discussed. Final conclusions and discussion are found in Chapter~5, along with recommendations for future work.
 
 % 10-12 pages
 \chapter{Problem Exposition}
 	\section{Literature Review}
-	\todo{Kevin: this is five pages and we expected 10}
 		\cite{structureinterpreters} reflect on why spending research and engineering effort on optimising interpreters is a worthwhile endeavour. Creating a machine abstraction layer between original source code and host machine architecture greatly simplifies the writing of compilers that target many platforms. Without such an abstraction layer for each host machine, a separate version of the compiler targeting that platform must be developed. Interpreters allow compilers to be more versatile with little effort. In a high-level language interpreter utilising a virtual machine, only the interpreter portion needs to be rewritten for different platforms, (or perhaps not even the interpreter if a high-level language is used to implement the interpreter) and the compiler remains the same. Interpreters tend to be simple compared to compilers targeting machine code, so this advantage is quite significant. Compared to native execution, interpreters also offer opportunity for more powerful usability features like debuggers, and have faster compilers, improving the write-compile-test cycle of modern software development methods.
 		
-		However, this comes at a cost---a program running on virtual machine is about 5--10 times slower than the same program running natively~\citep{optimizingindirectbranch}.
+		The benefits of using interpretation comes at some cost in performance. A program running on virtual machine is about 5--10 times slower than the same program running natively~\citep{optimizingindirectbranch}. This cost may be much larger if the design of the interpreter is poor. A well-designed high-level virtual machine is both easy to compile code for (sophisticated) and allows for fast interpretation (low overhead). Such consideration should be applied aross all features of an interpreter.
 		
-		A good design of a high-level virtual machine is one that is both easy to compile code for (sophisticated) and allows for fast interpretation (low overhead).
+		\cite{fastjava} believes that interpreters are not well designed to suit modern architectures features like pipelining, branch prediction and caches. They also provide encouragement by saying, ``if interpreters can be made much faster, they will become suitable for a wide range of applications that currently need a JIT.'' \cite[]{structureinterpreters} says that the performance difference between inefficient and efficient interpreters is larger than the difference between efficient interpreters and native code.
 		
-		The feature that is present in all virtual machine interpreters is a dispatch process. Dispatch refers to the process of fetching, decoding, and starting the execution of a virtual machine instruction. Dispatch technique can have the biggest effect on the performance of a virtual machine~\citep{structureinterpreters}.
+		\subsection{Virtual Machine Dispatch}
+		One feature that is present in all virtual machine interpreters is an instruction dispatch process. Dispatch refers to the process of fetching, decoding, and starting the execution of the code that is specific to the next virtual machine instruction. The dispatch technique can have the biggest effect on the performance of a virtual machine because it operates for every VM instruction executed. Consequently, interpreters spend most of their execution time on instruction dispatch \citep{modernarchvm}. 
 		
-		The most efficient dispatch method is direct threaded code. ``Threading'' in this case does not refer to ``multithreading'', but instead to a much older type of code structuring technique. In this method, a virtual machine instruction is actually the address of the code that implements that instruction. This is illustrated in \reffig{directthreading}. Notice the line `\texttt{jmp *pc++}'. This is an indirect branch. An indirect branch is an inescapable consequence of the dispatch process. Direct threading is efficient because, although it contains an indirect branch, there is little other overhead.
+		There are a variety of widely known implementation techniques for instruction dispatch. The fastest know dispatch method is direct threaded code~\citep{structureinterpreters}. ``Threading'' in this case does not refer to ``multithreading'', but instead to a much older type of code structuring technique. In this method, a virtual machine instruction is actually the address of the code that implements that instruction. This is illustrated in \reffig{directthreading}. Notice the line `\texttt{jmp *pc++}'. This is an indirect branch. An indirect branch is an inescapable consequence of the dispatch process. Direct threading is efficient because, although it contains an indirect branch, there is little other overhead. Techniques for improving the accuracy of branch target prediction have been investigated, and some more interesting ones are summarized by \cite{optimizingindirectbranch}. 
 		
 		\begin{myfigure}
 				\begin{lstlisting}
@@ -320,11 +321,9 @@ print:
 				\label{fig:directthreading}
 		\end{myfigure}
 		
-		The reason that the jump instruction occurs at the end of each implementation is that duplicating the indirect branch increases the utilisation of a branch target prediction, since there is an entry in the branch target buffer for each indirect branch instruction. If there was one common jump instruction, the BTB would always predict that the next instruction is the same as the previous one, which is not usually the case. This will be better explained later in this chapter.
+		Note that the jump instruction is duplicated at the end of each instruction. The reason is that duplicating the indirect branch increases the utilisation of a branch target prediction, since there is an entry in the branch target buffer for each source address of an indirect branch. If instead one common jump instruction is used, the BTB would always predict that the next instruction is the same as the previous one, which is almost always incorrect. This will be better explained later in this chapter.
 		
-		Other techniques for improving the accuracy of branch target prediction have been investigated, and some more interesting ones are summarized by \cite{optimizingindirectbranch}. 
-		
-		One interesting finding of that paper was that branch prediction in loops could be improved if no duplicate instructions occur in the loop. Branch prediction accuracy can be 100\% in that case, because the next instruction can always be predicted based only on the current instruction. 
+		An interesting finding of \cite{optimizingindirectbranch} is that branch prediction in loops can be greatly improved if every instruction within the loop body is unique. Branch prediction accuracy can be perfect in that case, because the current instruction is always sufficient to predict the next instruction. 
 		
 		Consider the code in \reffig{duplicatedinstructions}. During the second iteration of the loop, after the A instruction, C will be predicted because it was the last instruction to follow A. This is incorrect because B is the next instruction. The BTB will be updated to reflect that B follows A. After the next A instruction, B will be predicted because it was the last instruction to follow A. However, this is wrong again, and the BTB will update its prediction once more. A misprediction happens after every A instruction.
 		
@@ -359,30 +358,23 @@ jmp loop
 		
 		
 		
-		Another interesting technique investigated by \citeauthor{optimizingindirectbranch} is the use of `superinstructions' which are groups of instructions with a single opcode. By combining instructions into more complex instructions which are used less often, this technique can reduce branch prediction failures. For instance, superinstructions can be applied to \reffig{duplicatedinstructions} by combining the (A, C) instruction pair into an instruction AC. This results in a perfect prediction in this instance.
+		Another interesting technique investigated by \citeauthor{optimizingindirectbranch} is the use of `superinstructions' which are groups of instructions with a single opcode. Combining instructions into more complex instructions can reduce branch prediction failures by increasing the variety in opcodes. It also reduces the number of indirect branches, because a dispatch no longer occurs between the instructions that have been combined into a composite instruction. For instance, superinstructions can be applied to \reffig{duplicatedinstructions} by combining the (A, C) instruction pair into an instruction AC. This results in a perfect prediction in this instance.
 		
-		Traditionally, the high level virtual machines implemented in interpreters are stack machines. Stack machines are used over register machines for a few reasons. Instructions for stack machines are smaller, because instruction operands are implicit. This means that instruction fetching is faster. It is easier to compile code for a stack machine than a register machine because the compiler does not need to implement a register allocator \citep{caseregistervm}. However, \cite{stackregistershowdown} found that an efficient register virtual machine can execute benchmarks 32\% faster than an analogous stack machine. 
+		Traditionally, the high level virtual machines implemented in interpreters are stack machines. Stack machines have been favoured over register machines for a few reasons. Instructions for stack machines are smaller, because instruction operands are implicit. This means that instruction fetching is faster. It is easier to compile code for a stack machine than a register machine because the compiler does not need to implement a register allocator \citep{caseregistervm}. However, \cite{stackregistershowdown} found that an efficient register virtual machine can execute benchmarks 32\% faster than an analogous stack machine. 
 		
-		\cite{caseregistervm} mentions that the first successful virtual machine interpreter ran stack-based P-code for Pascal. This was the first in a large family of stack-based bytecodes for popular languages like Smalltalk, Java and the Common Intermediate Language (CIL). This suggests that there might be historic factors involved in the prevalence of stack based virtual machines.
-		
-		\cite{fastjava} believes that interpreters are not well designed to suit modern architectures features like pipelining, branch prediction and caches. They also provide encouragement by saying, ``if interpreters can be made much faster, they will become suitable for a wide range of applications that currently need a JIT.''
+		There might be historic factors involved in the prevalence of stack based virtual machines. \cite{caseregistervm} mentions that the first successful virtual machine interpreter ran stack-based P-code for Pascal. This was the first in a large family of stack-based bytecodes for popular languages like Smalltalk, Java and the Common Intermediate Language (CIL).
 		
 		\subsection{Relevant Previous Work}
-		The practice of mapping virtual machine resources to host machine registers has been investigated for stack machines by \cite{stackcaching}. Ertl measured the performance of stack machines which kept the top few elements of the stack in registers. He found that direct mapping of stack positions to machine registers was only useful for the case where just the top element of the stack was cached in a register. Further caching resulted in too many load-store instructions to shuffle register values around when positions on the stack change.
+		\cite{optimizingindirectbranch} discuss a technique they call dynamic replication, which solves the problem described in the previous section where duplicate instructions in a loop result in large amounts of misprediction. In this technique, the interpreter dynamically adds duplicates of instruction implementations to the virtual machine for each instruction emitted by the compiler. The bytecode produced by an interpreter utilising this technique consists of no duplicate opcodes, because if two of the same instruction exist, they will correspond to different implementation instances in the virtual machine. This technique dramatically reduces indirect branch mispredictions at the cost of increased code size.
+		
+		The practice of mapping virtual machine resources to host machine registers has been investigated for stack machines by \cite{stackcaching}. Ertl measured the performance of stack machines which kept the top few elements of the stack in registers. For the case of static register assignment, Ertl found that direct mapping of stack positions to machine registers was only useful for the case where just the top element of the stack was cached in a register. Further caching resulted in too many load-store instructions to shuffle register values around when positions on the stack change.
 		
 		Ertl also attempted a technique he calls ``dynamic stack caching'' where stack elements are cached in whatever register is convenient, and an internal state machine remembers the mapping between stack context and registers. The technique employs multiple versions of code to emulate each virtual machine instruction; the version which is executed depends on the current state of the state machine (register-stack state mapping). Ertl found that this technique halves the cost of operand fetching for each additional register involved in the caching, but adds an instruction dispatch cost because of the increased number of states. A possible explanation for this is the increase in dispatch complexity, and increased cache miss rate due to the large number of states.
 		
-		In the same paper, Ertl writes the first mention of the idea of achieving register mapping between a register virtual machine and a host register machine through a table of implementations for each combination of opcode and operands. However, the idea is quickly dismissed, as it would ``cause code explosion, and will probably suffer a severe performance hit on machines with small first-level caches.'' The R4000 MIPS processor was a contemporary example, having only 8 KB of level one (L1) instruction cache.
-		
-		\cite{optimizingindirectbranch} discuss a technique they call dynamic replication, which solves the problem described in the previous section where duplicate instructions in a loop result in large amounts of misprediction. In this technique, the interpreter dynamically adds duplicates of instruction implementations to the virtual machine for each instruction emitted by the compiler. The bytecode produced by an interpreter utilising this technique consists of no duplicate instructions, because if two of the same instruction exist, they will correspond to different implementation instances in the virtual machine. This technique dramatically reduces indirect branch mispredictions at the cost of increased code size.
-	
-		The state of cache availability has changed for modern processors. Consequently, this approach deserves further investigation. Modern processors have significantly larger cache sizes. For example, 4th generation Intel Core processors have 32 KB of L1 instruction cache \citep{optimisationreference}, four times as much as the R4000. They also have much larger second and third level caches.
-		
-		\todo{Should I spend much more effort on this subsection?}
-	
-		
+		In the same paper, Ertl writes the first mention of the idea of achieving register mapping between a register virtual machine and a host register machine through a table of implementations for each combination of opcode and operands. However, the idea is quickly dismissed, as it would ``cause code explosion, and will probably suffer a severe performance hit on machines with small first-level caches.'' The R4000 MIPS processor was a contemporary example, having only 8 KB of level one (L1) instruction cache. However, The state of cache availability has changed for modern processors. Modern processors have significantly larger cache sizes. For example, 4th generation Intel Core processors have 32 KB of L1 instruction cache \citep{optimisationreference}, four times as much as the R4000. They also have much larger second and third level caches. Consequently, this approach deserves further investigation.
+
 	\section{Difficulties}
-		Interpreters spend most of their execution time on instruction dispatch \citep{modernarchvm}. The main contributor is usually an indirect branch to the implementation code for the currently executing virtual machine instruction \citep{optimizingindirectbranch}. Every interpreter has at least one indirect branch in dispatch code \citep{modernarchvm}. Because these indirect branches are in the instruction dispatch portion of the interpreter, they are executed for every virtual machine instruction. This closely couples interpreter speed to efficiency of branching.
+		The main contributor to the large amount of time spent in the instruction dispatch of a virtual machine is usually  indirect branches~\citep{optimizingindirectbranch}. Every interpreter has at least one indirect branch in dispatch code \citep{modernarchvm}. Because these indirect branches are in the instruction dispatch portion of the interpreter, they are executed for every virtual machine instruction. This closely couples interpreter speed to efficiency of branching.
 		
 		Modern architectures tend to have long pipelines and perform branch target prediction to load the target of an upcoming branch before the branch instruction is executed. Branch target misprediction is very expensive in these architectures, because the execution of a branch happens late in the pipeline but affects the start of the pipeline \citep{optimizingindirectbranch}.
 				
@@ -455,11 +447,11 @@ print:
 		
 % 10-12 pages
 \chapter{Solution Design}
-	In this section, the design of the virtual machine will be discussed. The overarching design goal for this virtual machine is to enable register mapping between virtual machine and host machine.
+	In this chapter, the design of the virtual machine will be discussed. The overarching design goal for this virtual machine is to enable register mapping between virtual machine and host machine.
 	
-	In conventional virtual machines, an implementation for a virtual machine instruction will look like \reffig{operandfetch}. Notice how the virtual registers are implemented as an array in memory, and that the index of the virtual register is encoded into the instruction word (a bitfield, as explained earlier). If we are to store the virtual registers in real registers, we cannot access the register using an index.
+	The core idea exploited to achieve this is the idea introduced by \cite{stackcaching}, but dismissed due to concerns of low instruction cache availability. It is likely that those limits no longer apply. The design of a new virtual machine will allow that theory to be tested.
 	
-	\todo{Talk about traditional nuts and bolts?}
+	The suggested technique is perhaps best contrasted with conventional instruction dispatch. \reffig{operandfetch} presents a conventional instruction implementation. Notice how the virtual registers are implemented as an array in memory, and that the index of the virtual register is encoded into the instruction word (a bitfield, as explained in Chapter 2). The problem at hand is that real machine registers cannot be accessed through a computed index.
 	
 	\begin{myfigure}
 		\begin{lstlisting}
@@ -475,7 +467,7 @@ add(instr):
 		\label{fig:operandfetch}
 	\end{myfigure}
 	
-	Instead, we will duplicate the implementation code for every combination of registers, as shown in \reffig{dupimplementation}. Notice how the implementation is much simpler (we have managed to remove all the operand fetch code from before), although there is a significantly larger amount of code. By hard-coding the registers instead of dynamically accessing them, we are able to circumvent the restriction that real registers cannot be dynamically indexed.
+	The solution proposed by \cite{stackcaching} is to duplicate and specialise the implementation for every combination of the physical registeers that are supported. Such a scenario is illustrated for the `\texttt{add}' instruction in \reffig{dupimplementation}. Notice that each implementation section is much simpler. This is because much of the operand fetch code can be eliminated as the registers are accessed directly. Unfortunately, there is a significantly larger amount of code. Nevertheless, by hard-coding the registers instead of dynamically accessing them, the restriction that real registers cannot be dynamically indexed is circumvented.
 	
 	\begin{myfigure}
 		\begin{lstlisting}
@@ -515,23 +507,30 @@ add_1_1:
 		\end{array}
 	\] 
 	
-	There are several things we can do to attempt to reduce the inevitably large size of the implementation. The most obvious thing we can do is reduce the number of instructions supported by the VM architecture. This is more possible in high-level virtual machines than real machines, because the instructions tend to be more sophisticated. The second thing we can do is to reduce the number of registers exposed through the VM architecture. Because the size of the implementation has a polynomial relation to the number of exposed registers, this will probably have the largest effect. Our last attempt to reduce the size of the implementation will be to prohibit certain trivial combinations of operands for certain instructions. For instance, the instruction `\texttt{sub regA, regA}' is useless because the result will always be the same as `\texttt{mov regA, 0}'. Similar arguments lead us to remove combinations like `\texttt{xor regA, regA}', `\texttt{and regA, regA}' and so on. Removing these instructions from our specification means we can remove their implementations, because every combination of operands has its own implementation in our virtual machine.
+	There are several things that can be done to limit the inevitably large size of the implementation:
 	
-	Duplicating code in this way will reduce the indirect branch misprediction rate in the same way that dynamic replication (as mentioned in the literature review) does. By making instructions more diverse (ie., increasing the number of instructions by dispatching on both opcode and operands), the dispatch attached to a particular implementation has more information about the current instruction associated with it. The BTB record for the dispatch's indirect branch will be more specific for the instruction case, and better able to predict which instruction comes next.
+	\begin{description}
+		\item[Reduce the number of instructions supported.] Reducing the number of instructions supported by the VM architecture is more possible in high-level virtual machines than real machines, because the instructions tend to be more sophisticated.
+		\item[Reduce the number of registers supported.] The size of the implementation has a polynomial relation to the number of exposed registers, so reducing the number of registers exposed through the VM architecture will probably have the largest effect on reducing the code size.
+		\item[Prohibit trivial operations.] Because every combination of operands has its own implementation in our virtual machine, removing trivial operations from the specification means that fewer implementation cases need to included in the virtual machine. For instance, the instruction `\texttt{sub regA, regA}' is useless because the result will always be the same as `\texttt{movc regA, 0}'. Similar arguments lead us to remove combinations like `\texttt{xor regA, regA}', `\texttt{and regA, regA}' and so on. In physical machines, such redundancy is tolerated as it leads to simpler design. In a virtual machine, these alternatives provide no additional advantage.
+	\end{description}
 	
-	With all these constraints and goals in mind, we can design the virtual machine architecture.
+	The duplication of code produces a serendipitous side effect on branch target prediction. Duplicating code in this way will reduce the indirect branch misprediction rate in the same way that dynamic replication (as mentioned in the literature review) does. By making instructions more diverse (ie., increasing the number of instructions by dispatching on both opcode and operands), the dispatch attached to a particular implementation has more information about the current instruction associated with it. The BTB record for the dispatch's indirect branch will be more specific for the instruction case, and better able to predict which instruction comes next.
+	
+	A number of design constraints have been established, considering both previous research on the topic and the current processor landscape. The objectives of the design have also been determined. With all of this in mind, the design of the virtual machine architecture can now be presented.
 	
 	\section{Virtual Machine Architecture Design}
-		When designing the virtual machine architecture, it will be beneficial to remember this heuristic by \cite{structureinterpreters}: ``Well-designed VMs are tailored for both easy compilation from the source language and fast interpretation on real machines.''
+		When designing the virtual machine architecture, it will be beneficial to remember this heuristic by \cite{structureinterpreters}: ``Well-designed VMs are tailored for both easy compilation from the source language and fast interpretation on real machines.'' One direct application of this is that the virtual machine design must be designed with many real architectures in mind, all of which have their own idiosyncrasies. For instance, some architectures do not allow unaligned memory accesses, so the virtual machine does not require it. Other such limitations are discussed when aspects of the VM architecture address these issues.
 		
-		One direct application of this is that the virtual machine design must be designed with many real architectures in mind, all of which have their own idiosyncrasies. For instance, some architectures do not allow unaligned memory accesses, so our virtual machine does not require it. Other such limitations will be discussed when aspects of the VM architecture address these issues.
+		\subsection{General Purpose Registers}
+		Registers in our virtual machine will notionally be one of two types---64-bit integer or pointer. The machine supports six general purpose registers, each of which can contain either a pointer or an integer. However, it is illegal to treat a pointer as an integer or vice versa. For this reason, a general-purpose register $g_i$ can be thought of as two distinct registers: an integer $r_i$ and a pointer $p_i$, only one of which is valid at any time. The strange convention of these pairs of ``virtual registers'' is justified by the existence of real architectures that make a distinction between pointer and integer registers. In this case, $p_i$ and $r_i$ will be mapped to two distinct physical registers. However, the possibility that they may be mapped to the same register is possible. Although not implemented in our design, this convention can also be extended to a third type of register for floating point numbers, to support machines with separate floating point modules.
 		
-		Our virtual machine will be developed for a static language. Consequently, we do not have to do type checking in the virtual machine. Registers in our virtual machine will notionally be one of two types---64-bit integer or pointer. The machine will have six general purpose registers, each of which can contain either a pointer or an integer. However, it is illegal to treat a pointer as an integer or vice versa. For this reason, a general-purpose register $g_i$ can be thought of as two distinct registers: an integer $r_i$ and a pointer $p_i$, only one of which is ``alive'' at any time. The justification for the strange convention of these pairs of ``virtual registers'' is justified by the existence of real architectures that make a distinction between pointer and integer registers. In this case, $p_i$ and $r_i$ will be mapped to two distinct physical registers.
+		This high-level virtual machine implements pointers much the same as in high-level languages, where pointer arithmetic is transparent. It is illegal to do arithmetic on pointers. This decision was made to make the interpreted language memory safe.
 		
-		Because this is a high-level virtual machine, pointers work as in high-level languages where pointer arithmetic is transparent. It is illegal to do arithmetic on pointers. This decision was made to make the interpreted language memory safe.
-		
+		\subsection{Special Registers}
 		There are two notional registers which are not visible to the programmer at all. These are \texttt{pc}, the virtual machine instruction pointer, and \texttt{fp} the stack frame pointer. The programmer may indirectly influence these registers through operations like branches and function calls.
 		
+		\subsection{Instruction Encoding}
 		Instructions are sixteen bits long. Unlike the majority of virtual machines, the instruction words are not bitfields. In a conventional virtual machine, bitfields are useful because they simplify decoding the instruction words into opcode and operands. Since every unique instruction word corresponds to its own implementation code, and dispatch occurs over the entire word, bit fields serve no purpose, and actually make  threading more difficult because instructions with bitfields are not sequential.
 		
 		An instruction is sometimes followed by a sixteen-bit immediate value. This immediate value can be either a sixteen-bit constant, or a relative displacement to a position elsewhere in the program. This interpretation depends on the meaning of the preceding instruction.
@@ -539,7 +538,7 @@ add_1_1:
 		Since our virtual machine is designed to be run as a user process under an operating system, we should include instructions that help the program interact with its environment under the operating system. We call these instructions ``pragmatic'' instructions.
 		
 		\subsection{Types}
-		A pointer can refer to one of three data structures: an object, an array of integers, or an array of pointers. An object is a collection of variables of different types in an order specified by an object prototype. The prototype is found in the program's bytecode and has the format specified in \reffig{objproto}. Since the virtual machine is statically typed, it is necessary to keep track of the type of each member in an object, and the prototype serves this purpose. However, this is not necessary for arrays, since they are homogeneous---either all pointers or all integers.
+		A pointer can refer to one of three data structures: an object, an array of integers, or an array of pointers. An object is a collection of variables of different types in an order specified by an object prototype. The prototype is found in the program's bytecode and has the format specified in \reffig{objproto}. Since the virtual machine is statically typed, it is necessary to keep track of the type of each member in an object, and the prototype serves this purpose. The bitmap enables implementers to provide runtime safety checks when fields are accessed, or to implement a garbage collector. This is not necessary for arrays, since they are homogeneous---either all pointers or all integers.
 		
 		\begin{myfigure}
 			\begin{tabular}{|l|l| }
@@ -556,9 +555,9 @@ add_1_1:
 		\end{myfigure}
 		
 		\subsection{Function Call and Return}
-		The virtual machine's instruction set provides a high-level interface for calling functions through the \texttt{call} and \texttt{ret} instructions, which call and return from a function respectively. These instructions maintain a call stack and local variable space.
+		The virtual machine's instruction set provides a high-level interface for calling functions through the \texttt{call} and \texttt{ret} instructions, which call to, and return from, a function respectively. These instructions maintain a call stack and local variable space.
 		
-		When a function is called, a local variable space is created for the function. A function defines how much space it needs for local variables, and the types of those locals, in a \emph{function prototype}. 
+		A function defines how much space it needs for local variables, and the types of those locals, in a \emph{function prototype}. When a function is called, a new stack frame is initialised for the function. Registers $r_1$ through $r_4$, $pc$ and $fp$ are saved automatically, while registers $r_0$ and $r_5$ are not preserved, and may be used for return values. A number of locals from the caller are copied into the callee's local space, as determined by an immediate value passed to the \texttt{call} instruction. This makes it convenient to pass arguments to functions. A pointer to the function prototype is also saved to the new stack frame so that the types of locals can be investigated by tools.
 		
 		Function prototypes work similarly to object prototypes, as shown in \reffig{funcproto}. A function prototype begins with an eight-byte field which contains the number of locals the function needs. The corresponding amount of space is allocated for accessing these local variables through \texttt{getl}, \texttt{setl}, \texttt{getlp} and \texttt{setlp}. The next few eight-byte words contain bitmaps which store the type of each local. The types of variables and objects is always known to facilitate future implementation of a garbage collector, which must always be able to determine whether a given entity is a pointer or not. Immediately following the appropriate number of these bitmap words, the bytecode for the function begins.
 		
@@ -576,14 +575,14 @@ add_1_1:
 			\label{fig:funcproto}
 		\end{myfigure}
 		
-		When a function is called, a new stack frame is initialised for the function. Registers $r_1$ through $r_4$, $pc$ and $fp$ are saved automatically, while registers $r_0$ and $r_5$ are used for return values. A number of locals from the caller are copied into the callee's local space, as determined by an immediate value passed to the \texttt{call} instruction. A pointer to the function prototype is also saved to the new stack frame so that the types of locals can be known.
+	
 		
 		A bytecode program is expected to start with a function prototype, which is automatically called by the virtual machine at execution start, much like C and its \texttt{main()} method. When this method calls \texttt{ret}, the program terminates.
 		
 	\section{Implementation Details}
 		Because we need to map machine registers to virtual ones, our virtual machine must be able to manage registers directly. For this reason, the virtual machine is written mostly in Intel 64 assembly. It also makes use of standard C utility libraries for easy interface with the operating system.
 		
-		The basic structure of the assembly looks like the code sample in \reffig{vmstructure}. The vectors section contains an array of references to implementations for each instruction and operand combination. This array can be indexed using the instruction itself. In the code sample below, the instruction \texttt{0x0000} corresponds to \texttt{add r0, r0}, the instruction \texttt{0x0002} corresponds to \texttt{add r0, r2} and so on. Again, unlike traditional instruction sets, the actual value of the instruction has no meaning, and is just a unique index into this array.
+		The basic structure of the assembly looks like the code sample in \reffig{vmstructure}. The vectors section contains an array of references to implementations for each instruction and operand combination. This array can be indexed using the whole instruction instruction word. In \reffig{vmstructure}, the instruction \texttt{0x0000} corresponds to \texttt{add r0, r0}, the instruction \texttt{0x0002} corresponds to \texttt{add r0, r2} and so on. Again, unlike traditional instruction sets, the actual value of the instruction has no meaning, and is just a unique index into this array.
 		
 		\begin{myfigure}
 			\begin{lstlisting}
@@ -670,7 +669,7 @@ add {r[i]}, {r[j]}
 			\label{fig:regmap}
 		\end{myfigure}
 		
-		The Ruby script defines the \texttt{i}, \texttt{j} and \texttt{k} variables for each template expansion to represent the operands to the instruction, and also appends a dispatch template to the end of each implementation.
+		The Ruby script defines the \texttt{i}, \texttt{j} and \texttt{k} variables for each template expansion to represent the notional operand register indexes for the instruction. These indexes exist at VM build time, but not at the VM run=time. The script also appends a dispatch template to the end of each implementation.
 		
 		\subsection{Virtual Machine Interface}
 		A virtual machine interacts with both the interpreter system and the operating system. The scope of this project only includes virtual machine concepts, so the interpreter is replaced by an assembly program which sets up an environment in which the virtual machine can operate, and transfers control to virtual machine code. 
@@ -702,7 +701,9 @@ add {r[i]}, {r[j]}
 			\label{fig:objheader}
 		\end{myfigure}
 		
-		If the header describes an integer array, the numeric data section is set to the number of bytes in the array. If the header describes an array of pointers, the numeric data section is set to the number of pointers in the array. The reason for the difference in meaning for pointer arrays and integer arrays is that integer arrays serve a dual purpose as byte buffers (for instance, to implement strings) and therefore need byte-level granularity on their size. If the header describes an object, the numeric data section is set to the address of the object prototype, so that the types of object members can be known.
+		If the header describes an integer array, the numeric data section is set to the number of bytes in the array. If the header describes an array of pointers, the numeric data section is set to the number of pointers in the array. The reason for the difference in meaning for pointer arrays and integer arrays is that integer arrays serve a dual purpose as byte buffers (for instance, to implement strings) and therefore need byte-level granularity on their size. If the header describes an object, the numeric data section is set to the address of the object prototype, so that the types of object members can be inspected by a garbage collector, or debugging tools.
+		
+		All notable aspects of the virtual machine's design have been discussed. Potential weaknesses of this approach have also been identified. With this in mind, a method for testing this design is presented.
 
 \chapter{Evaluation Methods and Results}
 	The main idea in the virtual machine design is to map virtual machine registers to real registers. Being able to do this requires that the implementation for each instruction be expanded to provide a different implementation for every combination of operands. Although the idea of expanding instruction implementations is forced on us by our goal of mapping registers, there is a case to be made for expanding these implementations in the absence of register mapping. As discussed in the previous chapter, duplicating code may improve the performance in two key ways. Firstly, it removes the need to perform instruction decode and operand fetch and store for every instruction. Secondly, it will improve the ability of the physical processor to perform branch target prediction on the virtual machine dispatch, because there are are an increased number of places where indirect branches occur.
@@ -714,24 +715,25 @@ add {r[i]}, {r[j]}
 	
 	\begin{description}
 		\item[Conventional Virtual Machine:] This virtual machine will be used in both experiments as a control for comparison. Its implementation matches that of virtual machines which already exist. There is no code duplication or register mapping, and it resembles \reffig{operandfetch} in structure. It also expects a conventional instruction representation using bitfields, unlike the other two virtual machines.
-		\item[Duplicated Code Machine:] This virtual will have duplicated implementation code, but no register mapping. It will be used to test the hypothesis that improved performance is possible without register mapping. To determine whether the hypothesis is true, the performance of this virtual machine will be compared to the conventional virtual machine and the register-mapped machine.
+		\item[Duplicated Code Machine:] This virtual machine will have duplicated implementation code, but no physical register mapping. It will be used to test the theory that improved performance is possible without register mapping. To determine whether this theory is true, the performance of this virtual machine will be compared to the conventional virtual machine and the register-mapped machine.
 		\item[Register-Mapped Machine:] This virtual machine will implement both register mapping and, by necessity,  code duplication. If this virtual machine is significantly faster than both the conventional machine and the duplicated code machine, then register mapping will be confirmed as a strategy for performance improvement.
 	\end{description}
 	
 	\section{Benchmark Programs}
-	To test the performance of each of these benchmarks, a number of benchmark programs were written for these virtual machine's instruction set. Each benchmark is designed to test specific performance aspects of the virtual machine. The benchmarks were also translated to C to compare the interpreted benchmark programs to natively compiled programs.
+	To test the performance of each of these VMs, a number of benchmark programs were written for thee virtual machine instruction set. Each benchmark is designed to test specific performance aspects of the virtual machine. The benchmarks were also translated to C to compare the interpreted benchmark programs to natively compiled programs.
 	
 	\begin{description}
 		\item[Ackermann Function:] This benchmark is designed to perform an extreme amount of function calls~(recursion). It is designed to test the performance characteristics of function calls on the three virtual machines.
-		\item[Prime Sieve:] This benchmark uses linked lists to implement a sieve of Eratosthenes. This benchmark is designed to test performance characteristics of pointer operations in the virtual machine. The benchmark begins with a linked list of sequential numbers. Composite numbers are progressively removed from the list through pointer manipulation (removing nodes from a linked list).
+		\item[Prime Sieve:] This benchmark uses linked lists to implement a sieve of Eratosthenes. The benchmark tests performance characteristics of pointer operations in the virtual machine. The benchmark begins with a linked list of sequential numbers. Composite numbers are progressively removed from the list through pointer manipulation (removing nodes from a linked list).
 		\item[Fannkuch (Pancake):] This benchmark implements an iterative integer algorithm, and is designed to test the performance of simple load and store operations in an integer array.
 		\item[Mersenne Twister:] This benchmark implements a random number generator. It is designed to test binary operations (\texttt{and}, \texttt{shl}, etc.) on a large array of integers.
 		\item[Mandelbrot:] This benchmark renders an approximation of the mandelbrot set to a bitmap file. This benchmark allocates and writes to a large integer array. This benchmark was designed to do no function calls, in order to provide statistics isolated from the effects of function calls on the performance of the virtual machines.
 		\item[Fasta:] This benchmark produces a long string of characters representing nucleotides in a DNA sequence. It produces these through a simple linear congruence random number generator. 
-		\item[Reverse Complement:] This benchmark takes as input a long string of characters representing nucleotides, like the output of the previous benchmark. The benchmark then reverses this string, and performs a character-level substitution to generate a complementary DNA sequence. This benchmark tests the performance characteristics of stream processing on the virtual machines.
+		\item[Reverse Complement:] This benchmark takes as input a long string of characters representing nucleotides, much like the output of the fasta benchmark. The benchmark then reverses this string, and performs a character-level substitution to generate a complementary DNA sequence. This benchmark tests the performance characteristics of stream processing on the virtual machines.
 	\end{description}
 	
-	These benchmarks were assembled for the virtual machines using a purpose-build assembler program which was designed to have a flexible code generator so that benchmarks could be easily re-targeted for each of the virtual machines during development. The assembler defines a fairly typical assembly language. \reffig{ackermann} shows an excerpt of the assembly code for the Ackermann benchmark.
+	\section{Experimental Procedure}
+	These benchmarks were assembled for the virtual machines using a purpose-build assembler program which was designed to have a flexible code generator so that benchmarks could be easily re-targeted for each of the virtual machines during development. The assembler defines a fairly typical assembly language. \reffig{ackermann} shows an excerpt of the assembly code for the Ackermann benchmark. The C programs were compiled using GCC, with full optimisations enabled.
 	
 	\begin{myfigure}
 		\begin{lstlisting}
@@ -771,8 +773,35 @@ ret
 		\label{fig:ackermann}
 	\end{myfigure}
 	
-	\section{Execution Time}
-		Each benchmark was run on every virtual machine ten times, and the execution time was recorded. The graphs in \reffig{execgraphs} show the mean execution time in seconds, with the error bars representing the standard deviation. The execution time for the equivalent C program is also presented, with the exception of the Ackermann benchmark, where the recursion depth was too large to be efficiently reproduced in C. The virtual machines do not have a stack size restriction, because the call stack is implemented as a linked list on the heap.
+		All experiments were performed on an Intel Core~i5-4200U Haswell processor. The machine had 6~GiB of main memory. Each benchmark was run on every virtual machine ten times, and the execution time was recorded using the GNU's \texttt{time} software. The same procedure was followed for the C programs. 
+		
+		An important evaluation goal in this research is to determine whether the increased code size has an adverse effect on VM performance on modern processors. To that end, the virtual machines were also executed on Cachegrind, part of the Valgrind instrumentation framework. Cachegrind is a profiling simulator that provides dynamic analysis of cache usage and branch prediction in a guest program. Valgrind was also used during development to track down difficult-to-reproduce bugs with its excellent memory access auditing system, Memcheck.
+		
+		Cachegrind's machine cache model is designed around a two-level instruction and data cache. For these tests, Cachegrind's cache configuration was set as in \reffig{cacheconfig}. The cache line size is the size of individual chunks of contiguous memory which are cached.
+		
+		\begin{myfigure}
+			\begin{tabular}{|l|r|r|l|}
+				\hline
+				Cache Type & Size & Line Size & Associativity \\
+				\hline
+				L1 Instruction & 32 KiB & 64 B & 8 way \\
+				\hline
+				L1 Data & 32 KiB & 64 B & 8 way \\
+				\hline
+				L2 Combined & 3 MiB & 64 B & 12 way \\
+				\hline
+			\end{tabular}
+			
+			\thisfloatpagestyle{empty}
+			\caption{Cachegrind Configuration}
+			\label{fig:cacheconfig}
+		\end{myfigure}
+		
+		The benchmarks were executed on each virtual machine running under Cachegrind. Because Cachegrind is a simulator, this process took a large amount of time, and so multiple Cachegrind runs were not economical. 
+		
+	\section{Results}
+		\subsection{Execution Time}
+		The graphs in \reffig{execgraphs} show the mean execution time in seconds, with the error bars representing the standard deviation. The execution time for the equivalent C program is also presented, with the exception of the Ackermann benchmark, where the recursion depth was too large to be accommodated by the small C call stack. The virtual machines do not have a stack size restriction, because the call stack is implemented as a linked list on the heap.
 	
 		\begin{myfigure}
 		\begin{tikzpicture}
@@ -1026,15 +1055,15 @@ ret
 		\label{fig:execgraphs}
 		\end{myfigure}
 	
-		Both the duplicated code VM and the register-mapped VM were faster than the conventional VM with all benchmarks. Interestingly, the duplicated code VM and the register-mapped VM offered almost no improvement over the conventional VM on the Ackermann benchmark. This may be due to the fact that the Ackermann benchmark performs many \texttt{call} and \texttt{ret} instructions. These instructions have the heftiest implementations, and so the dispatch mechanism takes up a smaller fraction of the total execution time. 
+		Both the duplicated code VM and the register-mapped VM were faster than the conventional VM with all benchmarks. Interestingly, the duplicated code VM and the register-mapped VM offered very little improvement over the conventional VM on the Ackermann benchmark. This may be due to the fact that the Ackermann benchmark performs many \texttt{call} and \texttt{ret} instructions. These instructions have the heftiest implementations, and so the dispatch mechanism takes up a smaller fraction of the total execution time. 
 		
-		In all the benchmarks except Ackermann and Mersenne, the register-mapped virtual machine was faster than the duplicated code VM. A potential reason for the register-mapped VM being as fast the duplicated code VM in the ackermann benchmark is that during a function call and return, the register mapping is broken for the new stack frame. That is, during a function call, the registers are stored in the stack frame (in memory), and the callee takes over control of these registers. Likewise, during function return, registers $g_1$ through $g_4$ are cleared and replaced with the previous values saved in the stack frame. We were unable to think of a more elegant way to implement the \texttt{call} and \texttt{ret} instructions for the register-mapped VM that would make use of the register mapping, and so they are quite slow. This might be an unavoidable disadvantage of the register-mapped design.
+		In all the benchmarks except Ackermann and Mersenne, the register-mapped virtual machine was faster than the duplicated code VM. A possible reason for the register-mapped VM being no faster than the duplicated code VM in the Ackermann benchmark is that during a function call and return, the register mapping is broken for the new stack frame. That is, during a function call, the registers are stored in the stack frame (in memory), and the callee takes over control of these registers. Likewise, during function return, registers $g_1$ through $g_4$ are cleared and replaced with the previous values saved in the stack frame. We were unable to think of a more elegant way to implement the \texttt{call} and \texttt{ret} instructions for the register-mapped VM that would make use of the register mapping, and so they are quite slow. This might be an unavoidable disadvantage of the register-mapped design., as registers are in short supply.
 		
 		It is interesting to compare the difference between execution times on the duplicated code VM and the register-mapped VM. In some benchmarks, such as prime sieve, there is very little difference. This could be because the traversal through the linked list results in a large number of memory loads (to access the `next' pointer in each node), and seldom uses a register for more than very short-term storage (less than ten instructions before a register value is replaced with a value from memory). Register mapping does not contribute much performance gain in this case.
 		
 		Another interesting comparison to make is the difference in execution time of the C programs from the corresponding benchmark in each VM. This indicates how well suited to each task the virtual machines are. For instance, on the prime sieve benchmark, the virtual machines perform nearly as well as the C program. This suggests that the virtual machine design excels in operations involving pointer operations on the heap.
 		
-		\reffig{normaltimes} shows the average execution time for each virtual machine. To generate this graph, each benchmark time on each virtual machine was normalised by dividing it by the execution time of the C benchmark. The graph shows an average of this metric per virtual machine. The Ackermann benchmark is excluded from this graph because the C benchmark never finished. 
+		\reffig{normaltimes} shows the average execution time for each virtual machine. To generate this graph, each benchmark time on each virtual machine was normalised by dividing it by the execution time of the C benchmark. This was done to prevent averages from being unfairly biased towards long-running benchmarks. The graph shows the average of this metric per virtual machine. The Ackermann benchmark is excluded from this graph because the C benchmark never finished. 
 		
 		\begin{myfigure}
 			\begin{tikzpicture}
@@ -1072,35 +1101,13 @@ ret
 			\label{fig:normaltimes}
 		\end{myfigure}
 		
-		The graph shows that both the register-mapped VM and the duplicated code VM were faster than the conventional VM on average. The register-mapped VM was faster than the duplicated code VM on average. All virtual machines were more than twice as slow as the C programs, on average.
+		The graph shows that both the register-mapped VM and the duplicated code VM performed better than the conventional VM compared to native execution on average. The register-mapped VM performed better than the duplicated code VM on average. All virtual machines were more than twice as slow as the native C programs, on average.
 	
-	\section{Cache Behaviour}
-		An important evaluation goal in this research is to determine whether the increased code size has an adverse effect on VM performance on modern processors. To that end, the virtual machines were executed on Cachegrind, part of the Valgrind instrumentation framework. Cachegrind is a profiling simulator that provides dynamic analysis of cache usage and branch prediction in a guest program. Valgrind was also used during development to track down difficult-to-reproduce bugs with its excellent memory access auditing system, Memcheck.
+		\subsection{Cache Behaviour}
+		The Cachegrind results were very encouraging. None of the programs showed any significant instruction cache misses---under 0.01\% of all instruction loads resulted in a cache miss. We expected to see more instruction cache misses because of the large code size, but there is a possible explanation for its absence. Though there is a large amount of implementation code, a typical assembly program will not dynamically use all instruction-operand combinations. It is not necessary for the processor to cache the implementation code that is not used by the program, so a large percentage of the code does not even make it into the cache. This frees up space for code that does need to be cached.
 		
-		Cachegrind's machine cache model is designed around a two-level instruction and data cache. For these tests, Cachegrind's cache configuration was set as in \reffig{cacheconfig}. The cache line size is the size of individual chunks of contiguous memory which are cached.
-		
-		\begin{myfigure}
-			\begin{tabular}{|l|r|r|l|}
-				\hline
-				Cache Type & Size & Line Size & Associativity \\
-				\hline
-				L1 Instruction & 32 KiB & 64 B & 8 way \\
-				\hline
-				L1 Data & 32 KiB & 64 B & 8 way \\
-				\hline
-				L2 Combined & 3 MiB & 64 B & 12 way \\
-				\hline
-			\end{tabular}
-			\caption{Cachegrind Configuration}
-			\label{fig:cacheconfig}
-		\end{myfigure}
-	
-		The benchmarks were executed on each virtual machine running under Cachegrind, along with the C benchmark programs. Because Cachegrind is a simulator, this process took a large amount of time, and so multiple Cachegrind runs were not economical. 
-		
-		The Cachegrind results were very encouraging. None of the programs showed any significant instruction cache misses---under 0.01\% of all instruction loads resulted in a cache miss. We expected to see more instruction cache misses because of the large code size, but there is a possible explanation for its absence. Though there is a large amount of implementation code, a typical assembly program will not use absolutely all instruction-operand combinations. It is not necessary for the processor to cache the implementation code that is not used by the program, so a large percentage of the code does not even make it into the cache. This frees up space for code that does need to be cached.
-		
-		\section{Branch Target Prediction}
-		Cachegrind is also able to simulate the branch prediction behaviour of programs. We used Cachegrind to characterise the indirect branch prediction behaviour. The frequency of indirect branches that were predicted correctly, and those that weren't, are graphed in \reffig{btbgraph}. The indirect branch behaviour of the C programs is omitted, because it doesn't contribute to the discussion of the predictability of virtual machines.
+		\subsection{Branch Target Prediction}
+		Cachegrind is also able to simulate the branch prediction behaviour of programs. We used Cachegrind to characterise the indirect branch prediction behaviour. The frequency of indirect branches that were predicted correctly, and those that weren't, are graphed in \reffig{btbgraph}. The indirect branch behaviour of the native C programs is not reported here, because it doesn't contribute to the discussion of the predictability of virtual machines.
 		
 		\begin{myfigure}
 			\pgfplotsset{scaled x ticks=false}
@@ -1453,25 +1460,28 @@ ret
 	
 	The results show that conventional register virtual machines can be improved by modifying their design to leverage new design features of modern processors---for instance---large amounts of instruction cache. Duplicating implementation code was very effective at reducing the proportion of mispredicted indirect branches, without having a meaningful impact on the ability of the processor to cache the virtual machine's implementation code. The virtual machines with duplicated code were, on average, 60\% more predictable than the conventional virtual machine.
 	
-	Duplicating implementation code makes indirect branches in the dispatch process of the virtual machine easier to predict. Increasing the number of implementations increases the likelihood that a particular dispatch instance will branch to a unique implementation, simply because the virtual machine consists of implementations which are more specific---it is not often that the exact same instruction/operand combination occurs in many places in the program bytecode. This results in overall increased indirect branch prediction accuracy. 
+	The reason duplication had such a significant impact is supported by theory. Increasing the number of implementations increases the likelihood that a particular dispatch instance will branch to a unique implementation, simply because the virtual machine consists of implementations which are more specific---it is not often that the exact same instruction/operand combination occurs in many places in the program bytecode. This results in overall increased indirect branch prediction accuracy. 
 	
 	We are able to do this without sacrificing instruction cache performance, because of the large amount of instruction cache available on modern processors. In fact, no virtual machine had a problem becoming almost entirely cached (at least, the parts that were actually used), which is in stark contrast to the worries of past researchers. This in indicative of the large shift in processor design over the last twenty years.
 	
 	A second source of performance improvement is achieved by the elimination of the instruction decode step, and---in the register-mapped VM---operand fetch and store. In addition to the execution time saved by skipping these steps, their elimination also reduces the amount of data dependence on the behaviour of the virtual machine, making it easier for the processor to perform speculative optimisation. For instance, the processor can load the value of operands before they are needed by the instruction's implementation. If a virtual machine needs to decode instructions, the processor is only able to load these values after the bytecode instruction has been decoded and the involved operands determined.
 	
-	Register mapping also improves the performance of virtual machines, although not to the extent we expected. Keeping the often-accessed virtual machine registers in high-speed hardware registers caused this improvement. We have a possible explanation for the small margin between the register-mapped and duplicated code VM. In the duplicated code VM, the virtual registers in main memory are almost certainly going to be cached in L1 data cache. This reduces the performance penalty of storing virtual registers in main memory significantly, and closes the performance gap between the duplicated code and register-mapped VM. However, the register-mapped VM is still a solid improvement over the duplicated code VM, which constitutes a positive result.
+	Register mapping also improves the performance of virtual machines, although not to the extent we expected. \todo{add average data here} Keeping the often-accessed virtual machine registers in high-speed hardware registers caused this improvement. We have a possible explanation for the small margin between the register-mapped and duplicated code VM. In the duplicated code VM, the virtual registers in main memory are almost certainly going to be cached in L1 data cache. This reduces the performance penalty of storing virtual registers in main memory significantly, and closes the performance gap between the duplicated code and register-mapped VM. However, the register-mapped VM is still a solid improvement over the duplicated code VM, which constitutes a positive result.
 	
 	\section{Opportunities for Future Development}
 	These results demonstrate that there are still useful techniques to be discovered in the field of non-JIT interpreters. It is important to mention that ``non-JIT techniques'' are not irrelevant in a landscape dominated by JIT interpreters. Rather, these techniques complement JIT techniques, and should be pursued in the interests of producing performant interpreters on modern architectures.
 	
-	Assembly programming has lost favour amongst developers because of its difficulty and declining benefit caused by the improved optimisation ability of modern compilers. It is thus likely that interpreter developers may be unwilling to implement their virtual machines in assembly. However, some of the ideas investigated in this research---especially the code duplication aspect---is still applicable in high-level languages like C. For this reason, it would be beneficial to investigate the introduction of these ideas into existing virtual machines.
+	Assembly programming has lost favour amongst developers because of its difficulty and declining benefit caused by the improved optimisation ability of modern compilers. It is thus likely that interpreter developers may be unwilling to implement their virtual machines in assembly. However, some of the ideas investigated in this research---especially the code duplication aspect---are still applicable in high-level languages like C. For this reason, it would be beneficial to investigate the introduction of these ideas into existing virtual machines.
 	
 	It was surprising to discover instruction cache misses did not affect performance of the VM. Considerable design effort and compromise was exercised to reduce the number of instructions in the VM architecture. It would be interesting to see how big a virtual machine implementation can get before instruction cache becomes an important issue. This will help to see whether large virtual machines can be used in a practical VM architecture with many more pragmatic instructions.
+	
 	\clearpage
 	\section{Reflection}
-	If one thing was determined by this study, it is that the old wisdom of interpreter design needs to be revisited in light of the emergence of modern processor design. Ideas that were thought infeasible twenty years ago may be surprisingly effective today.
+	If one thing was determined by this study, it is that the old wisdom of interpreter design needs to be revisited in light of the emergence of modern processor design. Ideas that were thought infeasible twenty years ago may be surprisingly effective today. For instance, the core idea which resulted in the encouraging results that were achieved were dismissed by \cite{stackcaching}. The points made by Ertl were valid in 1995, but technology has changed substantially since then.
 	
 	However, the advent of ever-increasing complexity of modern processors comes at a cost---discovering the exact mechanism by which modern processors achieve their performance is proprietary knowledge of their manufacturers. Producing designs which fully leverage these ``secret optimisation features'' is a frustrating task, because so little is known about their implementation.
+	
+	
 	
 % Bibliography
 \bibliographysection
