@@ -9,7 +9,9 @@ for bench in "${benchmarks[@]}"; do
 
     cd ../../benchmarks/benchmarks/
     echo " C"
-    gcc -g -O3 -std=c99 $bench.c
+    if [ "$bench" != "ackermann" ]; then
+        gcc -g -O3 -std=c99 $bench.c
+   
 
     for i in `seq 1 $n`; do
         echo -n "  "
@@ -19,6 +21,7 @@ for bench in "${benchmarks[@]}"; do
             (/bin/time -f%e ./a.out) 2>&1 1>&2 > /dev/null
         fi
     done
+    fi
     
     cd ../../Work/Virtual\ Machines/
     
