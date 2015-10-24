@@ -2,6 +2,8 @@
 
 These are the source files and results of my BSc Hons Computer Science project.
 
+The treatise on the project can be found in `Treatise.pdf`
+
 ## Directory Layout
 * `Paper`: Contains LaTeX source files for the treatise on the project
 * `Virtual Machines`: Contains virtual machine source code
