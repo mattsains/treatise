@@ -9,7 +9,7 @@ The treatise on the project can be found in `Treatise.pdf`
 * `Virtual Machines`: Contains virtual machine source code
 * `benchmarks/assembler`: Contains a Ruby assembler for assembling bytecode for the VMs
 * `benchmarks/benchmarks`: Contains source code to the benchmark programs used to test the VMs
-* `benchmarks/tests`: Some example code demonstrating the assembly format
+* `benchmarks/examples`: Some example code demonstrating the assembly format
 * `benchmarks/stdlib.asm`: Standard library for VM bytecode
 * `results`: Contains results of benchmarking experiments
 
@@ -18,12 +18,16 @@ The assembler can be found at `benchmarks/assembler/assembler.rb`. Run `ruby ass
 
 ## Building and Running Virtual Machines
 ### Prerequisites for building the virtual machines:
-The virtual machines were designed with these prerequisites. Other versions may work also.
+
+The virtual machines are designed to be run on any modern Linux system, such as Fedora Desktop 22. There are certain prerequisites which should be available from your Linux distribution's package manager. The virtual machines were design with these versions, but other versions may work also.
+
 * GNU Make 4.0
 * GNU Compiler Collection v5.1.1
 * GNU C Standard Library v2.21
 * Ruby v2.2.3
 * Liquid Templating Engine for Ruby v3.01
+
+I wanted to include a ready-made Virtual Box image for ease of evaluation, but this would not fit on the DVD. This is available on request, please email s212213458@nmmu.ac.za for details.
 
 To compile a virtual machine, run `make` in the directory of the virtual machine.
 
