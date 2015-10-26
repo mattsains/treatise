@@ -388,10 +388,14 @@ jmp loop
 		
 		Duplicating the dispatch code still results in a large misprediction rate, because the prediction is essentially that a particular instruction is always followed by some other instruction. This is not very likely in reality, because the instruction could be followed by any VM instruction, a problem depicted in \reffig{interpreterbtb}. However, the prediction made by a BTB in this design is not as ridiculous as in the naïve design.
 		
-		\begin{myfigure}
-			\begin{tabular}{c c}
-				{
-				\begin{lstlisting}
+		\cite{structureinterpreters} found that the branch misprediction penalty consumes up to half of the execution time on some interpreters. This high proportion is a result of the fact that a dispatch happens extremely often in a virtual machine---once for every VM instruction executed.
+		
+		With the context surrounding research in efficient virtual machine design, the design of the new virtual machine architecture designed for this research can be presented.
+		
+				\begin{myfigure}
+					\begin{tabular}{c c}
+						{
+							\begin{lstlisting}
 start:
   pc = bytecode
   jmp *pc++
@@ -414,34 +418,30 @@ divide:
 print:
   //implementation
   jmp *pc++
-				\end{lstlisting}
-			} & 
-			{
-				\hspace{-9em}
-				\raisebox{-10.2em}{
-					\begin{tikzpicture}
-						\draw[arrows=->] (0,7) -- (1.5, 7);
-						\node[anchor=west,draw] (q) at (1.5, 7) {???};
-						
-						
-						\draw (q.north) -- +(0, 0.5);
-						\draw[arrows=->] (q.north)+(0, 0.5) -- +(-3, 0.5);
-						
-						\draw[arrows=->] (q.south)+(0,-0.7) -- +(-3, -0.7);
-						
-						\draw (q.south)+(0,0) -- +(0, -2.4);
-						\draw[arrows=->] (q.south)+(0,-2.4) -- +(-3, -2.4);
-					\end{tikzpicture}
-				}
-			}
-			\end{tabular}
-			\caption{Illustration of Indirect Branch Problems in Interpreters}
-			\label{fig:interpreterbtb}
-		\end{myfigure}
-		
-		\cite{structureinterpreters} found that the branch misprediction penalty consumes up to half of the execution time on some interpreters. This high proportion is a result of the fact that a dispatch happens extremely often in a virtual machine---once for every VM instruction executed.
-		
-		With the context surrounding research in efficient virtual machine design, the design of the new virtual machine architecture designed for this research can be presented.
+							\end{lstlisting}
+						} & 
+						{
+							\hspace{-9em}
+							\raisebox{-10.2em}{
+								\begin{tikzpicture}
+								\draw[arrows=->] (0,7) -- (1.5, 7);
+								\node[anchor=west,draw] (q) at (1.5, 7) {???};
+								
+								
+								\draw (q.north) -- +(0, 0.5);
+								\draw[arrows=->] (q.north)+(0, 0.5) -- +(-3, 0.5);
+								
+								\draw[arrows=->] (q.south)+(0,-0.7) -- +(-3, -0.7);
+								
+								\draw (q.south)+(0,0) -- +(0, -2.4);
+								\draw[arrows=->] (q.south)+(0,-2.4) -- +(-3, -2.4);
+								\end{tikzpicture}
+							}
+						}
+					\end{tabular}
+					\caption{Illustration of Indirect Branch Problems in Interpreters}
+					\label{fig:interpreterbtb}
+				\end{myfigure}
 		
 % 10-12 pages
 \chapter{Solution Design}
